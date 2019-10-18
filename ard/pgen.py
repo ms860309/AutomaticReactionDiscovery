@@ -7,8 +7,8 @@ Contains the :class:`Generate` for generating product structures.
 
 import pybel
 
-import ard.props as props
-import ard.gen3D as gen3D
+import props
+import gen3D
 
 ###############################################################################
 
