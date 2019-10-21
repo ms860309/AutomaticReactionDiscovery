@@ -6,7 +6,7 @@ if __name__ == '__main__':
     import argparse
     import os
 
-    from ard.main import ARD, readInput
+    from ard.main import ARD, readInput, readXYZ
 
     # Set up parser for reading the input filename from the command line
     parser = argparse.ArgumentParser(description='Automatic Reaction Discovery')
@@ -16,11 +16,22 @@ if __name__ == '__main__':
     # Read input file
     input_file = os.path.abspath(args.file)
     kwargs = readInput(input_file)
+    if kwargs['xyz'] == '1':
+        current_path = os.path.abspath("")
+        xyz = readXYZ(current_path+'/reactant.txt')
+        kwargs['reac_smi']= xyz
+        # Set output directory
+        output_dir = os.path.abspath(os.path.dirname(input_file))
+        kwargs['output_dir'] = output_dir
 
-    # Set output directory
-    output_dir = os.path.abspath(os.path.dirname(input_file))
-    kwargs['output_dir'] = output_dir
+        # Execute job
+        ard = ARD(**kwargs)
+        ard.execute(**kwargs)
+    else:
+        # Set output directory
+        output_dir = os.path.abspath(os.path.dirname(input_file))
+        kwargs['output_dir'] = output_dir
 
-    # Execute job
-    ard = ARD(**kwargs)
-    ard.execute(**kwargs)
+        # Execute job
+        ard = ARD(**kwargs)
+        ard.execute(**kwargs)

@@ -258,7 +258,7 @@ def readInput(input_file):
     A dictionary containing all input parameters and their values is returned.
     """
     # Allowed keywords
-    keys = ('reac_smi', 'nbreak', 'nform', 'dh_cutoff', 'forcefield', 'name',
+    keys = ('reac_smi', 'xyz', 'nbreak', 'nform', 'dh_cutoff', 'forcefield', 'name',
             'nsteps', 'nnode', 'lsf', 'tol', 'gtol', 'nlstnodes',
             'qprog', 'theory', 'theory_low')
 
@@ -304,6 +304,7 @@ def readInput(input_file):
         input_dict['reactant'] = reac_node
         input_dict['product'] = prod_node
 
+
     # Extract remaining keywords and values
     for line in input_data:
         if line != '' and not line.strip().startswith('#'):
@@ -327,3 +328,21 @@ def readInput(input_file):
             raise Exception('Invalid method: {}'.format(method))
 
     return input_dict
+
+def readXYZ(xyz):
+    with open(xyz,'r') as f:
+        input_data = f.read().splitlines()
+
+    geometry = []
+    for line in input_data:
+        geometry.append(line)
+
+    multiplicity = geometry[1].split()[1]
+    reactant = geometry[2:]
+    reac_atoms = [line.split()[0] for line in reactant]
+    reac_geo = [[float(coord) for coord in line.split()[1:4]] for line in reactant]
+
+    reac_node = Node(reac_geo, reac_atoms, multiplicity)
+    new_smi = reac_node.toSMILES()
+    return new_smi
+

@@ -68,7 +68,7 @@ class Generate(object):
             [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
              for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
         ))
-
+        
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]
 
