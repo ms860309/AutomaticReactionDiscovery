@@ -124,6 +124,21 @@ class Molecule(pybel.Molecule):
         m.mols = self.mols
         return m
 
+    def OpenBabelBondInformation(self):
+        m = Molecule(pybel.ob.OBMol())
+        OBMol = m.OBMol
+        bond_atom_0 = []
+        bond_atom_1 = []
+        bond_order = []
+        for bond in pybel.ob.OBMolBondIter(self.OBMol):
+            bond_atom_0.append(bond.GetBeginAtomIdx() - 1)
+            bond_atom_1.append(bond.GetEndAtomIdx() - 1)
+            bond_order.append(bond.GetBondOrder())
+
+        zipped = zip(bond_atom_0,bond_atom_1,bond_order)
+        return zipped
+
+
     def toNode(self):
         """
         Convert to :class:`node.Node` object and return the object.
