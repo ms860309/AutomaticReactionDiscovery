@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
         # Execute job
         ard = ARD(**kwargs)
-        ard.execute(**kwargs)
+        ard.executeXYZ(**kwargs)
     else:
         # Set output directory
         output_dir = os.path.abspath(os.path.dirname(input_file))

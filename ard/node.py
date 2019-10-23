@@ -89,7 +89,8 @@ class Node(object):
                     continue
             if int(num) not in props.atomnum.keys():
                 raise ValueError('Invalid atomic number or symbol: {0}'.format(num))
-            self.atoms.append(int(num))
+
+            
 
         self.multiplicity = int(multiplicity)
 

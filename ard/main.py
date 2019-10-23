@@ -181,6 +181,79 @@ class ARD(object):
         # Finalize
         self.finalize(start_time)
 
+    def executeXYZ(self, **kwargs):
+        """
+        Execute the automatic reaction discovery procedure.
+        """
+        start_time = time.time()
+        reac_mol = self.reac_smi
+        # self.optimizeReactant(reac_mol, **kwargs)
+
+        gen = Generate(reac_mol)
+        self.logger.info('Generating all possible products...')
+        gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
+        prod_mols = gen.prod_mols
+        self.logger.info('{} possible products generated\n'.format(len(prod_mols)))
+
+        # Load thermo database and choose which libraries to search
+        thermo_db = ThermoDatabase()
+        thermo_db.load(os.path.join(settings['database.directory'], 'thermo'))
+        thermo_db.libraryOrder = ['primaryThermoLibrary', 'NISTThermoLibrary', 'thermo_DFT_CCSDTF12_BAC',
+                                    'CBS_QB3_1dHR', 'DFT_QCI_thermo', 'BurkeH2O2', 'GRI-Mech3.0-N', ]
+
+        # Filter reactions based on standard heat of reaction
+        H298_reac = reac_mol.getH298(thermo_db)
+        self.logger.info('Filtering reactions...')
+        prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
+        self.logger.info('{} products remaining\n'.format(len(prod_mols_filtered)))
+
+        # Generate 3D geometries
+        if prod_mols_filtered:
+            self.logger.info('Feasible products:\n')
+            rxn_dir = util.makeOutputSubdirectory(self.output_dir, 'reactions')
+
+            # These two lines are required so that new coordinates are
+            # generated for each new product. Otherwise, Open Babel tries to
+            # use the coordinates of the previous molecule if it is isomorphic
+            # to the current one, even if it has different atom indices
+            # participating in the bonds. a hydrogen atom is chosen
+            # arbitrarily, since it will never be the same as any of the
+            # product structures.
+            Hatom = gen3D.readstring('smi', '[H]')
+            ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
+
+            reac_mol_copy = reac_mol.copy()
+            for rxn, mol in enumerate(prod_mols_filtered):
+                mol.gen3D(forcefield=self.forcefield, make3D=False)
+                arrange3D = gen3D.Arrange3D(reac_mol, mol)
+                msg = arrange3D.arrangeIn3D()
+                if msg != '':
+                    self.logger.info(msg)
+
+                ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
+                reac_mol.gen3D(make3D=False)
+                ff.Setup(Hatom.OBMol)
+                mol.gen3D(make3D=False)
+                ff.Setup(Hatom.OBMol)
+
+                reactant = reac_mol.toNode()
+                product = mol.toNode()
+
+                rxn_num = '{:04d}'.format(rxn)
+                output_dir = util.makeOutputSubdirectory(rxn_dir, rxn_num)
+                kwargs['output_dir'] = output_dir
+                kwargs['name'] = rxn_num
+
+                self.logger.info('Product {}: {}\n{}\n****\n{}\n'.format(rxn, product.toSMILES(), reactant, product))
+                self.makeInputFile(reactant, product, **kwargs)
+
+                reac_mol.setCoordsFromMol(reac_mol_copy)
+            else:
+             self.logger.info('No feasible products found')
+
+        # Finalize
+        self.finalize(start_time)
+
     def finalize(self, start_time):
         """
         Finalize the job.
@@ -344,9 +417,8 @@ def readXYZ(xyz):
     reac_geo = [[float(coord) for coord in line.split()[1:4]] for line in reactant]
 
     reac_node = Node(reac_geo, reac_atoms, multiplicity)
-    a = reac_node.toMolecule()
-    b = a.OpenBabelBondInformation()
-    print(b)
-    new_smi = reac_node.toSMILES()
-    return new_smi
-
+    OBMol = reac_node.toMolecule()
+    #b = a.OpenBabelBondInformation()
+    #v = [atom.OBAtom.BOSum() for atom in a]
+    #new_smi = reac_node.toSMILES()
+    return OBMol
