@@ -417,8 +417,8 @@ def readXYZ(xyz):
     reac_geo = [[float(coord) for coord in line.split()[1:4]] for line in reactant]
 
     reac_node = Node(reac_geo, reac_atoms, multiplicity)
-    a = reac_node.toMolecule()
+    OBMol = reac_node.toMolecule()
     #b = a.OpenBabelBondInformation()
     #v = [atom.OBAtom.BOSum() for atom in a]
     #new_smi = reac_node.toSMILES()
-    return a
+    return OBMol
