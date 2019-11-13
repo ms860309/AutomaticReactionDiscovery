@@ -130,13 +130,11 @@ class Molecule(pybel.Molecule):
         bond_atom_0 = []
         bond_atom_1 = []
         bond_order = []
-        for bond in pybel.ob.OBMolBondIter(self.OBMol):
-            bond_atom_0.append(bond.GetBeginAtomIdx() - 1)
-            bond_atom_1.append(bond.GetEndAtomIdx() - 1)
-            bond_order.append(bond.GetBondOrder())
-
-        zipped = zip(bond_atom_0,bond_atom_1,bond_order)
-        return zipped
+        bonds = tuple(sorted(
+            [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
+             for bond in pybel.ob.OBMolBondIter(self.OBMol)]
+        ))
+        return bonds
 
 
     def toNode(self):

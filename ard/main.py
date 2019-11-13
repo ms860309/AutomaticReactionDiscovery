@@ -9,6 +9,7 @@ state searches.
 
 from __future__ import print_function
 
+import rdkit
 import logging
 import os
 import time
@@ -16,6 +17,9 @@ import time
 import pybel
 from rmgpy import settings
 from rmgpy.data.thermo import ThermoDatabase
+from rmgpy.molecule import Molecule
+from rmgpy.molecule import converter
+from rdkit import Chem
 
 import constants
 import gen3D
@@ -418,7 +422,23 @@ def readXYZ(xyz):
 
     reac_node = Node(reac_geo, reac_atoms, multiplicity)
     OBMol = reac_node.toMolecule()
-    #b = a.OpenBabelBondInformation()
+    RMGMol = reac_node.toRMGMolecule()
+    spl = RMGMol.split()
+    frag_bond = []
+    for fragment in spl:
+        a = converter.toOBMol(fragment)
+        bonds = tuple(sorted(
+            [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
+                for bond in pybel.ob.OBMolBondIter(a)]
+        ))
+        print(bonds)
+        frag_bond.append(bonds)
+
+
+    #index1 = [ans[1].atoms.index(a) for a in ans[1].atoms]
+    #print(index1)
+    #b = OBMol.OpenBabelBondInformation()
+    #print(b)
     #v = [atom.OBAtom.BOSum() for atom in a]
     #new_smi = reac_node.toSMILES()
     return OBMol

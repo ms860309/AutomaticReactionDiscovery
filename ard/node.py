@@ -89,6 +89,7 @@ class Node(object):
                     continue
             if int(num) not in props.atomnum.keys():
                 raise ValueError('Invalid atomic number or symbol: {0}'.format(num))
+            self.atoms.append(int(num))
 
             
 
@@ -187,7 +188,6 @@ class Node(object):
                 else:
                     bond = (atom1.idx, atom2.idx, 1)
                     bonds.append(bond)
-
         return bonds
 
     def toPybelMol(self):
