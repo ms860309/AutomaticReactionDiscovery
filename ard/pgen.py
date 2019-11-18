@@ -10,6 +10,7 @@ import pybel
 import props
 import gen3D
 
+import numpy as np
 ###############################################################################
 
 class StructureError(Exception):
@@ -64,10 +65,19 @@ class Generate(object):
             raise Exception('Breaking/forming bonds is limited to a maximum of 3')
 
         # Extract bonds as an unmutable sequence (indices are made compatible with atom list)
-        reactant_bonds = tuple(sorted(
+        reactant_bonds = []
+        reactant_bond = sorted(
             [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
              for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
-        ))
+        )
+        for i in reactant_bond:
+            np_1 = sorted(np.array([i[0], i[1]]))
+            np_2 = np.array([i[2]])
+            bond = np.concatenate((np_1, np_2), axis=0).tolist()
+            reactant_bonds.append(tuple(bond))
+        
+        reactant_bonds = tuple(sorted(reactant_bonds))
+
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]
 
@@ -80,7 +90,6 @@ class Generate(object):
         bonds_form_all = [(atom1_idx, atom2_idx, 1)
                           for atom1_idx in range(natoms - 1)
                           for atom2_idx in range(atom1_idx + 1, natoms)]
-
         # Generate products
         bf_combinations = ((0, 1), (1, 0), (1, 1), (1, 2), (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3))
         for bf in bf_combinations:

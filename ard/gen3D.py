@@ -127,9 +127,6 @@ class Molecule(pybel.Molecule):
     def OpenBabelBondInformation(self):
         m = Molecule(pybel.ob.OBMol())
         OBMol = m.OBMol
-        bond_atom_0 = []
-        bond_atom_1 = []
-        bond_order = []
         bonds = tuple(sorted(
             [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
              for bond in pybel.ob.OBMolBondIter(self.OBMol)]

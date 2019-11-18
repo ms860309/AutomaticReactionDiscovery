@@ -19,7 +19,6 @@ from rmgpy import settings
 from rmgpy.data.thermo import ThermoDatabase
 from rmgpy.molecule import Molecule
 from rmgpy.molecule import converter
-from rdkit import Chem
 
 import constants
 import gen3D
@@ -27,6 +26,7 @@ import util
 from quantum import QuantumError
 from node import Node
 from pgen import Generate
+from imaginary import Imaginary
 import openbabel as ob
 
 ###############################################################################
@@ -192,8 +192,9 @@ class ARD(object):
         start_time = time.time()
         reac_mol = self.reac_smi
         # self.optimizeReactant(reac_mol, **kwargs)
-
+        
         gen = Generate(reac_mol)
+        img = Imaginary(reac_mol)
         self.logger.info('Generating all possible products...')
         gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
         prod_mols = gen.prod_mols
@@ -422,8 +423,10 @@ def readXYZ(xyz):
 
     reac_node = Node(reac_geo, reac_atoms, multiplicity)
     OBMol = reac_node.toMolecule()
+    """
     RMGMol = reac_node.toRMGMolecule()
     spl = RMGMol.split()
+
     frag_bond = []
     for fragment in spl:
         a = converter.toOBMol(fragment)
@@ -433,10 +436,8 @@ def readXYZ(xyz):
         ))
         print(bonds)
         frag_bond.append(bonds)
+    """
 
-
-    #index1 = [ans[1].atoms.index(a) for a in ans[1].atoms]
-    #print(index1)
     #b = OBMol.OpenBabelBondInformation()
     #print(b)
     #v = [atom.OBAtom.BOSum() for atom in a]
