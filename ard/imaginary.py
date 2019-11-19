@@ -15,6 +15,8 @@ import numpy as np
 from rmgpy.molecule import Molecule
 from rmgpy.molecule import converter
 
+from itertools import combinations
+
 ###############################################################################
 
 class StructureError(Exception):
@@ -133,10 +135,25 @@ class Imaginary(object):
             raise Exception('Breaking/forming bonds is limited to a maximum of 3')
 
         # Extract bonds as an unmutable sequence (indices are made compatible with atom list)
-        reactant_bonds = tuple(sorted(
+        reactant_bonds = []
+        reactant_bond = sorted(
             [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
              for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
-        ))
+        )
+        #Sorting the atom with the following format (smaller_idx, bigger_idx, bond_order)
+        for i in reactant_bond:
+            np_1 = sorted(np.array([i[0], i[1]]))
+            np_2 = np.array([i[2]])
+            bond = np.concatenate((np_1, np_2), axis=0).tolist()
+            reactant_bonds.append(tuple(bond))
+        
+        reactant_bonds = tuple(sorted(reactant_bonds))
+        #Extract heavy atom label
+        heavy_atom_label = []
+        for i in reactant_bonds:
+            heavy_atom_label.append(i[0])
+        heavy_atom_label = list(set(heavy_atom_label))
+
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]
 
@@ -146,9 +163,16 @@ class Imaginary(object):
 
         # Generate all possibilities for forming bonds
         natoms = len(self.atoms)
-        bonds_form_all = [(atom1_idx, atom2_idx, 1)
-                          for atom1_idx in range(natoms - 1)
-                          for atom2_idx in range(atom1_idx + 1, natoms)]
+        bonds_form_all = []
+        for i in imagine:
+            bonds_form_all.append(i)
+        combination = list(combinations(heavy_atom_label,2))
+        for com in combination:
+            com += (1,)
+            bonds_form_all.append(com)
+        bonds_form_all = list(set(bonds_form_all))
+
+            
         # Generate products
         bf_combinations = ((0, 1), (1, 0), (1, 1), (1, 2), (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3))
         for bf in bf_combinations:

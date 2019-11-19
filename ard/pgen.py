@@ -77,7 +77,6 @@ class Generate(object):
             reactant_bonds.append(tuple(bond))
         
         reactant_bonds = tuple(sorted(reactant_bonds))
-
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]
 

@@ -55,9 +55,10 @@ class ARD(object):
 
     """
 
-    def __init__(self, reac_smi, nbreak=3, nform=3, dh_cutoff=20.0, theory_low=None,
+    def __init__(self, reac_smi, imaginarybond=0, nbreak=3, nform=3, dh_cutoff=20.0, theory_low=None,
                  forcefield='mmff94', distance=3.5, output_dir='', **kwargs):
         self.reac_smi = reac_smi
+        self.imaginarybond = imaginarybond
         self.nbreak = int(nbreak)
         self.nform = int(nform)
         self.dh_cutoff = float(dh_cutoff)
@@ -192,9 +193,10 @@ class ARD(object):
         start_time = time.time()
         reac_mol = self.reac_smi
         # self.optimizeReactant(reac_mol, **kwargs)
-        
-        gen = Generate(reac_mol)
-        img = Imaginary(reac_mol)
+        if self.imaginarybond == 1:
+            gen = Imaginary(reac_mol)
+        else:
+            gen = Generate(reac_mol)
         self.logger.info('Generating all possible products...')
         gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
         prod_mols = gen.prod_mols
@@ -337,7 +339,7 @@ def readInput(input_file):
     A dictionary containing all input parameters and their values is returned.
     """
     # Allowed keywords
-    keys = ('reac_smi', 'xyz', 'nbreak', 'nform', 'dh_cutoff', 'forcefield', 'name',
+    keys = ('reac_smi', 'xyz', 'imaginarybond', 'nbreak', 'nform', 'dh_cutoff', 'forcefield', 'name',
             'nsteps', 'nnode', 'lsf', 'tol', 'gtol', 'nlstnodes',
             'qprog', 'theory', 'theory_low')
 
