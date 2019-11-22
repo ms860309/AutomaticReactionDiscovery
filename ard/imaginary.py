@@ -9,10 +9,9 @@ import pybel
 
 import props
 import gen3D
-
+from gen3D import Molecule
 import numpy as np
 
-from rmgpy.molecule import Molecule
 from rmgpy.molecule import converter
 
 from itertools import combinations
@@ -130,7 +129,6 @@ class Imaginary(object):
         bonds.
         """
         imagine = self.ImaginaryBonds()
-        
         if nbreak > 3 or nform > 3:
             raise Exception('Breaking/forming bonds is limited to a maximum of 3')
 

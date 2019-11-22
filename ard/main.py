@@ -18,7 +18,6 @@ import pybel
 from rmgpy import settings
 from rmgpy.data.thermo import ThermoDatabase
 from rmgpy.molecule import Molecule
-from rmgpy.molecule import converter
 
 import constants
 import gen3D
@@ -58,7 +57,7 @@ class ARD(object):
     def __init__(self, reac_smi, imaginarybond=0, nbreak=3, nform=3, dh_cutoff=20.0, theory_low=None,
                  forcefield='mmff94', distance=3.5, output_dir='', **kwargs):
         self.reac_smi = reac_smi
-        self.imaginarybond = imaginarybond
+        self.imaginarybond = int(imaginarybond)
         self.nbreak = int(nbreak)
         self.nform = int(nform)
         self.dh_cutoff = float(dh_cutoff)
@@ -193,7 +192,7 @@ class ARD(object):
         start_time = time.time()
         reac_mol = self.reac_smi
         # self.optimizeReactant(reac_mol, **kwargs)
-        if self.imaginarybond == 1:
+        if self.imaginarybond:
             gen = Imaginary(reac_mol)
         else:
             gen = Generate(reac_mol)
@@ -255,8 +254,8 @@ class ARD(object):
                 self.makeInputFile(reactant, product, **kwargs)
 
                 reac_mol.setCoordsFromMol(reac_mol_copy)
-            else:
-             self.logger.info('No feasible products found')
+        else:
+            self.logger.info('No feasible products found')
 
         # Finalize
         self.finalize(start_time)
@@ -411,37 +410,7 @@ def readInput(input_file):
     return input_dict
 
 def readXYZ(xyz):
-    with open(xyz,'r') as f:
-        input_data = f.read().splitlines()
-
-    geometry = []
-    for line in input_data:
-        geometry.append(line)
-
-    multiplicity = geometry[1].split()[1]
-    reactant = geometry[2:]
-    reac_atoms = [line.split()[0] for line in reactant]
-    reac_geo = [[float(coord) for coord in line.split()[1:4]] for line in reactant]
-
-    reac_node = Node(reac_geo, reac_atoms, multiplicity)
-    OBMol = reac_node.toMolecule()
-    """
-    RMGMol = reac_node.toRMGMolecule()
-    spl = RMGMol.split()
-
-    frag_bond = []
-    for fragment in spl:
-        a = converter.toOBMol(fragment)
-        bonds = tuple(sorted(
-            [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
-                for bond in pybel.ob.OBMolBondIter(a)]
-        ))
-        print(bonds)
-        frag_bond.append(bonds)
-    """
-
-    #b = OBMol.OpenBabelBondInformation()
-    #print(b)
-    #v = [atom.OBAtom.BOSum() for atom in a]
-    #new_smi = reac_node.toSMILES()
-    return OBMol
+    mol = next(pybel.readfile('xyz', xyz))
+    mol = gen3D.Molecule(mol.OBMol)
+    #mol = mol.OBMol
+    return mol

@@ -5,3 +5,6 @@
 *.pyc
 *.so
 *.pyd
+
+#Reactions folder
+reactions/

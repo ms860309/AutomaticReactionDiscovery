@@ -64,9 +64,6 @@ class TSSearch(object):
         if reactant.atoms != product.atoms:
             raise Exception('Atom labels of reactant and product do not match')
         self.reactant = reactant
-        reactant_smi = self.reactant.toSMILES()
-        print(self.reactant)
-        print(reactant_smi)
         self.product = product
         self.name = name
 

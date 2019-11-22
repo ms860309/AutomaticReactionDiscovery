@@ -18,7 +18,7 @@ if __name__ == '__main__':
     kwargs = readInput(input_file)
     if kwargs['xyz'] == '1':
         current_path = os.path.abspath("")
-        OBMol = readXYZ(current_path+'/reactant.txt')
+        OBMol = readXYZ(current_path+'/reactant.xyz')
         kwargs['reac_smi']= OBMol
         # Set output directory
         output_dir = os.path.abspath(os.path.dirname(input_file))

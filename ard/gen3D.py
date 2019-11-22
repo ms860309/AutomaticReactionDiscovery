@@ -6,7 +6,6 @@ Contains functions and classes for generating 3D geometries using Open Babel.
 Also contains functionality for estimating thermo using group additivity and
 RMG database values.
 """
-
 from __future__ import division
 
 import os
@@ -123,16 +122,6 @@ class Molecule(pybel.Molecule):
         m.mols_indices = self.mols_indices
         m.mols = self.mols
         return m
-
-    def OpenBabelBondInformation(self):
-        m = Molecule(pybel.ob.OBMol())
-        OBMol = m.OBMol
-        bonds = tuple(sorted(
-            [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
-             for bond in pybel.ob.OBMolBondIter(self.OBMol)]
-        ))
-        return bonds
-
 
     def toNode(self):
         """
