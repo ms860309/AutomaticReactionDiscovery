@@ -573,7 +573,7 @@ class Arrange3D(object):
         # atom_in_mol tells which mol the atom is in
         atom_in_mol_1 = [0] * len(mol_1.atoms)
         atom_in_mol_2 = [0] * len(mol_2.atoms)
-
+        
         for i, mol_indices in enumerate(mol_1.mols_indices):
             for j in mol_indices:
                 atom_in_mol_1[j] = i

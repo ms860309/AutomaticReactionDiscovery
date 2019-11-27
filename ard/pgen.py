@@ -55,6 +55,84 @@ class Generate(object):
         #self.reac_smi = self.reac_mol.write('can').strip()
         self.atoms = tuple(atom.atomicnum for atom in self.reac_mol)
 
+    def rdbe(self, products_bonds):
+        """
+        Ring plus Double Bonds Equivalent
+        RDBE = C+Si-0.5(H+F+Cl+Br+I)+0.5(N+P)+1
+        Now only consider double bonds
+        """
+        count_atoms = dict((a,self.atoms.count(a)) for a in self.atoms)
+        try:
+            nH_atoms = int(count_atoms[1])
+        except:
+            nH_atoms = 0
+        try:
+            nC_atoms = int(count_atoms[6]) 
+        except:
+            nC_atoms = 0
+        try:
+            nN_atoms = int(count_atoms[7])
+        except:
+            nN_atoms = 0
+        try:
+            nO_atoms = int(count_atoms[8])
+        except:
+            nO_atoms = 0
+        try:
+            nF_atoms = int(count_atoms[9])
+        except:
+            nF_atoms = 0
+        try:
+            nSi_atoms = int(count_atoms[14])
+        except:
+            nSi_atoms = 0
+        try:
+            nP_atoms = int(count_atoms[15])
+        except:
+            nP_atoms = 0
+        try:
+            nCl_atoms = int(count_atoms[17])
+        except:
+            nCl_atoms = 0
+        try:
+            nBr_atoms = int(count_atoms[35])
+        except:
+            nBr_atoms = 0
+
+        rdbe = int(nC_atoms + nSi_atoms - 0.5*(nH_atoms + nF_atoms + nCl_atoms + nBr_atoms) + 0.5*(nN_atoms + nP_atoms) + 1)
+        bond_order =[]
+        for i in products_bonds:
+            double = [j[2] for j in i]
+            bond_order.append(double)
+        nDouble_bonds = []
+        for order in bond_order:
+            nDouble = dict((o,order.count(o)) for o in order)
+            nDouble_bonds.append(nDouble)
+
+        products_bonds = list(products_bonds)
+        del_idx = []
+        for idx,order in enumerate(nDouble_bonds):
+            for products in products_bonds:
+                try:
+                    if order[3] != 0:
+                        order[2] += 2*order[3]
+                        if order[2] > rdbe:
+                            del_idx.append(idx)
+                except:
+                    pass
+                try:
+                    if order[2] > rdbe:
+                        del_idx.append(idx)
+                except:
+                    pass
+        del_idx = set(del_idx)
+        products_bonds_idx = [i for i in range(len(products_bonds))]
+        products_bonds_idx = set(products_bonds_idx)
+        index = list(products_bonds_idx - del_idx)
+        products_bonds = set([products_bonds[i] for i in index])
+
+        return products_bonds
+
     def generateProducts(self, nbreak=3, nform=3):
         """
         Generate all possible products from the reactant under the constraints
@@ -77,6 +155,7 @@ class Generate(object):
             reactant_bonds.append(tuple(bond))
         
         reactant_bonds = tuple(sorted(reactant_bonds))
+
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]
 
@@ -104,6 +183,9 @@ class Generate(object):
 
         # Convert all products to Molecule objects and append to list of product molecules
         if products_bonds:
+            #Filter the products_bonds which doesn't follow rdbe rule
+            products_bonds = self.rdbe(products_bonds)
+
             reac_rmg_mol = self.reac_mol.toRMGMolecule()
             for bonds in products_bonds:
                 mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
