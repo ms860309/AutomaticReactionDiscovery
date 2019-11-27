@@ -55,82 +55,78 @@ class Generate(object):
         #self.reac_smi = self.reac_mol.write('can').strip()
         self.atoms = tuple(atom.atomicnum for atom in self.reac_mol)
 
-    def rdbe(self, products_bonds):
+    def DoU(self, products_bonds):
         """
-        Ring plus Double Bonds Equivalent
-        RDBE = C+Si-0.5(H+F+Cl+Br+I)+0.5(N+P)+1
-        Now only consider double bonds
+        Degrees of Unsaturation, DoU is also known as Double Bond Equivalent
+        DoU = (2*C+2+N-X-H)/2
+        C is the number of carbons
+        N is the number of nitrogens
+        X is the number of halogens (F,Cl,Br,I)
+        H is the number of hydrogens
+        Oxygen and Sulfer are not included in the formula because saturatuin is unaffected by these elements.
+        So if Oxygen or Sulfer in atoms, pass DoU filtration.
+        Now only consider double bonds and triple bonds, ignoring rings.
         """
-        count_atoms = dict((a,self.atoms.count(a)) for a in self.atoms)
-        try:
-            nH_atoms = int(count_atoms[1])
-        except:
-            nH_atoms = 0
-        try:
-            nC_atoms = int(count_atoms[6]) 
-        except:
-            nC_atoms = 0
-        try:
-            nN_atoms = int(count_atoms[7])
-        except:
-            nN_atoms = 0
-        try:
-            nO_atoms = int(count_atoms[8])
-        except:
-            nO_atoms = 0
-        try:
-            nF_atoms = int(count_atoms[9])
-        except:
-            nF_atoms = 0
-        try:
-            nSi_atoms = int(count_atoms[14])
-        except:
-            nSi_atoms = 0
-        try:
-            nP_atoms = int(count_atoms[15])
-        except:
-            nP_atoms = 0
-        try:
-            nCl_atoms = int(count_atoms[17])
-        except:
-            nCl_atoms = 0
-        try:
-            nBr_atoms = int(count_atoms[35])
-        except:
-            nBr_atoms = 0
+        if 8 not in self.atoms and 16 not in self.atoms:
+            count_atoms = dict((a,self.atoms.count(a)) for a in self.atoms)
+            try:
+                nH_atoms = int(count_atoms[1])
+            except:
+                nH_atoms = 0
+            try:
+                nC_atoms = int(count_atoms[6]) 
+            except:
+                nC_atoms = 0
+            try:
+                nN_atoms = int(count_atoms[7])
+            except:
+                nN_atoms = 0
+            try:
+                nF_atoms = int(count_atoms[9])
+            except:
+                nF_atoms = 0
+            try:
+                nCl_atoms = int(count_atoms[17])
+            except:
+                nCl_atoms = 0
+            try:
+                nBr_atoms = int(count_atoms[35])
+            except:
+                nBr_atoms = 0
 
-        rdbe = int(nC_atoms + nSi_atoms - 0.5*(nH_atoms + nF_atoms + nCl_atoms + nBr_atoms) + 0.5*(nN_atoms + nP_atoms) + 1)
-        bond_order =[]
-        for i in products_bonds:
-            double = [j[2] for j in i]
-            bond_order.append(double)
-        nDouble_bonds = []
-        for order in bond_order:
-            nDouble = dict((o,order.count(o)) for o in order)
-            nDouble_bonds.append(nDouble)
+            DoU = (nC_atoms*2 + 2 + nN_atoms -nF_atoms - nCl_atoms - nBr_atoms - nH_atoms)/2
+            bond_order =[]
+            for i in products_bonds:
+                double = [j[2] for j in i]
+                bond_order.append(double)
+            nDouble_bonds = []
+            for order in bond_order:
+                nDouble = dict((o,order.count(o)) for o in order)
+                nDouble_bonds.append(nDouble)
 
-        products_bonds = list(products_bonds)
-        del_idx = []
-        for idx,order in enumerate(nDouble_bonds):
-            for products in products_bonds:
-                try:
-                    if order[3] != 0:
-                        order[2] += 2*order[3]
-                        if order[2] > rdbe:
+            products_bonds = list(products_bonds)
+            del_idx = []
+            for idx,order in enumerate(nDouble_bonds):
+                for products in products_bonds:
+                    try:
+                        if order[3] != 0:
+                            order[2] += 2*order[3]
+                            if order[2] > DoU:
+                                del_idx.append(idx)
+                    except:
+                        pass
+                    try:
+                        if order[2] > DoU:
                             del_idx.append(idx)
-                except:
-                    pass
-                try:
-                    if order[2] > rdbe:
-                        del_idx.append(idx)
-                except:
-                    pass
-        del_idx = set(del_idx)
-        products_bonds_idx = [i for i in range(len(products_bonds))]
-        products_bonds_idx = set(products_bonds_idx)
-        index = list(products_bonds_idx - del_idx)
-        products_bonds = set([products_bonds[i] for i in index])
-
+                    except:
+                        pass
+            del_idx = set(del_idx)
+            products_bonds_idx = [i for i in range(len(products_bonds))]
+            products_bonds_idx = set(products_bonds_idx)
+            index = list(products_bonds_idx - del_idx)
+            products_bonds = set([products_bonds[i] for i in index])
+        else:
+            products_bonds = products_bonds
         return products_bonds
 
     def generateProducts(self, nbreak=3, nform=3):
@@ -184,7 +180,7 @@ class Generate(object):
         # Convert all products to Molecule objects and append to list of product molecules
         if products_bonds:
             #Filter the products_bonds which doesn't follow rdbe rule
-            products_bonds = self.rdbe(products_bonds)
+            products_bonds = self.DoU(products_bonds)
 
             reac_rmg_mol = self.reac_mol.toRMGMolecule()
             for bonds in products_bonds:
