@@ -144,6 +144,7 @@ class Generate(object):
             [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
              for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
         )
+
         for i in reactant_bond:
             np_1 = sorted(np.array([i[0], i[1]]))
             np_2 = np.array([i[2]])
@@ -178,9 +179,15 @@ class Generate(object):
                 )
 
         # Convert all products to Molecule objects and append to list of product molecules
+        for i in products_bonds:
+            if len(i)+2 < len(reactant_bonds):
+                products_bonds = list(products_bonds)
+                products_bonds.remove(i)
+                products_bonds = tuple(products_bonds)
+            
         if products_bonds:
-            #Filter the products_bonds which doesn't follow rdbe rule
-            products_bonds = self.DoU(products_bonds)
+            #Filter the products_bonds which doesn't follow DoU rule
+            #products_bonds = self.DoU(products_bonds)
 
             reac_rmg_mol = self.reac_mol.toRMGMolecule()
             for bonds in products_bonds:
@@ -197,7 +204,6 @@ class Generate(object):
         broken and formed, a set for storing the products, a sequence of atoms,
         of bonds, and of valences. `bonds_form_all` should contain a tuple of
         tuples of bonds that contains all possibilities for forming bonds.
-
         Nothing is returned, but formed products are added to `products`.
         """
         if bonds_broken is None:
@@ -210,7 +216,6 @@ class Generate(object):
             for bond_break_idx, bond_break in enumerate(bonds):
                 valences_break = self.changeValences(valences, bond_break, -1)
                 bonds_break = self.breakBond(bonds, bond_break_idx)
-
                 # Keep track of bonds that have been broken
                 if bond_break_idx == 0:
                     bonds_broken.append(bond_break)
@@ -236,7 +241,7 @@ class Generate(object):
                 # Do not add bond if it has previously been broken
                 if bond_form[:2] in [bond[:2] for bond in bonds_broken]:
                     continue
-
+                
                 # Form new bond and catch exception if it violates constraints
                 try:
                     valences_form = self.changeValences(valences, bond_form, 1)
@@ -283,7 +288,6 @@ class Generate(object):
         """
         # Ensure that only one bond is added at a time
         assert new_bond[2] == 1
-
         try:  # Check if bond exists as single bond
             idx = bonds.index(new_bond)
         except ValueError:

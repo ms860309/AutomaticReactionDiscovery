@@ -211,6 +211,20 @@ class ARD(object):
         H298_reac = reac_mol.getH298(thermo_db)
         self.logger.info('Filtering reactions...')
         prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
+        
+        #check product isomorphic
+        isomorphic_idx = []
+        for idx_1, i in enumerate(prod_mols_filtered):
+            prod_rmg_mol = i.toRMGMolecule()
+            for idx_2, j in enumerate(prod_mols_filtered[idx_1+1:]):
+                compare = j.toRMGMolecule()
+                if compare.isIsomorphic(prod_rmg_mol):
+                    isomorphic_idx.append(idx_1 + 1 + idx_2)
+        isomorphic = set(isomorphic_idx)
+        prod_mols_filtered_idx = set([i for i in range(len(prod_mols_filtered))])
+        index = list(prod_mols_filtered_idx - isomorphic)
+        prod_mols_filtered = [prod_mols_filtered[i] for i in index]
+        print(prod_mols_filtered)
         self.logger.info('{} products remaining\n'.format(len(prod_mols_filtered)))
 
         # Generate 3D geometries
