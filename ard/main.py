@@ -27,6 +27,7 @@ from node import Node
 from pgen import Generate
 from imaginary import Imaginary
 import openbabel as ob
+import numpy as np
 
 ###############################################################################
 
@@ -194,8 +195,10 @@ class ARD(object):
         # self.optimizeReactant(reac_mol, **kwargs)
         if self.imaginarybond:
             gen = Imaginary(reac_mol)
+            gen_2 = Imaginary(reac_mol)
         else:
             gen = Generate(reac_mol)
+            gen_2 = Generate(reac_mol)
         self.logger.info('Generating all possible products...')
         gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
         prod_mols = gen.prod_mols
@@ -211,21 +214,28 @@ class ARD(object):
         H298_reac = reac_mol.getH298(thermo_db)
         self.logger.info('Filtering reactions...')
         prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
-        
-        #check product isomorphic
-        isomorphic_idx = []
-        for idx_1, i in enumerate(prod_mols_filtered):
-            prod_rmg_mol = i.toRMGMolecule()
-            for idx_2, j in enumerate(prod_mols_filtered[idx_1+1:]):
-                compare = j.toRMGMolecule()
-                if compare.isIsomorphic(prod_rmg_mol):
-                    isomorphic_idx.append(idx_1 + 1 + idx_2)
-        isomorphic = set(isomorphic_idx)
-        prod_mols_filtered_idx = set([i for i in range(len(prod_mols_filtered))])
-        index = list(prod_mols_filtered_idx - isomorphic)
-        prod_mols_filtered = [prod_mols_filtered[i] for i in index]
-        print(prod_mols_filtered)
         self.logger.info('{} products remaining\n'.format(len(prod_mols_filtered)))
+        #check product isomorphic and filter them
+        if self.nbreak == 3 and self.nform == 3 :
+            gen_2.generateProducts(nbreak=2, nform=2)
+            prod_mols_2 = gen_2.prod_mols
+            self.logger.info('{} possible products generated with nbreak = 2 and nbreak = 2\n'.format(len(prod_mols_2)))
+            self.logger.info('Filtering reactions...')
+            #prod_mols_filtered_2 after filter by delta H
+            prod_mols_filtered_2 = [mol for mol in prod_mols_2 if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
+            self.logger.info('{} products remaining with nbreak = 2 and nbreak = 2 after filter by delta H\n'.format(len(prod_mols_filtered_2)))
+            #prod_mols_filtered_2 after filter by isomorphic
+            prod_mols_filtered_2 = self.filterIsomorphic_itself(prod_mols_filtered_2, prod_mols_filtered_2)
+            self.logger.info('{} products remaining with nbreak = 2 and nbreak = 2 after isomorphic screening\n'.format(len(prod_mols_filtered_2)))
+            prod_mols_filtered = self.filterIsomorphic(prod_mols_filtered, prod_mols_filtered_2)
+            self.logger.info('{} products remaining after isomorphic screening by nbreak=2 and nform=2\n'.format(len(prod_mols_filtered)))
+            prod_mols_filtered = self.filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
+            self.logger.info('{} products remaining with nbreak = 3 and nbreak = 3 after isomorphic screening\n'.format(len(prod_mols_filtered)))
+            prod_mols_filtered += prod_mols_filtered_2 
+            self.logger.info('{} total products remaining(break=2, form=2 + break=3, form=3)\n'.format(len(prod_mols_filtered)))
+        else:
+            prod_mols_filtered = self.filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
+            self.logger.info('{} products remaining after isomorphic screening\n'.format(len(prod_mols_filtered)))
 
         # Generate 3D geometries
         if prod_mols_filtered:
@@ -294,6 +304,35 @@ class ARD(object):
             return True
         return False
 
+    def filterIsomorphic(self, base, compare):
+
+        isomorphic_idx = []
+        for idx_1, i in enumerate(compare):
+            prod_rmg_mol = i.toRMGMolecule()
+            for idx_2, j in enumerate(base):
+                compare = j.toRMGMolecule()
+                if compare.isIsomorphic(prod_rmg_mol):
+                    isomorphic_idx.append(idx_2)
+        isomorphic = set(isomorphic_idx)
+        prod_mols_filtered_idx = set([i for i in range(len(base))])
+        index = list(prod_mols_filtered_idx - isomorphic)
+        prod_mols_filtered = [base[i] for i in index]
+        return prod_mols_filtered
+
+    def filterIsomorphic_itself(self, base, compare):
+
+        isomorphic_idx = []
+        for idx_1, i in enumerate(compare):
+            prod_rmg_mol = i.toRMGMolecule()
+            for idx_2, j in enumerate(base[idx_1+1:]):
+                compare = j.toRMGMolecule()
+                if compare.isIsomorphic(prod_rmg_mol):
+                    isomorphic_idx.append(idx_1 + 1 + idx_2)
+        isomorphic = set(isomorphic_idx)
+        prod_mols_filtered_idx = set([i for i in range(len(base))])
+        index = list(prod_mols_filtered_idx - isomorphic)
+        prod_mols_filtered = [base[i] for i in index]
+        return prod_mols_filtered
     @staticmethod
     def makeInputFile(reactant, product, **kwargs):
         """
