@@ -27,7 +27,6 @@ from node import Node
 from pgen import Generate
 from imaginary import Imaginary
 import openbabel as ob
-import numpy as np
 
 ###############################################################################
 
