@@ -338,14 +338,14 @@ class ARD(object):
         Create input file for TS search and return path to file.
         """
         path = os.path.join(kwargs['output_dir'], 'input.txt')
-
         with open(path, 'w') as f:
+            f.write('$rem\n')
             for key, val in kwargs.iteritems():
                 if key not in ('reac_smi', 'nbreak', 'nform', 'dh_cutoff', 'forcefield', 'distance', 'theory_low',
-                               'output_dir'):
+                               'output_dir', 'lsf', 'theory', 'nnode', 'xyz', 'tol', 'nlstnodes', 'imaginarybond', 'nsteps', 'name'):
                     f.write('{0}  {1}\n'.format(key, val))
-            f.write('\n')
-            f.write('geometry (\n0 {0}\n{1}\n****\n{2}\n)\n'.format(reactant.multiplicity, reactant, product))
+            f.write('$end\n \n')
+            f.write('$Molecule \n0 {0}\n{1}\n****\n{2}\n$end'.format(reactant.multiplicity, reactant, product))
 
         return path
 
@@ -392,12 +392,12 @@ def readInput(input_file):
     # Allowed keywords
     keys = ('reac_smi', 'xyz', 'imaginarybond', 'nbreak', 'nform', 'dh_cutoff', 'forcefield', 'name',
             'nsteps', 'nnode', 'lsf', 'tol', 'gtol', 'nlstnodes',
-            'qprog', 'theory', 'theory_low')
+            'qprog', 'theory', 'theory_low',
+            'fsm_ngrad', 'fsm_nnode', 'fsm_mode', 'fsm_opt_mode', 'method', 'basis')
 
     # Read all data from file
     with open(input_file, 'r') as f:
         input_data = f.read().splitlines()
-
     # Create dictionary
     input_dict = {}
 
@@ -447,18 +447,16 @@ def readInput(input_file):
                 input_dict[key] = line.split()[2]
             else:
                 input_dict[key] = line.split()[1]
-
     # Check if valid method was specified and default to FSM
     try:
-        method = input_dict['method'].lower()
+        jobtype = input_dict['jobtype'].lower()
     except KeyError:
-        input_dict['method'] = 'fsm'
+        input_dict['jobtype'] = 'fsm'
     except AttributeError:
-        raise Exception('Invalid method')
+        raise Exception('Invalid jobtype')
     else:
-        if method != 'gsm' and method != 'fsm':
-            raise Exception('Invalid method: {}'.format(method))
-
+        if jobtype != 'gsm' and jobtype != 'fsm':
+            raise Exception('Invalid jobtype: {}'.format(jobtype))
     return input_dict
 
 def readXYZ(xyz):
