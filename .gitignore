@@ -8,3 +8,6 @@
 
 #Reactions folder
 reactions/
+
+#PBS
+*.job.*
