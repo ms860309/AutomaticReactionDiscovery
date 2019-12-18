@@ -1,0 +1,7 @@
+Using Theano backend.
+Traceback (most recent call last):
+  File "tssearch.py", line 567, in <module>
+    options = readInput(input_file)
+  File "/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/ard/main.py", line 399, in readInput
+    with open(input_file, 'r') as f:
+IOError: [Errno 2] No such file or directory: '/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/reaction/0000/input.txt'

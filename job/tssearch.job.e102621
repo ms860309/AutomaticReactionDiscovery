@@ -1,0 +1,13 @@
+Using Theano backend.
+Traceback (most recent call last):
+  File "tssearch.py", line 579, in <module>
+    tssearch.execute()
+  File "tssearch.py", line 119, in execute
+    self.executeExactTSSearch()
+  File "/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/ard/util.py", line 115, in fnWrappedWithLog
+    result = fn(*args, **kwargs)
+  File "/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/ard/util.py", line 102, in fnWithTime
+    result = fn(*args, **kwargs)
+  File "tssearch.py", line 361, in executeExactTSSearch
+    raise TSError('TS search failed during exact TS search')
+__main__.TSError: TS search failed during exact TS search

@@ -1,0 +1,19 @@
+Using Theano backend.
+Traceback (most recent call last):
+  File "tssearch.py", line 579, in <module>
+    tssearch.execute()
+  File "tssearch.py", line 104, in execute
+    reac_opt_success = self.optimizeReactant()
+  File "/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/ard/util.py", line 115, in fnWrappedWithLog
+    result = fn(*args, **kwargs)
+  File "/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/ard/util.py", line 102, in fnWithTime
+    result = fn(*args, **kwargs)
+  File "tssearch.py", line 199, in optimizeReactant
+    ngrad = reac_mol.optimizeGeometry(self.Qclass, name=name, **self.kwargs)
+  File "/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/ard/gen3D.py", line 300, in optimizeGeometry
+    ngrad += n.optimizeGeometry(Qclass, **kwargs)
+  File "/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/ard/node.py", line 386, in optimizeGeometry
+    q.executeJob(self, jobtype='opt', **kwargs)
+  File "/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/ard/quantum.py", line 612, in executeJob
+    os.remove(os.path.join(output_dir, 'pathtable'))
+OSError: [Errno 2] No such file or directory: '/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/reactions/0000/pathtable'

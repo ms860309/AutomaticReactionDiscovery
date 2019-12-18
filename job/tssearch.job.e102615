@@ -1,0 +1,25 @@
+Using Theano backend.
+Traceback (most recent call last):
+  File "tssearch.py", line 579, in <module>
+    tssearch.execute()
+  File "tssearch.py", line 104, in execute
+    reac_opt_success = self.optimizeReactant()
+  File "/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/ard/util.py", line 115, in fnWrappedWithLog
+    result = fn(*args, **kwargs)
+  File "/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/ard/util.py", line 102, in fnWithTime
+    result = fn(*args, **kwargs)
+  File "tssearch.py", line 199, in optimizeReactant
+    ngrad = reac_mol.optimizeGeometry(self.Qclass, name=name, **self.kwargs)
+  File "/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/ard/gen3D.py", line 300, in optimizeGeometry
+    ngrad += n.optimizeGeometry(Qclass, **kwargs)
+  File "/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/ard/node.py", line 386, in optimizeGeometry
+    q.executeJob(self, jobtype='opt', **kwargs)
+  File "/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/ard/quantum.py", line 611, in executeJob
+    self.submitProcessAndCheck('qchem', '-np', 1, '-nt', nproc, self.input_file, self.logfile, 'save')
+  File "/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/ard/quantum.py", line 124, in submitProcessAndCheck
+    submitProcess(cmd, *args)
+  File "/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/ard/quantum.py", line 37, in submitProcess
+    subprocess.check_call(full_cmd)
+  File "/home/guest/guest94/anaconda3/envs/rmg_env/lib/python2.7/subprocess.py", line 190, in check_call
+    raise CalledProcessError(retcode, cmd)
+subprocess.CalledProcessError: Command '['qchem', '-np', '1', '-nt', '1', '/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/reactions/0000/reac_opt.00000.in', '/home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery/reactions/0000/reac_opt.00000.log', 'save']' returned non-zero exit status 4

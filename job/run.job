@@ -1,0 +1,7 @@
+#/usr/bin/bash                                                                                                                 
+#PBS -l select=1:ncpus=8:mpiprocs=8
+source ~/.bashrc
+cd /home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery
+conda activate rmg_env
+python ard.py input.txt
+conda deactivate

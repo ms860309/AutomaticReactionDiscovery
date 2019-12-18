@@ -1,0 +1,7 @@
+#!/usr/bin/bash
+##PBS -l select=1:ncpus=16:mpiprocs=16
+cd /home/guest/guest94/jianyi/develop/AutomaticReactionDiscovery
+source ~/.bashrc_qchem
+conda activate rmg_env
+python tssearch.py ./reactions/0000/input.txt
+conda deactivate

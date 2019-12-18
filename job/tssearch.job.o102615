@@ -1,0 +1,3 @@
+Invalid option: -np 
+Not Valid for serial jobs
+Usage: qchem [ -save ] [ -nt threads ] infile [ outfile ] [ savename ]
