@@ -1,19 +1,13 @@
 reac_smi          0                 # Reactant SMILES
 xyz               1                 # If input reactant format is xyz
 imaginarybond     0                 # Experimental function of imaginary bond
-nbreak            2                 # Maximum number of bonds to be broken
-nform             2                 # Maximum number of bonds to be formed
-dH_cutoff         20                # Heat of reaction cutoff
+nbreak            1                 # Maximum number of bonds to be broken
+nform             1                 # Maximum number of bonds to be formed
+dH_cutoff         80                # Heat of reaction cutoff
 nsteps            6                 # Number of gradient evaluations
 nnode             20                # Desired number of nodes
 lsf               0.7               # Line search factor
 tol               0.05              # Perpendicular gradient tolerance
 nLSTnodes         100               # Number of nodes for LST interpolation
-theory      b3lyp/6-31+G*      # Level of theory
-JOBTYPE           fsm				# jobtype
-fsm_ngrad      4      # parameters
-fsm_nnode      40      # parameters
-fsm_mode      2      # parameters
-fsm_opt_mode      2      # parameters
-method      b3lyp      # exchange method
-basis      6-31G*      # basis
+theory      b3lyp/6-31+G*           # Level of theory
+

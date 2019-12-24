@@ -70,7 +70,7 @@ class String(object):
     """
 
     def __init__(self, reactant, product, name='0000', logger=None,
-                 nsteps=4, nnode=15, tol=0.1, nlstnodes=100, qprog='gau', **kwargs):
+                 nsteps=4, nnode=15, tol=0.1, nlstnodes=100, qprog='qchem', **kwargs):
         if reactant.atoms != product.atoms:
             raise Exception('Atom labels of reactant and product do not match')
         self.reactant = reactant

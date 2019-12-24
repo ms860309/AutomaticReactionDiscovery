@@ -68,7 +68,7 @@ class TSSearch(object):
         self.name = name
 
         self.output_dir = kwargs.get('output_dir', '')
-        qprog = kwargs.get('qprog', 'gau')
+        qprog = kwargs.get('qprog', 'qchem')
         self.Qclass = util.assignQclass(qprog)
         self.kwargs = kwargs
 

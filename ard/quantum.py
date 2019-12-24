@@ -608,7 +608,7 @@ class QChem(Quantum):
 
         # Run job
         self.logfile = os.path.join(output_dir, name + '.log')
-        self.submitProcessAndCheck('qchem', '-np', 1, '-nt', nproc, self.input_file, self.logfile, 'save')
+        self.submitProcessAndCheck('qchem', '-nt', nproc, self.input_file, self.logfile, 'save')
         os.remove(os.path.join(output_dir, 'pathtable'))
 
         # Read output

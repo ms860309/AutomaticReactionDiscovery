@@ -25,7 +25,9 @@ import util
 from quantum import QuantumError
 from node import Node
 from pgen import Generate
+
 from imaginary import Imaginary
+from filter_rule import _filter
 import openbabel as ob
 
 ###############################################################################
@@ -238,6 +240,8 @@ class ARD(object):
 
         # Generate 3D geometries
         if prod_mols_filtered:
+            #a = _filter(reac_mol, prod_mols_filtered)
+            #a.nRing()
             self.logger.info('Feasible products:\n')
             rxn_dir = util.makeOutputSubdirectory(self.output_dir, 'reactions')
 
@@ -254,11 +258,12 @@ class ARD(object):
             reac_mol_copy = reac_mol.copy()
             for rxn, mol in enumerate(prod_mols_filtered):
                 mol.gen3D(forcefield=self.forcefield, make3D=False)
+                """
                 arrange3D = gen3D.Arrange3D(reac_mol, mol)
                 msg = arrange3D.arrangeIn3D()
                 if msg != '':
                     self.logger.info(msg)
-
+                """
                 ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
                 reac_mol.gen3D(make3D=False)
                 ff.Setup(Hatom.OBMol)
@@ -337,15 +342,12 @@ class ARD(object):
         """
         Create input file for TS search and return path to file.
         """
-        path = os.path.join(kwargs['output_dir'], 'input.txt')
+        path = os.path.join(kwargs['output_dir'], 'input.xyz')
+        nreac_atoms = len(reactant.getListOfAtoms())
+        nproduct_atoms = len(product.getListOfAtoms())
+
         with open(path, 'w') as f:
-            f.write('$rem\n')
-            for key, val in kwargs.iteritems():
-                if key not in ('reac_smi', 'nbreak', 'nform', 'dh_cutoff', 'forcefield', 'distance', 'theory_low',
-                               'output_dir', 'lsf', 'theory', 'nnode', 'xyz', 'tol', 'nlstnodes', 'imaginarybond', 'nsteps', 'name'):
-                    f.write('{0}  {1}\n'.format(key, val))
-            f.write('$end\n \n')
-            f.write('$Molecule \n0 {0}\n{1}\n****\n{2}\n$end'.format(reactant.multiplicity, reactant, product))
+            f.write('{}\n\n{}\n{}\n\n{}\n'.format(nreac_atoms, reactant, nproduct_atoms, product))
 
         return path
 
@@ -392,8 +394,7 @@ def readInput(input_file):
     # Allowed keywords
     keys = ('reac_smi', 'xyz', 'imaginarybond', 'nbreak', 'nform', 'dh_cutoff', 'forcefield', 'name',
             'nsteps', 'nnode', 'lsf', 'tol', 'gtol', 'nlstnodes',
-            'qprog', 'theory', 'theory_low',
-            'fsm_ngrad', 'fsm_nnode', 'fsm_mode', 'fsm_opt_mode', 'method', 'basis')
+            'qprog', 'theory')
 
     # Read all data from file
     with open(input_file, 'r') as f:
@@ -461,6 +462,8 @@ def readInput(input_file):
 
 def readXYZ(xyz):
     mol = next(pybel.readfile('xyz', xyz))
+    #i = mol.write('smi').strip().split()
+    #print(i)
     mol = gen3D.Molecule(mol.OBMol)
     #mol = mol.OBMol
     return mol
