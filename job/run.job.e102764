@@ -1,0 +1,11 @@
+Using Theano backend.
+Traceback (most recent call last):
+  File "gsm.py", line 33, in <module>
+    run_GSM()
+  File "gsm.py", line 23, in run_GSM
+    '-ID 1'
+  File "/home/guest/guest94/anaconda3/envs/rmg_env/lib/python2.7/subprocess.py", line 394, in __init__
+    errread, errwrite)
+  File "/home/guest/guest94/anaconda3/envs/rmg_env/lib/python2.7/subprocess.py", line 1047, in _execute_child
+    raise child_exception
+OSError: [Errno 2] No such file or directory

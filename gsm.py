@@ -16,12 +16,9 @@ def run_GSM():
 
     for i in dirs:
         gsm_input_path = reactions_path + '/' + i + '/'
-        p =subprocess.Popen(['gsm -xyzfile ' + gsm_input_path +'input.xyz ' +
-                                    '-mode DE_GSM ' +
-                                   '-package QChem ' + 
-                                   '-lot_inp_file ' + gsm_path + 'qstart ' + 
-                                   '-ID 1'
-                                   ])
+	a = 'gsm -xyzfile '+gsm_input_path+'input.xyz '+'-mode DE_GSM '+'-package QChem '+'-lot_inp_file '+gsm_path+'qstart '+'-ID 1'
+	print(a)
+	p =subprocess.Popen([a],shell=True)
         p.wait()
 
 #run ts search job

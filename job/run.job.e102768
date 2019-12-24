@@ -1,0 +1,11 @@
+Using Theano backend.
+Traceback (most recent call last):
+  File "gsm.py", line 28, in <module>
+    run_GSM()
+  File "gsm.py", line 19, in run_GSM
+    p =subprocess.Popen('gsm -xyzfile '+gsm_input_path+'input.xyz '+'-mode DE_GSM '+'-package QChem '+'-lot_inp_file '+gsm_path+'qstart '+'-ID 1')
+  File "/home/guest/guest94/anaconda3/envs/rmg_env/lib/python2.7/subprocess.py", line 394, in __init__
+    errread, errwrite)
+  File "/home/guest/guest94/anaconda3/envs/rmg_env/lib/python2.7/subprocess.py", line 1047, in _execute_child
+    raise child_exception
+OSError: [Errno 2] No such file or directory

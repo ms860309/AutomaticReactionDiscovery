@@ -1,0 +1,7 @@
+Using Theano backend.
+Traceback (most recent call last):
+  File "gsm.py", line 31, in <module>
+    run_GSM()
+  File "gsm.py", line 19, in run_GSM
+    p = subprocess,Popen('cd')
+NameError: global name 'Popen' is not defined

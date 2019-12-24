@@ -347,7 +347,7 @@ class ARD(object):
         nproduct_atoms = len(product.getListOfAtoms())
 
         with open(path, 'w') as f:
-            f.write('{}\n\n{}\n{}\n\n{}\n'.format(nreac_atoms, reactant, nproduct_atoms, product))
+            f.write('{}\n\n{}\n{}\n\n{}'.format(nreac_atoms, reactant, nproduct_atoms, product))
 
         return path
 

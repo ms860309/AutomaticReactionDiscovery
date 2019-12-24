@@ -1,9 +1,9 @@
 reac_smi          0                 # Reactant SMILES
 xyz               1                 # If input reactant format is xyz
 imaginarybond     0                 # Experimental function of imaginary bond
-nbreak            1                 # Maximum number of bonds to be broken
-nform             1                 # Maximum number of bonds to be formed
-dH_cutoff         80                # Heat of reaction cutoff
+nbreak            3                 # Maximum number of bonds to be broken
+nform             3                 # Maximum number of bonds to be formed
+dH_cutoff         20                # Heat of reaction cutoff
 nsteps            6                 # Number of gradient evaluations
 nnode             20                # Desired number of nodes
 lsf               0.7               # Line search factor
