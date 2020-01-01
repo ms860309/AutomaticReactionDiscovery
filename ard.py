@@ -6,7 +6,7 @@ if __name__ == '__main__':
     import argparse
     import os
 
-    from ard.main import ARD, readInput, readXYZ
+    from ard.main import ARD, readInput, readXYZ, add_bond
 
     # Set up parser for reading the input filename from the command line
     parser = argparse.ArgumentParser(description='Automatic Reaction Discovery')
@@ -19,6 +19,9 @@ if __name__ == '__main__':
     if kwargs['xyz'] == '1':
         current_path = os.path.abspath("")
         OBMol = readXYZ(current_path+'/reactant.xyz')
+        add_bonds = add_bond(current_path+'/reactant.xyz')
+        if add_bonds[1] != '':
+            kwargs['add_bonds'] = add_bonds[1]
         kwargs['reac_smi']= OBMol
         # Set output directory
         output_dir = os.path.abspath(os.path.dirname(input_file))

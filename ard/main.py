@@ -29,6 +29,7 @@ from pgen import Generate
 from imaginary import Imaginary
 from filter_rule import _filter
 import openbabel as ob
+import multiprocessing as mp
 
 ###############################################################################
 
@@ -71,6 +72,7 @@ class ARD(object):
         self.output_dir = output_dir
         log_level = logging.INFO
         self.logger = util.initializeLog(log_level, os.path.join(self.output_dir, 'ARD.log'), logname='main')
+        self.add_bond = kwargs['add_bonds']
 
     def initialize(self):
         """
@@ -193,13 +195,14 @@ class ARD(object):
         """
         start_time = time.time()
         reac_mol = self.reac_smi
+        add_bond = self.add_bond
         # self.optimizeReactant(reac_mol, **kwargs)
         if self.imaginarybond:
             gen = Imaginary(reac_mol)
             gen_2 = Imaginary(reac_mol)
         else:
-            gen = Generate(reac_mol)
-            gen_2 = Generate(reac_mol)
+            gen = Generate(reac_mol, add_bond)
+            gen_2 = Generate(reac_mol, add_bond)
         self.logger.info('Generating all possible products...')
         gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
         prod_mols = gen.prod_mols
@@ -256,14 +259,21 @@ class ARD(object):
             ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
 
             reac_mol_copy = reac_mol.copy()
+            _arrange3D = []
+            msgs = []
             for rxn, mol in enumerate(prod_mols_filtered):
                 mol.gen3D(forcefield=self.forcefield, make3D=False)
-                """
                 arrange3D = gen3D.Arrange3D(reac_mol, mol)
-                msg = arrange3D.arrangeIn3D()
+                _arrange3D.append(arrange3D)
+                for arrange3D in _arrange3D:
+                    msg = mp.Process(target=arrange3D.arrangeIn3D)
+                    msg.start()
+                    msgs.append(msg)
+                for msg in msgs:
+                    msg.join()
                 if msg != '':
                     self.logger.info(msg)
-                """
+
                 ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
                 reac_mol.gen3D(make3D=False)
                 ff.Setup(Hatom.OBMol)
@@ -337,6 +347,7 @@ class ARD(object):
         index = list(prod_mols_filtered_idx - isomorphic)
         prod_mols_filtered = [base[i] for i in index]
         return prod_mols_filtered
+
     @staticmethod
     def makeInputFile(reactant, product, **kwargs):
         """
@@ -347,7 +358,7 @@ class ARD(object):
         nproduct_atoms = len(product.getListOfAtoms())
 
         with open(path, 'w') as f:
-            f.write('{}\n\n{}\n{}\n\n{}'.format(nreac_atoms, reactant, nproduct_atoms, product))
+            f.write('{}\n\n{}\n{}\n\n{}\n'.format(nreac_atoms, reactant, nproduct_atoms, product))
 
         return path
 
@@ -364,6 +375,8 @@ class ARD(object):
         self.logger.info('Heat of reaction cutoff: {:.1f} kcal/mol'.format(self.dh_cutoff))
         self.logger.info('Force field for 3D structure generation: ' + self.forcefield)
         self.logger.info('######################################################################\n')
+    
+
 
 ###############################################################################
 
@@ -459,6 +472,11 @@ def readInput(input_file):
         if jobtype != 'gsm' and jobtype != 'fsm':
             raise Exception('Invalid jobtype: {}'.format(jobtype))
     return input_dict
+
+def add_bond(path):
+    with open(path, 'r') as f:
+        input_data = f.read().splitlines()
+    return input_data
 
 def readXYZ(xyz):
     mol = next(pybel.readfile('xyz', xyz))

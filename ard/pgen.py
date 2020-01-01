@@ -39,10 +39,11 @@ class Generate(object):
           (beginAtomIdx, endAtomIdx, bondOrder)
     """
 
-    def __init__(self, reac_mol):
+    def __init__(self, reac_mol, add_bond=None):
         self.reac_mol = reac_mol
         #self.reac_smi = None
         self.atoms = None
+        self.add_bond = add_bond.split()
         self.prod_mols = []
 
         self.initialize()
@@ -152,7 +153,6 @@ class Generate(object):
             reactant_bonds.append(tuple(bond))
         
         reactant_bonds = tuple(sorted(reactant_bonds))
-
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]
 
