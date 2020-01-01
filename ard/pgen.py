@@ -43,7 +43,8 @@ class Generate(object):
         self.reac_mol = reac_mol
         #self.reac_smi = None
         self.atoms = None
-        self.add_bond = add_bond.split()
+        if add_bond != None:
+            self.add_bond = self.string_to_list(add_bond)
         self.prod_mols = []
 
         self.initialize()
@@ -55,6 +56,25 @@ class Generate(object):
         """
         #self.reac_smi = self.reac_mol.write('can').strip()
         self.atoms = tuple(atom.atomicnum for atom in self.reac_mol)
+
+    def string_to_list(self, add_bond):
+
+        save = ()
+        container = []
+        for index, i in enumerate(add_bond):
+            try:
+                b = int(i)
+                save += (b,) 
+            except:
+                if index == len(add_bond)-1:
+                    container.append(save)
+                    
+                if i == ' ':
+                    container.append(save)
+                    save = ()
+                else:
+                    continue
+        return container
 
     def DoU(self, products_bonds):
         """
@@ -153,6 +173,14 @@ class Generate(object):
             reactant_bonds.append(tuple(bond))
         
         reactant_bonds = tuple(sorted(reactant_bonds))
+        #add user given bonds to reactant_bonds 
+        try:
+            for i in self.add_bond:
+                if i not in reactant_bonds:
+                    reactant_bonds += i,
+        except:
+            pass
+
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]
 

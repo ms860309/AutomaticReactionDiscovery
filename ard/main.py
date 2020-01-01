@@ -72,8 +72,10 @@ class ARD(object):
         self.output_dir = output_dir
         log_level = logging.INFO
         self.logger = util.initializeLog(log_level, os.path.join(self.output_dir, 'ARD.log'), logname='main')
-        self.add_bond = kwargs['add_bonds']
-
+        try:
+            self.add_bond = kwargs['add_bonds']
+        except:
+            pass
     def initialize(self):
         """
         Initialize the ARD job. Return the :class:`gen3D.Molecule` object for
@@ -195,14 +197,21 @@ class ARD(object):
         """
         start_time = time.time()
         reac_mol = self.reac_smi
-        add_bond = self.add_bond
+        try:
+            add_bond = self.add_bond
+        except:
+            pass
         # self.optimizeReactant(reac_mol, **kwargs)
         if self.imaginarybond:
             gen = Imaginary(reac_mol)
             gen_2 = Imaginary(reac_mol)
         else:
-            gen = Generate(reac_mol, add_bond)
-            gen_2 = Generate(reac_mol, add_bond)
+            try:
+                gen = Generate(reac_mol, add_bond)
+                gen_2 = Generate(reac_mol, add_bond)
+            except:
+                gen = Generate(reac_mol)
+                gen_2 = Generate(reac_mol)
         self.logger.info('Generating all possible products...')
         gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
         prod_mols = gen.prod_mols
