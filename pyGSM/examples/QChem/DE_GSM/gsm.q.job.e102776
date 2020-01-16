@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/home/guest/guest94/anaconda3/envs/rmg_env/bin/gsm", line 11, in <module>
+    load_entry_point('pyGSM==0.1', 'console_scripts', 'gsm')()
+  File "/home/guest/guest94/anaconda3/envs/rmg_env/lib/python2.7/site-packages/pyGSM-0.1-py2.7.egg/pygsm/wrappers/main.py", line 338, in main
+    frozen_atoms=frozen_indices,
+  File "/home/guest/guest94/anaconda3/envs/rmg_env/lib/python2.7/site-packages/pyGSM-0.1-py2.7.egg/pygsm/coordinate_systems/internal_coordinates.py", line 133, in from_options
+    return cls(cls.default_options().set_values(kwargs))
+  File "/home/guest/guest94/anaconda3/envs/rmg_env/lib/python2.7/site-packages/pyGSM-0.1-py2.7.egg/pygsm/coordinate_systems/primitive_internals.py", line 77, in __init__
+    self.get_hybrid_indices(xyz)
+  File "/home/guest/guest94/anaconda3/envs/rmg_env/lib/python2.7/site-packages/pyGSM-0.1-py2.7.egg/pygsm/coordinate_systems/primitive_internals.py", line 1277, in get_hybrid_indices
+    raise RuntimeError
+RuntimeError

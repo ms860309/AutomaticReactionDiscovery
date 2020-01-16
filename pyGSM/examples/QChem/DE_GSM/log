@@ -1,0 +1,23 @@
+usage: gsm [-h] -xyzfile XYZFILE [-isomers ISOMERS] -mode
+           {DE_GSM,SE_GSM,SE_Cross}
+           [-package {QChem,Orca,Molpro,PyTC,TeraChemCloud,OpenMM,DFTB,TeraChem}]
+           -lot_inp_file LOT_INP_FILE [-ID ID] [-num_nodes NUM_NODES]
+           [-pes_type {PES,Avg_PES,Penalty_PES}]
+           [-adiabatic_index [ADIABATIC_INDEX [ADIABATIC_INDEX ...]]]
+           [-multiplicity [MULTIPLICITY [MULTIPLICITY ...]]] [-FORCE FORCE]
+           [-optimizer OPTIMIZER] [-opt_print_level OPT_PRINT_LEVEL]
+           [-gsm_print_level GSM_PRINT_LEVEL]
+           [-linesearch {NoLineSearch,backtrack}]
+           [-coordinate_type {TRIC,DLC,HDLC}] [-ADD_NODE_TOL ADD_NODE_TOL]
+           [-DQMAG_MAX DQMAG_MAX] [-BDIST_RATIO BDIST_RATIO]
+           [-CONV_TOL CONV_TOL] [-growth_direction {0,1}]
+           [-reactant_geom_fixed] [-product_geom_fixed] [-nproc NPROC]
+           [-charge CHARGE] [-max_gsm_iters MAX_GSM_ITERS]
+           [-max_opt_steps MAX_OPT_STEPS] [-only_climb] [-no_climb]
+           [-optimize_mesx] [-optimize_meci] [-restart_file RESTART_FILE]
+           [-use_multiprocessing] [-dont_analyze_ICs]
+           [-hybrid_coord_idx_file HYBRID_COORD_IDX_FILE]
+           [-frozen_coord_idx_file FROZEN_COORD_IDX_FILE]
+           [-conv_Ediff CONV_EDIFF] [-conv_dE CONV_DE] [-conv_gmax CONV_GMAX]
+           [-sigma SIGMA] [-prim_idx_file PRIM_IDX_FILE]
+gsm: error: argument -ID: expected one argument

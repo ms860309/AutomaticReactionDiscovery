@@ -1,0 +1,25 @@
+#!/usr/bin/bash
+
+#PBS -l select=1:ncpus=2:mpiprocs=2
+
+cd /home/guest/guest94/jianyi/pyGSM/examples/QChem/DE_GSM/job/
+
+echo "=========================================================="
+echo "Starting on : $(date)"
+echo "Running on node : $(hostname)"
+echo "Current directory : $(pwd)"
+echo "Current job ID : $PBS_JOBID"
+echo "=========================================================="
+
+source ~/.bashrc
+conda activate gsm_env
+source ~/.bashrc_qchem
+
+gsm -xyzfile ../../../../data/diels_alder.xyz \
+    -mode DE_GSM\
+    -package QChem \
+    -lot_inp_file ../qstart\
+    -ID  $PBS_ARRAYID  > log &
+ID=`printf "%0*d\n" 3 $PBS_ARRAYID`
+rm -rf $QCSCRATCH/string_$ID
+conda deactivate
