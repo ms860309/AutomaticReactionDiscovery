@@ -194,8 +194,6 @@ class ARD(object):
     def executeXYZ(self, **kwargs):
 
         reac_mol = self.reac_smi
-        dh_cutoff=self.dh_cutoff
-        output_dir = self.output_dir
         try:
             add_bond = self.add_bond
         except:

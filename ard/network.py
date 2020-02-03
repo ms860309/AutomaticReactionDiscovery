@@ -28,14 +28,16 @@ class Network(object):
         log_level = logging.INFO
         self.logger = util.initializeLog(log_level, os.path.join(self.output_dir, 'ARD.log'), logname='main')
         self.network_prod_mols = []
+        self.pre_product = []
         self.count = 0
         self.nround = -1
+        self.times = 1
+        self.next_num = 0
 
     def genNetwork(self, reac_mol, **kwargs):
         """
         Execute the automatic reaction discovery procedure.
         """
-        start_time = time.time()
 
         self.logger.info('Generating all possible products...')
         self.gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
@@ -81,6 +83,7 @@ class Network(object):
             mol.gen3D(forcefield=self.forcefield, make3D=False)
             pre_products.append(mol)
         self.recurrently_gen(pre_products)
+        del pre_products[:]
         # use product_mol to generate product if there has the same product in list ignore else append to network
 
 
@@ -107,7 +110,7 @@ class Network(object):
     def filterIsomorphic(self, base, compare):
 
         isomorphic_idx = []
-        for idx_1, i in enumerate(compare):
+        for i in compare:
             prod_rmg_mol = i.toRMGMolecule()
             for idx_2, j in enumerate(base):
                 compare = j.toRMGMolecule()
@@ -134,8 +137,9 @@ class Network(object):
         prod_mols_filtered = [base[i] for i in index]
         return prod_mols_filtered
 
-    def gen_geometry(network_prod_mols):
+    def gen_geometry(self, network_prod_mols, **kwargs):
 
+        start_time = time.time()
         # These two lines are required so that new coordinates are
         # generated for each new product. Otherwise, Open Babel tries to
         # use the coordinates of the previous molecule if it is isomorphic
@@ -148,12 +152,12 @@ class Network(object):
 
         reac_mol_copy = self.reac_mol.copy()
         # Generate 3D geometries
-        if prod_mols_filtered:
+        if network_prod_mols:
             self.logger.info('Feasible products:\n')
             rxn_dir = util.makeOutputSubdirectory(self.output_dir, 'reactions')
-            for rxn, mol in enumerate(prod_mols_filtered):
+            for rxn, mol in enumerate(network_prod_mols):
 
-                arrange3D = gen3D.Arrange3D(reac_mol, mol)
+                arrange3D = gen3D.Arrange3D(self.reac_mol, mol)
                 msg = arrange3D.arrangeIn3D()
                 if msg != '':
                     self.logger.info(msg)
@@ -182,40 +186,57 @@ class Network(object):
         self.finalize(start_time)
 
     def recurrently_gen (self, prod_mols_filtered, round_ = 1):
-        filtered = self.filterIsomorphic(self.network_prod_mols, prod_mols_filtered)
-        num = len(filtered)
-        for mol in filtered:
-            self.network_prod_mols.append(mol)
-
+        det = 0
+        filtered = []
         self.nround += round_
-        # First round add products to network_prod_mols
-        if self.network_prod_mols == []:       
+        filtered = self.filterIsomorphic(self.network_prod_mols, prod_mols_filtered)
+        det = len(filtered) 
+
+        while self.nround == 0 :  
             for mol in prod_mols_filtered:
                 self.network_prod_mols.append(mol)
-            print("There are {} products need to gen next round".format(len(self.network_prod_mols)))
+            print("Here is the first generation")
+            print("There are {} rounds need to generate possible products at first generation".format(len(self.network_prod_mols)))
+            global tot
+            tot = len(self.network_prod_mols)
             for mol in self.network_prod_mols:
                 self.count += 1
                 self.genNetwork(mol)
-                print('There had generated {} round'.format(self.count))
-                while self.count == len(self.network_prod_mols):
-                    self.next_round(self.network_prod_mols, self.count)
-        #after first rounds, if new product not in network, them add it
-        print('At {} round, there are {} products add to network and total product = {}'.format(self.nround, num, len(self.network_prod_mols)))
+                print('There had generated {} rounds'.format(self.count))
 
-    def next_round(self, network_prod_mols, count):
-        cal = 0
-        for mol in network_prod_mols[count:]:
-            num = len(network_prod_mols) - count
-            print("There are {} products need to gen at next round".format(num))
-            cal += 1
+        if self.nround <= len(self.network_prod_mols):
+            self.next_num += det
+            tot += det
+            print('At {} generation {} round, there are {} products add to network and total product = {}'.format(self.times, self.nround, det, tot)) 
+            for mol in filtered:
+                self.pre_product.append(mol) 
+            del filtered[:]              
+            if self.next_num != 0:
+                print("Add {} products into next generation and the products is from {} rounds".format(self.next_num, self.count))
+                #clear the next_num
+                self.next_num = 0
+            
+            if self.nround == len(self.network_prod_mols) and len(self.pre_product) != 0:
+                for mol in self.pre_product:
+                    self.network_prod_mols.append(mol)
+                times = self.next_generation(self.pre_product)
+                del self.pre_product[:]
+            elif self.next_num == 0 and self.nround == len(self.network_prod_mols) and len(self.pre_product) == 0:
+                print("starting generate geometry")
+                self.gen_geometry(self.network_prod_mols)
+
+
+    def next_generation(self, pre_product):
+        print("next_generation")
+        print(self.pre_product)
+        self.times += 1
+        for mol in pre_product:
             self.genNetwork(mol)
-            print('There had generated {} at next_round'.format(cal))
-        if len(network_prod_mols) == len(self.network_prod_mols):
-            self.gen_geometry(self.network_prod_mols)
-        else:
-            self.next_round(self.network_prod_mols, len(network_prod_mols))
-                
-        
+        print("self.pre_product = {}".format(len(self.pre_product)))
+        del self.pre_product[:]
+        print("self.pre_product = {}".format(len(self.pre_product)))
+        return self.times
+
     @staticmethod
     def makeInputFile(reactant, product, **kwargs):
         """
@@ -237,7 +258,7 @@ class Network(object):
         self.logger.info('######################################################################')
         self.logger.info('#################### AUTOMATIC REACTION DISCOVERY ####################')
         self.logger.info('######################################################################')
-        self.logger.info('Reactant SMILES: ' + self.reac_smi)
+        self.logger.info('Reactant SMILES: ' + self.reac_mol)
         self.logger.info('Maximum number of bonds to be broken: ' + str(self.nbreak))
         self.logger.info('Maximum number of bonds to be formed: ' + str(self.nform))
         self.logger.info('Heat of reaction cutoff: {:.1f} kcal/mol'.format(self.dh_cutoff))
