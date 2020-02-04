@@ -203,39 +203,48 @@ class Network(object):
                 self.count += 1
                 self.genNetwork(mol)
                 print('There had generated {} rounds'.format(self.count))
+            self.count = 0
 
         if self.nround <= len(self.network_prod_mols):
             self.next_num += det
             tot += det
             print('At {} generation {} round, there are {} products add to network and total product = {}'.format(self.times, self.nround, det, tot)) 
             for mol in filtered:
-                self.pre_product.append(mol) 
-            del filtered[:]              
-            if self.next_num != 0:
-                print("Add {} products into next generation and the products is from {} rounds".format(self.next_num, self.count))
-                #clear the next_num
-                self.next_num = 0
-            
-            if self.nround == len(self.network_prod_mols) and len(self.pre_product) != 0:
-                for mol in self.pre_product:
-                    self.network_prod_mols.append(mol)
-                times = self.next_generation(self.pre_product)
-                del self.pre_product[:]
-            elif self.next_num == 0 and self.nround == len(self.network_prod_mols) and len(self.pre_product) == 0:
-                print("starting generate geometry")
-                self.gen_geometry(self.network_prod_mols)
+                self.pre_product.append(mol)   
 
+        #After first generation
+        while self.nround > tot:
+            print("Here is the second generation")
+            print("There are {} more products need to generation at this generation".format(len(self.pre_product)))
+            for mol in self.pre_product:
+                self.network_prod_mols.append(mol)
+            print("Starting next generation")
+            self.count = 0
+            for mol in self.pre_product:
+                self.count += 1
+                self.genNetwork(mol)
+                print('There had generated {} rounds'.format(self.count))
+                self.pre_product.remove(mol)
 
-    def next_generation(self, pre_product):
-        print("next_generation")
-        print(self.pre_product)
-        self.times += 1
-        for mol in pre_product:
-            self.genNetwork(mol)
-        print("self.pre_product = {}".format(len(self.pre_product)))
-        del self.pre_product[:]
-        print("self.pre_product = {}".format(len(self.pre_product)))
-        return self.times
+            if self.nround == len(self.network_prod_mols):
+                if self.next_num == 0:
+                    print("starting generate geometry")
+                    self.gen_geometry(self.network_prod_mols)
+                elif self.next_num != 0:
+                    print("There are {} more products need to generate at third generation".format(len(self.next_num)))
+                    #clear the next_num
+                    self.next_num = 0
+                    #generate
+                    for mol in self.pre_product:
+                        self.network_prod_mols.append(mol)
+                    print("Starting next generation")
+                    self.count = 0
+                    for mol in self.pre_product:
+                        self.count += 1
+                        self.genNetwork(mol)
+                        print('There had generated {} rounds'.format(self.count))
+                        self.pre_product.remove(mol)
+
 
     @staticmethod
     def makeInputFile(reactant, product, **kwargs):
