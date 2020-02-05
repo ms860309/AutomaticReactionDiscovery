@@ -29,9 +29,7 @@ class Network(object):
         self.logger = util.initializeLog(log_level, os.path.join(self.output_dir, 'ARD.log'), logname='main')
         self.network_prod_mols = []
         self.pre_product = []
-        self.count = 0
         self.nround = -1
-        self.times = 1
         self.next_num = 0
         self.first_num = 0
 
@@ -83,81 +81,61 @@ class Network(object):
         # initial round add all prod to self.network
         self.nround += _round
         if self.nround == 0:
-            print("Here is the first generation")
-            print("There are {} rounds need to generate possible products at first generation".format(len(prod_mols_filtered)))
+            print("Here is the next generation")
+            print("There are {} rounds need to generate possible products at next generation".format(len(prod_mols_filtered)))
             self.first_num = len(prod_mols_filtered)
             for mol in prod_mols_filtered:
                 mol.gen3D(forcefield=self.forcefield, make3D=False)
                 self.network_prod_mols.append(mol)
-            for mol in self.network_prod_mols:
-                self.count += 1
-                self.genNetwork(mol)
-                print('There had generated {} rounds'.format(self.count))
+            self.recurrently_gen(self.network_prod_mols, 0)
         else:
             for mol in prod_mols_filtered:
                 mol.gen3D(forcefield=self.forcefield, make3D=False)
                 pre_products.append(mol)
-            self.recurrently_gen(pre_products)
-
-    def recurrently_gen (self, prod_mols_filtered):
-        """
-        For generate recyclely
-        """
-        det = 0
-        filtered = []
-        filtered = self.filterIsomorphic(self.network_prod_mols, prod_mols_filtered)
-        det = len(filtered) 
-        self.next_num += det
-
-        if self.nround <= self.first_num:
-            tot = 0
-            tot = self.first_num + self.next_num
-            for mol in filtered:
-                self.pre_product.append(mol)
             filtered = []
-            print('At {} round, there are {} products add to network and total product = {}'.format(self.nround, det, tot))
-            if self.nround == self.first_num and self.next_num != 0:
-                print("Here is the next generation")
-                print("There are {} more rounds need to generate at this generation".format(len(self.pre_product)))
-                print("Starting next generation")
-                #reset counter
-                self.count = 0
-                for mol in self.pre_product:
-                    self.network_prod_mols.append(mol)
-                parse = len(self.pre_product)
-                self.pre_product = []
-                for mol in self.network_prod_mols[parse:]:
-                    self.count += 1
-                    self.genNetwork(mol)
-            elif self.nround == self.first_num and self.next_num == 0:
-                print("starting generate geometry")
-                self.gen_geometry(self.network_prod_mols)
-        else:
-            tot = 0
+            filtered = self.filterIsomorphic(self.network_prod_mols, pre_products)
+            det = len(filtered)
+            self.next_num += det
             for mol in filtered:
                 self.pre_product.append(mol)
                 self.network_prod_mols.append(mol)
-            filtered = []
-            tot = len(self.network_prod_mols)
-            print('At {} round, there are {} products add to network and total product = {}'.format(self.nround, det, tot))
+            print("Add {} new products into network".format(det))
+            print("Now network have {} products".format(len(self.network_prod_mols)))
 
-            print('There had generated {} rounds'.format(self.count))
-            if self.nround == tot and len(self.pre_product) == 0:
-                print("starting generate geometry")
-                self.gen_geometry(self.network_prod_mols)
-            elif self.nround == tot and len(self.pre_product) != 0:
+    def recurrently_gen (self, prod_mols_filtered, num):
+        """
+        For generate recyclely
+        """
+        _count = 0
+        self.pre_product = []
+        for mol in prod_mols_filtered[num:]:
+            self.genNetwork(mol)    
+            _count += 1
+            print("*Finished {} rounds".format(_count))
+            self.checker(self.nround, self.first_num)
+    
+    def checker(self, count, check):
+        if count == check:
+            if len(self.pre_product) !=0:
                 print("Here is the next generation")
-                print("There are {} more rounds need to generate at this generation".format(len(self.pre_product)))
-                print("Starting next generation")
-                #reset counter
-                self.count = 0
+                print("There are {} rounds need to generate possible products at first generation".format(self.next_num))
                 parse = len(self.pre_product)
-                self.pre_product = []
-                for mol in self.network_prod_mols[parse:]:
-                    self.count += 1
-                    self.genNetwork(mol)
-                    print('There had generated {} rounds'.format(self.count))      
-
+                self.recurrently_gen(self.network_prod_mols, parse)
+            elif len(self.pre_product) == 0:
+                print("starting generate geometry")
+                self.gen_geometry(self.network_prod_mols)             
+        elif count == check + self.next_num:
+            if len(self.pre_product) !=0:
+                print("Here is the next generation")
+                print("There are {} rounds need to generate possible products at first generation".format(self.next_num))
+                parse = len(self.pre_product)
+                self.recurrently_gen(self.network_prod_mols, parse)
+            elif len(self.pre_product) == 0:
+                print("starting generate geometry")
+                self.gen_geometry(self.network_prod_mols) 
+        else:
+            pass
+            
 
     def finalize(self, start_time):
         """
