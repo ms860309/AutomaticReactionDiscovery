@@ -290,7 +290,7 @@ def readInput(input_file):
     """
     # Allowed keywords
     keys = ('reac_smi', 'xyz', 'imaginarybond', 'nbreak', 'nform', 'dh_cutoff', 'forcefield', 'name',
-            'nsteps', 'nnode', 'lsf', 'tol', 'gtol', 'nlstnodes',
+            'nsteps', 'nnode', 'lsf', 'tol', 'gtol', 'nlstnodes', 'dh_cutoff_method',
             'qprog', 'theory')
 
     # Read all data from file

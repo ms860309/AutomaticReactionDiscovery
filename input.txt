@@ -10,4 +10,4 @@ lsf               0.7               # Line search factor
 tol               0.05              # Perpendicular gradient tolerance
 nLSTnodes         100               # Number of nodes for LST interpolation
 theory      b3lyp/6-31+G*           # Level of theory
-
+dH_cutoff_method  mopac             # method

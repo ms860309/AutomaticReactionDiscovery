@@ -13,6 +13,7 @@ import util
 from quantum import QuantumError
 from node import Node
 from pgen import Generate
+from mopac import mopac
 
 class Network(object):
 
@@ -32,6 +33,7 @@ class Network(object):
         self.nround = -1
         self.next_num = 0
         self.first_num = 0
+        self.method = kwargs["dh_cutoff_method"]
 
     def genNetwork(self, reac_mol, _round = 1, **kwargs):
         """
@@ -50,9 +52,16 @@ class Network(object):
                                     'CBS_QB3_1dHR', 'DFT_QCI_thermo', 'BurkeH2O2', 'GRI-Mech3.0-N', ]
 
         # Filter reactions based on standard heat of reaction
-        H298_reac = reac_mol.getH298(thermo_db)
-        self.logger.info('Filtering reactions...')
-        prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
+        if self.method == "mopac":
+            H298_reactant = mopac(reac_mol)
+            H298_reac = H298_reactant.makeInputFile(reac_mol)
+            self.logger.info('Filtering reactions...')
+            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol, **kwargs)]
+        else:
+            H298_reac = reac_mol.getH298(thermo_db)
+            self.logger.info('Filtering reactions...')
+            prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
+
         self.logger.info('{} products remaining\n'.format(len(prod_mols_filtered)))
         #check product isomorphic and filter them
         if self.nbreak == 3 and self.nform == 3 :
@@ -127,7 +136,7 @@ class Network(object):
         elif count == check + self.next_num:
             if len(self.pre_product) !=0:
                 print("Here is the next generation")
-                print("There are {} rounds need to generate possible products at first generation".format(self.next_num))
+                print("There are {} rounds need to generate possible products at this generation".format(self.next_num))
                 parse = len(self.pre_product)
                 self.recurrently_gen(self.network_prod_mols, parse)
             elif len(self.pre_product) == 0:
@@ -151,6 +160,16 @@ class Network(object):
         `self.dh_cutoff`, `False` otherwise.
         """
         H298_prod = prod_mol.getH298(thermo_db)
+        dH = H298_prod - H298_reac
+
+        if dH < self.dh_cutoff:
+            return True
+        return False
+    
+    def filter_dh_mopac(self, H298_reac, prod_mol, **kwargs):
+        H298_product = mopac(prod_mol)
+        H298_prod = H298_product.makeInputFile(prod_mol)
+        print(H298_prod)
         dH = H298_prod - H298_reac
 
         if dH < self.dh_cutoff:
