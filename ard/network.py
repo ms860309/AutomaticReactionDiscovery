@@ -53,7 +53,7 @@ class Network(object):
 
         # Filter reactions based on standard heat of reaction
         if self.method == "mopac":
-            H298_reactant = mopac(reac_mol)
+            H298_reactant = mopac(reac_mol, self.forcefield)
             H298_reac = H298_reactant.makeInputFile(reac_mol)
             self.logger.info('Filtering reactions...')
             prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol, **kwargs)]
@@ -167,9 +167,8 @@ class Network(object):
         return False
     
     def filter_dh_mopac(self, H298_reac, prod_mol, **kwargs):
-        H298_product = mopac(prod_mol)
+        H298_product = mopac(prod_mol, self.forcefield)
         H298_prod = H298_product.makeInputFile(prod_mol)
-        print(H298_prod)
         dH = H298_prod - H298_reac
 
         if dH < self.dh_cutoff:

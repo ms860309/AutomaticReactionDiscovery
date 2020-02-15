@@ -2,11 +2,14 @@ from node import Node
 import shutil
 import os
 from subprocess import Popen, PIPE
+import gen3D
+import pybel
 
 class mopac(object):
 
-    def __init__(self, reac_mol):
+    def __init__(self, reac_mol, forcefield):
         self.reac_mol = reac_mol
+        self.forcefield = forcefield
 
     def makeInputFile(self, InputFile, charge = 0, multiplicity = 'SINGLET', method = 'PM6'):
         """
@@ -31,6 +34,23 @@ class mopac(object):
     
     def genInput(self, InputFile):
 
+        reac_mol = self.reac_mol
+        Hatom = gen3D.readstring('smi', '[H]')
+        ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
+        reac_mol_copy = reac_mol.copy()
+        InputFile.gen3D(forcefield=self.forcefield, make3D=False)
+        """
+        arrange3D = gen3D.Arrange3D(reac_mol, InputFile)
+        msg = arrange3D.arrangeIn3D()
+        if msg != '':
+            self.logger.info(msg)
+        """
+        ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
+        reac_mol.gen3D(make3D=False)
+        ff.Setup(Hatom.OBMol)
+        InputFile.gen3D(make3D=False)
+        ff.Setup(Hatom.OBMol)
+
         geometry = InputFile.toNode()
         geometry = str(geometry)
         geometry = geometry.splitlines()
@@ -44,7 +64,7 @@ class mopac(object):
             out = atom + l
             output.append(out)
         output = "\n".join(output)
-
+        reac_mol.setCoordsFromMol(reac_mol_copy)
         return output
 
     def getHeatofFormation(self, tmpdir):
