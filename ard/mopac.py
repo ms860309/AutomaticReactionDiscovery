@@ -4,6 +4,8 @@ import os
 from subprocess import Popen, PIPE
 import gen3D
 import pybel
+import psutil
+
 
 class mopac(object):
 
@@ -30,6 +32,13 @@ class mopac(object):
 
         self.runMopac(tmpdir)
         result = self.getHeatofFormation(tmpdir)
+        """
+        info = psutil.virtual_memory()
+        print("cpu numbers : {}".format(psutil.cpu_count()))
+        print("total memory : {}".format(info.total))
+        print("memory used : {}".format(psutil.Process(os.getpid()).memory_info().rss))
+        print("memory used percent : {}".format(info.percent))
+        """
         return float(result)
     
     def genInput(self, InputFile):
@@ -57,14 +66,14 @@ class mopac(object):
         output = []
         for i in geometry:
             i_list = i.split()
-            atom = i_list[0]
-            atom = atom + " "
-            k = i_list[1:]
+            atom = i_list[0] + " "
+            k = i_list[1:] + [""]
             l = " 1 ".join(k)
             out = atom + l
             output.append(out)
         output = "\n".join(output)
         reac_mol.setCoordsFromMol(reac_mol_copy)
+        print(output)
         return output
 
     def getHeatofFormation(self, tmpdir):
