@@ -31,7 +31,6 @@ from imaginary import Imaginary
 from filter_rule import _filter
 import openbabel as ob
 import multiprocessing as mp
-
 ###############################################################################
 
 class ARD(object):
