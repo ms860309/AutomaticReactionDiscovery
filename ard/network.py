@@ -17,10 +17,8 @@ from mopac import mopac
 
 class Network(object):
 
-    def __init__(self, reac_mol, gen, gen_2, forcefield, **kwargs):
+    def __init__(self, reac_mol, forcefield, **kwargs):
         self.reac_mol = reac_mol
-        self.gen = gen
-        self.gen_2 = gen_2
         self.nbreak = int(kwargs['nbreak'])
         self.nform = int(kwargs['nform'])
         self.forcefield = forcefield
@@ -35,14 +33,15 @@ class Network(object):
         self.first_num = 0
         self.method = kwargs["dh_cutoff_method"]
 
-    def genNetwork(self, reac_mol, _round = 1, **kwargs):
+    def genNetwork(self, mol_object, _round = 1, **kwargs):
         """
         Execute the automatic reaction discovery procedure.
         """
-
         self.logger.info('Generating all possible products...')
-        self.gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
-        prod_mols = self.gen.prod_mols
+        gen = Generate(mol_object)
+        gen_2 = Generate(mol_object)
+        gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
+        prod_mols = gen.prod_mols
         self.logger.info('{} possible products generated\n'.format(len(prod_mols)))
 
         # Load thermo database and choose which libraries to search
@@ -50,39 +49,46 @@ class Network(object):
         thermo_db.load(os.path.join(settings['database.directory'], 'thermo'))
         thermo_db.libraryOrder = ['primaryThermoLibrary', 'NISTThermoLibrary', 'thermo_DFT_CCSDTF12_BAC',
                                     'CBS_QB3_1dHR', 'DFT_QCI_thermo', 'BurkeH2O2', 'GRI-Mech3.0-N', ]
-
         # Filter reactions based on standard heat of reaction
         if self.method == "mopac":
-            H298_reactant = mopac(reac_mol, self.forcefield)
-            H298_reac = H298_reactant.makeInputFile(reac_mol)
+            H298_reactant = mopac(mol_object, self.forcefield)
+            H298_reac = H298_reactant.makeInputFile(mol_object)
             self.logger.info('Filtering reactions...')
             prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol, **kwargs)]
         else:
-            H298_reac = reac_mol.getH298(thermo_db)
+            H298_reac = mol_object.getH298(thermo_db)
             self.logger.info('Filtering reactions...')
             prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
 
         self.logger.info('{} products remaining\n'.format(len(prod_mols_filtered)))
         #check product isomorphic and filter them
-        if self.nbreak == 3 and self.nform == 3 :
-            self.gen_2.generateProducts(nbreak=2, nform=2)
-            prod_mols_2 = self.gen_2.prod_mols
+        if self.nbreak == 3 and self.nform == 3:
+            gen_2.generateProducts(nbreak=2, nform=2)
+            prod_mols_2 = gen_2.prod_mols
             self.logger.info('{} possible products generated with nbreak = 2 and nbreak = 2\n'.format(len(prod_mols_2)))
             self.logger.info('Filtering reactions...')
             #prod_mols_filtered_2 after filter by delta H
-            prod_mols_filtered_2 = [mol for mol in prod_mols_2 if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
+            if self.method == "mopac":
+                prod_mols_filtered_2 = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol, **kwargs)]
+            else:
+                prod_mols_filtered_2 = [mol for mol in prod_mols_2 if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
             self.logger.info('{} products remaining with nbreak = 2 and nbreak = 2 after filter by delta H\n'.format(len(prod_mols_filtered_2)))
             #prod_mols_filtered_2 after filter by isomorphic
-            prod_mols_filtered_2 = self.filterIsomorphic_itself(prod_mols_filtered_2, prod_mols_filtered_2)
+
+            #prod_mols_filtered_2 = self.filterIsomorphic_itself(prod_mols_filtered_2, prod_mols_filtered_2)
+            prod_mols_filtered_2 = self.unique_key_filterIsomorphic_itself(prod_mols_filtered_2, prod_mols_filtered_2)
             self.logger.info('{} products remaining with nbreak = 2 and nbreak = 2 after isomorphic screening\n'.format(len(prod_mols_filtered_2)))
-            prod_mols_filtered = self.filterIsomorphic(prod_mols_filtered, prod_mols_filtered_2)
+            prod_mols_filtered = self.filterIsomorphic(prod_mols_filtered, prod_mols_filtered_2)#
+            #prod_mols_filtered = self.unique_key_filterIsomorphic(prod_mols_filtered, prod_mols_filtered_2)
             self.logger.info('{} products remaining after isomorphic screening by nbreak=2 and nform=2\n'.format(len(prod_mols_filtered)))
-            prod_mols_filtered = self.filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
+            #prod_mols_filtered = self.filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
+            prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
             self.logger.info('{} products remaining with nbreak = 3 and nbreak = 3 after isomorphic screening\n'.format(len(prod_mols_filtered)))
             prod_mols_filtered += prod_mols_filtered_2 
             self.logger.info('{} total products remaining(break=2, form=2 + break=3, form=3)\n'.format(len(prod_mols_filtered)))
         else:
-            prod_mols_filtered = self.filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
+            #prod_mols_filtered = self.filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
+            prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
             self.logger.info('{} products remaining after isomorphic screening\n'.format(len(prod_mols_filtered)))
 
         # append product_mol to network
@@ -90,7 +96,7 @@ class Network(object):
         # initial round add all prod to self.network
         self.nround += _round
         if self.nround == 0:
-            print("Here is the next generation")
+            print("Here is the first generation")
             print("There are {} rounds need to generate possible products at next generation".format(len(prod_mols_filtered)))
             self.first_num = len(prod_mols_filtered)
             for mol in prod_mols_filtered:
@@ -120,7 +126,7 @@ class Network(object):
         for mol in prod_mols_filtered[num:]:
             self.genNetwork(mol)    
             _count += 1
-            print("*Finished {} rounds".format(_count))
+            print("Finished {} rounds".format(_count))
             self.checker(self.nround, self.first_num)
     
     def checker(self, count, check):
@@ -181,8 +187,8 @@ class Network(object):
         for i in compare:
             prod_rmg_mol = i.toRMGMolecule()
             for idx_2, j in enumerate(base):
-                compare = j.toRMGMolecule()
-                if compare.isIsomorphic(prod_rmg_mol):
+                tmp = j.toRMGMolecule()
+                if tmp.isIsomorphic(prod_rmg_mol):
                     isomorphic_idx.append(idx_2)
         isomorphic = set(isomorphic_idx)
         prod_mols_filtered_idx = set([i for i in range(len(base))])
@@ -196,14 +202,60 @@ class Network(object):
         for idx_1, i in enumerate(compare):
             prod_rmg_mol = i.toRMGMolecule()
             for idx_2, j in enumerate(base[idx_1+1:]):
-                compare = j.toRMGMolecule()
-                if compare.isIsomorphic(prod_rmg_mol):
+                tmp = j.toRMGMolecule()
+                if tmp.isIsomorphic(prod_rmg_mol):
                     isomorphic_idx.append(idx_1 + 1 + idx_2)
         isomorphic = set(isomorphic_idx)
         prod_mols_filtered_idx = set([i for i in range(len(base))])
         index = list(prod_mols_filtered_idx - isomorphic)
         prod_mols_filtered = [base[i] for i in index]
         return prod_mols_filtered
+
+    def unique_key_filterIsomorphic(self, base, compare):
+        """
+        Convert rmg molecule into inchi key(unique key) and check isomorphic
+        """
+        isomorphic_idx = []
+        base_unique = []
+        compare_unique = []
+        for i in base:
+            mol = i.toRMGMolecule()
+            unique = mol.toAugmentedInChIKey()
+            base_unique.append(unique)
+        for i in compare:
+            mol = i.toRMGMolecule()
+            unique = mol.toAugmentedInChIKey()
+            compare_unique.append(unique)
+        for idx_1, i in enumerate(compare_unique):
+            if i not in base_unique:
+                isomorphic_idx.append(idx_1)
+        for i in isomorphic_idx:
+            base.append(compare[i])
+        return base
+
+    def unique_key_filterIsomorphic_itself(self, base, compare):
+        """
+        Convert rmg molecule into inchi key(unique key) and check isomorphic
+        """
+        isomorphic_idx = []
+        base_unique = []
+        compare_unique = []
+        result = []
+        for i in base:
+            mol = i.toRMGMolecule()
+            unique = mol.toAugmentedInChIKey()
+            base_unique.append(unique)
+        for i in compare:
+            mol = i.toRMGMolecule()
+            unique = mol.toAugmentedInChIKey()
+            compare_unique.append(unique)
+        for idx_1, i in enumerate(compare_unique):
+            if i not in base_unique[idx_1+1:]:
+                isomorphic_idx.append(idx_1)
+        for i in isomorphic_idx:
+            result.append(compare[i])
+        return result
+
 
     def gen_geometry(self, network_prod_mols, **kwargs):
 

@@ -190,6 +190,7 @@ class ARD(object):
 
         # Finalize
         self.finalize(start_time)
+
     def executeXYZ(self, **kwargs):
 
         reac_mol = self.reac_smi
@@ -208,7 +209,7 @@ class ARD(object):
             except:
                 gen = Generate(reac_mol)
                 gen_2 = Generate(reac_mol)
-        network = Network(reac_mol, gen, gen_2, forcefield = self.forcefield, **kwargs)
+        network = Network(reac_mol, forcefield = self.forcefield, **kwargs)
         network.genNetwork(reac_mol)
 
     def finalize(self, start_time):

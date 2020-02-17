@@ -73,7 +73,6 @@ class mopac(object):
             output.append(out)
         output = "\n".join(output)
         reac_mol.setCoordsFromMol(reac_mol_copy)
-        print(output)
         return output
 
     def getHeatofFormation(self, tmpdir):
