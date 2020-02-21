@@ -244,6 +244,7 @@ class Generate(object):
             for bond_break_idx, bond_break in enumerate(bonds):
                 valences_break = self.changeValences(valences, bond_break, -1)
                 bonds_break = self.breakBond(bonds, bond_break_idx)
+
                 # Keep track of bonds that have been broken
                 if bond_break_idx == 0:
                     bonds_broken.append(bond_break)
@@ -269,7 +270,7 @@ class Generate(object):
                 # Do not add bond if it has previously been broken
                 if bond_form[:2] in [bond[:2] for bond in bonds_broken]:
                     continue
-                
+
                 # Form new bond and catch exception if it violates constraints
                 try:
                     valences_form = self.changeValences(valences, bond_form, 1)
@@ -316,6 +317,7 @@ class Generate(object):
         """
         # Ensure that only one bond is added at a time
         assert new_bond[2] == 1
+
         try:  # Check if bond exists as single bond
             idx = bonds.index(new_bond)
         except ValueError:
@@ -366,7 +368,6 @@ class Generate(object):
         Convert a sequence of bonds and valences corresponding to the atoms in
         `self.atoms` to an MDL molfile representation and return it as a
         string.
-
         Note: Atom indices in the MDL representation start at 1.
         """
         # Create counts line of MDL format

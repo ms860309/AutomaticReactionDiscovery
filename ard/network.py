@@ -26,11 +26,15 @@ class Network(object):
         self.output_dir = kwargs['output_dir']
         log_level = logging.INFO
         self.logger = util.initializeLog(log_level, os.path.join(self.output_dir, 'ARD.log'), logname='main')
+        self.network_log = util.initializeLog(log_level, os.path.join(self.output_dir, 'NETWORK.log'), logname='sec')
         self.network_prod_mols = []
         self.pre_product = []
         self.nround = -1
         self.next_num = 0
         self.first_num = 0
+        self.tmp = 0
+        self._count = 0
+        self.generation = 1
         self.method = kwargs["dh_cutoff_method"]
 
     def genNetwork(self, mol_object, _round = 1, **kwargs):
@@ -78,8 +82,8 @@ class Network(object):
             #prod_mols_filtered_2 = self.filterIsomorphic_itself(prod_mols_filtered_2, prod_mols_filtered_2)
             prod_mols_filtered_2 = self.unique_key_filterIsomorphic_itself(prod_mols_filtered_2, prod_mols_filtered_2)
             self.logger.info('{} products remaining with nbreak = 2 and nbreak = 2 after isomorphic screening\n'.format(len(prod_mols_filtered_2)))
-            prod_mols_filtered = self.filterIsomorphic(prod_mols_filtered, prod_mols_filtered_2)#
-            #prod_mols_filtered = self.unique_key_filterIsomorphic(prod_mols_filtered, prod_mols_filtered_2)
+            #prod_mols_filtered = self.filterIsomorphic(prod_mols_filtered, prod_mols_filtered_2)#
+            prod_mols_filtered = self.unique_key_filterIsomorphic(prod_mols_filtered, prod_mols_filtered_2)
             self.logger.info('{} products remaining after isomorphic screening by nbreak=2 and nform=2\n'.format(len(prod_mols_filtered)))
             #prod_mols_filtered = self.filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
             prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
@@ -96,8 +100,8 @@ class Network(object):
         # initial round add all prod to self.network
         self.nround += _round
         if self.nround == 0:
-            print("Here is the first generation")
-            print("There are {} rounds need to generate possible products at next generation".format(len(prod_mols_filtered)))
+            self.network_log.info("Here is the {} generation\n".format(self.generation))
+            self.network_log.info("There are {} rounds need to generate possible products at next generation\n".format(len(prod_mols_filtered)))
             self.first_num = len(prod_mols_filtered)
             for mol in prod_mols_filtered:
                 mol.gen3D(forcefield=self.forcefield, make3D=False)
@@ -108,49 +112,48 @@ class Network(object):
                 mol.gen3D(forcefield=self.forcefield, make3D=False)
                 pre_products.append(mol)
             filtered = []
-            filtered = self.filterIsomorphic(self.network_prod_mols, pre_products)
+            filtered = self.unique_key_filterIsomorphic(self.network_prod_mols, pre_products)
             det = len(filtered)
             self.next_num += det
             for mol in filtered:
                 self.pre_product.append(mol)
                 self.network_prod_mols.append(mol)
-            print("Add {} new products into network".format(det))
-            print("Now network have {} products".format(len(self.network_prod_mols)))
+            self.network_log.info("Add {} new products into network\n".format(det))
+            self.network_log.info("Now network have {} products\n".format(len(self.network_prod_mols)))
 
     def recurrently_gen (self, prod_mols_filtered, num):
         """
         For generate recyclely
         """
-        _count = 0
         self.pre_product = []
         for mol in prod_mols_filtered[num:]:
             self.genNetwork(mol)    
-            _count += 1
-            print("Finished {} rounds".format(_count))
+            self._count += 1
+            self.network_log.info("Finished {}/{} rounds at {} generations\n".format(self._count, self.first_num+self.tmp, self.generation))
             self.checker(self.nround, self.first_num)
     
     def checker(self, count, check):
         if count == check:
             if len(self.pre_product) !=0:
-                print("Here is the next generation")
-                print("There are {} rounds need to generate possible products at first generation".format(self.next_num))
-                parse = len(self.pre_product)
-                self.recurrently_gen(self.network_prod_mols, parse)
+                self.generation += 1
+                self.network_log.info("Here is the {} generation\n".format(self.generation))
+                self.network_log.info("There are {} rounds need to generate possible products at this generation\n".format(len(self.pre_product)))
+                self.tmp = len(self.pre_product)
+                self.recurrently_gen(self.network_prod_mols, len(self.network_prod_mols) - self.tmp)
             elif len(self.pre_product) == 0:
-                print("starting generate geometry")
+                self.network_log.info("starting generate geometry\n")
                 self.gen_geometry(self.network_prod_mols)             
-        elif count == check + self.next_num:
+        elif count == check + self.tmp:
             if len(self.pre_product) !=0:
-                print("Here is the next generation")
-                print("There are {} rounds need to generate possible products at this generation".format(self.next_num))
-                parse = len(self.pre_product)
-                self.recurrently_gen(self.network_prod_mols, parse)
+                self.generation += 1
+                self.network_log.info("Here is the {} generation\n".format(self.generation))
+                self.network_log.info("There are {} rounds need to generate possible products at this generation\n".format(len(self.pre_product)))
+                self.tmp += len(self.pre_product)
+                self.recurrently_gen(self.network_prod_mols, len(self.network_prod_mols) - self.tmp)
             elif len(self.pre_product) == 0:
-                print("starting generate geometry")
+                self.network_log.info("starting generate geometry\n")
                 self.gen_geometry(self.network_prod_mols) 
-        else:
-            pass
-            
+
 
     def finalize(self, start_time):
         """
@@ -184,32 +187,31 @@ class Network(object):
     def filterIsomorphic(self, base, compare):
 
         isomorphic_idx = []
-        for i in compare:
+        for idx_1, i in enumerate(compare):
             prod_rmg_mol = i.toRMGMolecule()
             for idx_2, j in enumerate(base):
                 tmp = j.toRMGMolecule()
-                if tmp.isIsomorphic(prod_rmg_mol):
-                    isomorphic_idx.append(idx_2)
+                if prod_rmg_mol.isIsomorphic(tmp):
+                    isomorphic_idx.append(idx_1)
         isomorphic = set(isomorphic_idx)
-        prod_mols_filtered_idx = set([i for i in range(len(base))])
+        prod_mols_filtered_idx = set([i for i in range(len(compare))])
         index = list(prod_mols_filtered_idx - isomorphic)
-        prod_mols_filtered = [base[i] for i in index]
-        return prod_mols_filtered
+        result = [compare[i] for i in index]
+        return result
 
     def filterIsomorphic_itself(self, base, compare):
-
         isomorphic_idx = []
         for idx_1, i in enumerate(compare):
             prod_rmg_mol = i.toRMGMolecule()
             for idx_2, j in enumerate(base[idx_1+1:]):
                 tmp = j.toRMGMolecule()
-                if tmp.isIsomorphic(prod_rmg_mol):
-                    isomorphic_idx.append(idx_1 + 1 + idx_2)
+                if prod_rmg_mol.isIsomorphic(tmp):
+                    isomorphic_idx.append(idx_1)
         isomorphic = set(isomorphic_idx)
         prod_mols_filtered_idx = set([i for i in range(len(base))])
         index = list(prod_mols_filtered_idx - isomorphic)
-        prod_mols_filtered = [base[i] for i in index]
-        return prod_mols_filtered
+        result = [compare[i] for i in isomorphic]
+        return result
 
     def unique_key_filterIsomorphic(self, base, compare):
         """
@@ -218,6 +220,7 @@ class Network(object):
         isomorphic_idx = []
         base_unique = []
         compare_unique = []
+        result = []
         for i in base:
             mol = i.toRMGMolecule()
             unique = mol.toAugmentedInChIKey()
@@ -230,8 +233,8 @@ class Network(object):
             if i not in base_unique:
                 isomorphic_idx.append(idx_1)
         for i in isomorphic_idx:
-            base.append(compare[i])
-        return base
+            result.append(compare[i])
+        return result
 
     def unique_key_filterIsomorphic_itself(self, base, compare):
         """
