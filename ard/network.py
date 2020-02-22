@@ -56,7 +56,7 @@ class Network(object):
         # Filter reactions based on standard heat of reaction
         if self.method == "mopac":
             H298_reactant = mopac(mol_object, self.forcefield)
-            H298_reac = H298_reactant.makeInputFile(mol_object)
+            H298_reac = H298_reactant.mopac_get_H298(mol_object)
             self.logger.info('Filtering reactions...')
             prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol, **kwargs)]
         else:
@@ -177,7 +177,7 @@ class Network(object):
     
     def filter_dh_mopac(self, H298_reac, prod_mol, **kwargs):
         H298_product = mopac(prod_mol, self.forcefield)
-        H298_prod = H298_product.makeInputFile(prod_mol)
+        H298_prod = H298_product.mopac_get_H298(prod_mol)
         dH = H298_prod - H298_reac
 
         if dH < self.dh_cutoff:
@@ -223,11 +223,13 @@ class Network(object):
         result = []
         for i in base:
             mol = i.toRMGMolecule()
-            unique = mol.toAugmentedInChIKey()
+            #unique = mol.toAugmentedInChIKey()
+            unique = mol.toInChIKey()
             base_unique.append(unique)
         for i in compare:
             mol = i.toRMGMolecule()
-            unique = mol.toAugmentedInChIKey()
+            #unique = mol.toAugmentedInChIKey()
+            unique = mol.toInChIKey()
             compare_unique.append(unique)
         for idx_1, i in enumerate(compare_unique):
             if i not in base_unique:
@@ -246,11 +248,13 @@ class Network(object):
         result = []
         for i in base:
             mol = i.toRMGMolecule()
-            unique = mol.toAugmentedInChIKey()
+            #unique = mol.toAugmentedInChIKey()
+            unique = mol.toInChIKey()
             base_unique.append(unique)
         for i in compare:
             mol = i.toRMGMolecule()
-            unique = mol.toAugmentedInChIKey()
+            #unique = mol.toAugmentedInChIKey()
+            unique = mol.toInChIKey()
             compare_unique.append(unique)
         for idx_1, i in enumerate(compare_unique):
             if i not in base_unique[idx_1+1:]:

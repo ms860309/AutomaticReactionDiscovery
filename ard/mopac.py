@@ -6,6 +6,11 @@ import gen3D
 import pybel
 import psutil
 
+class MopacError(Exception):
+    """
+    An exception class for errors that occur during mopac calculations.
+    """
+    pass
 
 class mopac(object):
 
@@ -13,7 +18,7 @@ class mopac(object):
         self.reac_mol = reac_mol
         self.forcefield = forcefield
 
-    def makeInputFile(self, InputFile, charge = 0, multiplicity = 'SINGLET', method = 'PM6'):
+    def mopac_get_H298(self, InputFile, charge = 0, multiplicity = 'SINGLET', method = 'PM6'):
         """
         Create a directory folder called "tmp" for mopac calculation
         Create a input file called "input.mop" for mopac calculation
@@ -27,7 +32,7 @@ class mopac(object):
 
         geometry = self.genInput(InputFile)
         with open(input_path, 'w') as f:
-            f.write(" AUX LARGE CHARGE={} {} {}".format(charge, multiplicity, method))
+            f.write(" AUX LARGE CHARGE={} {} {} GEO-OK".format(charge, multiplicity, method))
             f.write("\n{}".format(geometry))
 
         self.runMopac(tmpdir)
@@ -76,12 +81,19 @@ class mopac(object):
         return output
 
     def getHeatofFormation(self, tmpdir):
+        """
+        if Error return False, which HF may be 0.0
+        """
         input_path = os.path.join(tmpdir, "input.out")
         with open(input_path, 'r') as f:
             lines = f.readlines()
             for line in lines:
-                if line.strip().startswith('FINAL HEAT OF FORMATION'):
-                    HeatofFormation = line.split()[5]
+                try:
+                    if line.strip().startswith('FINAL HEAT OF FORMATION'):
+                        HeatofFormation = line.split()[5]
+                except:
+                    HeatofFormation = False
+                    raise MopacError('Mopac calculation error')
         return HeatofFormation
 
     def runMopac(self, tmpdir):
