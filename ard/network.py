@@ -305,7 +305,7 @@ class Network(object):
 
                 self.logger.info('Product {}: {}\n{}\n****\n{}\n'.format(rxn, product.toSMILES(), reactant, product))
                 self.makeInputFile(reactant, product, **kwargs)
-
+                self.makeCalEnergyFile(product, **kwargs)
                 self.reac_mol.setCoordsFromMol(reac_mol_copy)
         else:
             self.logger.info('No feasible products found')
@@ -327,6 +327,19 @@ class Network(object):
 
         return path
 
+    @staticmethod
+    def makeCalEnergyFile(_input, exchange = 'b3lyp', basis = '6-31g*', spin = 0, multiplicity = 1, **kwargs):
+        """
+        Create input file for TS search and return path to file.
+        """
+        path = os.path.join(kwargs['output_dir'], 'energy.in')
+        ninput_atoms = len(_input.getListOfAtoms())
+
+        with open(path, 'w') as f:
+            f.write('$rem\njobtype = freq\nexchange = {}\nbasis = {}\n$end\n'.format(exchange, basis))
+            f.write('\n$molecule\n{} {}\n{}\n$end'.format(spin, multiplicity, _input))
+
+        return path
     def logHeader(self):
         """
         Output a log file header.
