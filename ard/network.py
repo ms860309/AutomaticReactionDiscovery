@@ -265,7 +265,6 @@ class Network(object):
 
 
     def gen_geometry(self, network_prod_mols, **kwargs):
-
         start_time = time.time()
         # These two lines are required so that new coordinates are
         # generated for each new product. Otherwise, Open Babel tries to
@@ -283,12 +282,10 @@ class Network(object):
             self.logger.info('Feasible products:\n')
             rxn_dir = util.makeOutputSubdirectory(self.output_dir, 'reactions')
             for rxn, mol in enumerate(network_prod_mols):
-
                 arrange3D = gen3D.Arrange3D(self.reac_mol, mol)
                 msg = arrange3D.arrangeIn3D()
                 if msg != '':
                     self.logger.info(msg)
-
                 ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
                 self.reac_mol.gen3D(make3D=False)
                 ff.Setup(Hatom.OBMol)

@@ -5,6 +5,7 @@ from rmgpy.molecule.molecule import Atom, Bond, Molecule
 from rmgpy.molecule.draw import MoleculeDrawer
 from rmgpy.molecule import element
 from rmgpy.molecule.element import get_element
+import rmgpy.molecule.converter
 try:
     import cairocffi as cairo
 except ImportError:
@@ -117,21 +118,19 @@ class NetworkDrawer(object):
             
 
     def pybel_to_rmg(self, pybel_mol):
-        """
-        Convert Pybel molecule to RMG molecule but ignore charge,
-        multiplicity, and bond orders.
-        """
-        mol = Molecule()
-        for pybel_atom in pybel_mol:
-            element = get_element(pybel_atom.atomicnum)
-            atom = Atom(element=element, coords=np.array(pybel_atom.coords))
-            mol.vertices.append(atom)
-        for obbond in pybel.ob.OBMolBondIter(pybel_mol.OBMol):
-            begin_idx = obbond.GetBeginAtomIdx() - 1  # Open Babel indexes atoms starting at 1
-            end_idx = obbond.GetEndAtomIdx() - 1
-            bond = Bond(mol.vertices[begin_idx], mol.vertices[end_idx])
-            mol.add_bond(bond)
-        return mol
+        mol = rmgpy.molecule.converter.from_ob_mol(Molecule(), pybel_mol.OBMol)
+        xyz_path = os.path.join(os.path.join(os.path.join(os.path.abspath(""), 'reactions'), 'reactant'), "draw.xyz")
+        a = next(pybel.readfile('xyz', xyz_path))
+        a = rmgpy.molecule.converter.from_ob_mol(Molecule(), a.OBMol)
+        print(a.to_inchi_key())
+        bxyz_path = os.path.join(os.path.join(os.path.join(os.path.abspath(""), 'reactions'), '0003'), "draw.xyz")
+        b = next(pybel.readfile('xyz', bxyz_path))
+        b = rmgpy.molecule.converter.from_ob_mol(Molecule(), b.OBMol)
+        print(b.to_inchi_key())
+        if a.to_inchi_key() == b.to_inchi_key():
+            print('NOOO')
+        return(mol)
+        
 
     def draw_mol(self, cr, x, y, target, file_format='png'):
 

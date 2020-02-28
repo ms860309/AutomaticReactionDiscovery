@@ -1,5 +1,5 @@
 Generating all possible products...
-137 possible products generated
+133 possible products generated
 
 Filtering reactions...
 7 products remaining
@@ -15,7 +15,7 @@ Filtering reactions...
 2 products remaining after isomorphic screening
 
 Generating all possible products...
-145 possible products generated
+144 possible products generated
 
 Filtering reactions...
 24 products remaining
@@ -31,7 +31,7 @@ Filtering reactions...
 1 products remaining after isomorphic screening
 
 Generating all possible products...
-137 possible products generated
+133 possible products generated
 
 Filtering reactions...
 7 products remaining
@@ -141,5 +141,5 @@ H      5.72122978   -0.33889863   -0.14847508
 H      5.72461823    0.33889863    0.14847508
 
 
-ARD terminated on Sat Feb 22 22:59:01 2020
-Total ARD run time: 36.1 s
+ARD terminated on Wed Feb 26 20:43:37 2020
+Total ARD run time: 38.7 s

@@ -9,7 +9,6 @@ import pybel
 
 import props
 import gen3D
-
 import numpy as np
 ###############################################################################
 
@@ -46,7 +45,7 @@ class Generate(object):
         if add_bond != None:
             self.add_bond = self.string_to_list(add_bond)
         self.prod_mols = []
-
+        self.reac_mol_inchikey = reac_mol.toRMGMolecule().toInChIKey()
         self.initialize()
 
     def initialize(self):
@@ -223,8 +222,12 @@ class Generate(object):
                 mol.setCoordsFromMol(self.reac_mol)
 
                 prod_rmg_mol = mol.toRMGMolecule()
+                if prod_rmg_mol.toInChIKey() != self.reac_mol_inchikey:
+                    self.prod_mols.append(mol)
+                """
                 if not prod_rmg_mol.isIsomorphic(reac_rmg_mol):
                     self.prod_mols.append(mol)
+                """
 
     def _generateProductsHelper(self, nbreak, nform, products, bonds, valences, bonds_form_all, bonds_broken=None):
         """
