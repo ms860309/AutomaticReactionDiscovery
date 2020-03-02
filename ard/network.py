@@ -14,7 +14,7 @@ from quantum import QuantumError
 from node import Node
 from pgen import Generate
 from mopac import mopac
-from os import walk
+import copy
 
 class Network(object):
 
@@ -116,7 +116,7 @@ class Network(object):
                 self.network_prod_mols.append(mol)
                 self.gen_geometry(self.reac_mol, mol)
                 rxn_idx = 'reaction{}'.format(idx)
-                rxn_num = rxn_num = '{:05d}'.format(self.rxn_num)
+                rxn_num = '{:05d}'.format(self.rxn_num)
                 self.reactions[rxn_idx] = ['00000', rxn_num]
             self.recurrently_gen(self.network_prod_mols, 0)
         else:
@@ -128,8 +128,19 @@ class Network(object):
             det = len(filtered)
             if det != 0:
                 self.network_log.info("starting generate geometry\n")
-                for prod_mol in filtered:
-                    self.gen_geometry(mol_object, prod_mols)
+                index = self.network_prod_mols.index(mol_object)
+                rxn_idx = 'reaction{}'.format(index)
+                tmp_list = self.reactions[rxn_idx]                
+                for idx, prod_mol in enumerate(filtered):
+                    a = copy.deepcopy(tmp_list)
+                    rxn_idx = 'reaction{}'.format(self.rxn_num)
+                    rxn_num = '{:05d}'.format(self.rxn_num + 1)
+                    a.append(rxn_num)
+                    self.reactions[rxn_idx] = a
+                    self.gen_geometry(mol_object, prod_mol)
+                
+                self.network_log.info("self.reactions = {}".format(self.reactions))
+
                 self.next_num += det
                 for mol in filtered:
                     self.pre_product.append(mol)
@@ -165,8 +176,7 @@ class Network(object):
                 self.tmp = len(self.pre_product)
                 self.recurrently_gen(self.network_prod_mols, len(self.network_prod_mols) - self.tmp) 
             elif len(self.pre_product) == 0:
-                self.network_log.info("Network is finished.")
-                print(self.reactions)
+                self.network_log.info("Network is finished.\n self.reactions = {}".format(self.reactions))
         elif count == check + self.tmp:
             if len(self.pre_product) !=0:
                 self.generation += 1
@@ -175,7 +185,7 @@ class Network(object):
                 self.tmp += len(self.pre_product)
                 self.recurrently_gen(self.network_prod_mols, len(self.network_prod_mols) - self.tmp) 
             elif len(self.pre_product) == 0:
-                self.network_log.info("Network is finished.")
+                self.network_log.info("Network is finished.\n self.reactions = {}".format(self.reactions))
 
 
     def finalize(self, start_time):
@@ -303,10 +313,12 @@ class Network(object):
         reac_mol_copy = reactant_mol.copy()
         # Generate 3D geometries
         rxn_dir = util.makeReactionSubdirectory(self.output_dir, 'reactions')
+        """
         arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mols)
         msg = arrange3D.arrangeIn3D()
         if msg != '':
             self.logger.info(msg)
+        """
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reactant_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
