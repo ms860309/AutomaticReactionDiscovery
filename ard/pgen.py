@@ -38,14 +38,15 @@ class Generate(object):
           (beginAtomIdx, endAtomIdx, bondOrder)
     """
 
-    def __init__(self, reac_mol, add_bond=None):
+    def __init__(self, reac_mol, total_reactant, add_bond=None):
         self.reac_mol = reac_mol
+        self.reactant_list = total_reactant
+        self.reactant_inchikey = [i.toRMGMolecule().toInChIKey() for i in self.reactant_list]
         #self.reac_smi = None
         self.atoms = None
         if add_bond != None:
             self.add_bond = self.string_to_list(add_bond)
         self.prod_mols = []
-        self.reac_mol_inchikey = reac_mol.toRMGMolecule().toInChIKey()
         self.initialize()
 
     def initialize(self):
@@ -222,7 +223,7 @@ class Generate(object):
                 mol.setCoordsFromMol(self.reac_mol)
 
                 prod_rmg_mol = mol.toRMGMolecule()
-                if prod_rmg_mol.toInChIKey() != self.reac_mol_inchikey:
+                if prod_rmg_mol.toInChIKey() not in  self.reactant_inchikey:
                     self.prod_mols.append(mol)
                 """
                 if not prod_rmg_mol.isIsomorphic(reac_rmg_mol):

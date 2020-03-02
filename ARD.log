@@ -6,41 +6,7 @@ Filtering reactions...
 
 3 products remaining after isomorphic screening
 
-Generating all possible products...
-166 possible products generated
-
-Filtering reactions...
-18 products remaining
-
-2 products remaining after isomorphic screening
-
-Generating all possible products...
-144 possible products generated
-
-Filtering reactions...
-24 products remaining
-
-2 products remaining after isomorphic screening
-
-Generating all possible products...
-163 possible products generated
-
-Filtering reactions...
-6 products remaining
-
-1 products remaining after isomorphic screening
-
-Generating all possible products...
-133 possible products generated
-
-Filtering reactions...
-7 products remaining
-
-3 products remaining after isomorphic screening
-
-Feasible products:
-
-Product 0: C1CC1.[H][H]
+Product 1: C1CC1.[H][H]
 C     -1.35075342   -0.27652954    0.07557138
 C     -0.25623752    0.49349733    0.04450880
 C      1.12790317   -0.05206477   -0.07875057
@@ -65,7 +31,10 @@ H     -0.10927008    1.48628426   -0.85164116
 H      5.08477703   -0.33889863   -0.14847508
 H      5.08816549    0.33889863    0.14847508
 
-Product 1: C=C.C
+
+ARD terminated on Mon Mar  2 19:19:02 2020
+Total ARD run time: 0.2 s
+Product 2: C=C.C
 C     -1.35088076   -0.27640732    0.07356397
 C     -0.25610741    0.49336806    0.04658558
 C      1.12793124   -0.05208482   -0.07837743
@@ -75,22 +44,25 @@ H      1.24374966   -0.61598258   -1.00903766
 H     -2.33875044    0.16433003    0.16572618
 H     -1.28690407   -1.35808862    0.00538264
 H     -0.36224250    1.57333589    0.11800478
-H      1.43013924    1.11591901    3.21850932
-H      1.12875105    1.56644961    2.71473621
+H      1.42502909    1.80333383    3.35558403
+H      1.13452925    1.58497260    2.71096925
 ****
 C     -0.48544982   -0.30921680   -0.33882951
 C      0.48544988    0.30921664    0.33882957
-C      1.17641661   -4.07029569    1.10893727
-H      0.73024138   -4.95691409    1.56471673
-H      2.26503527   -4.14958189    1.14795812
-H      0.85397354   -3.99457071    0.06817037
+C      0.20225085   -3.17612459    2.45444897
+H     -0.73527009   -3.42389586    1.95189212
+H      0.42293055   -3.93511904    3.20819123
+H      1.01120283   -3.14511920    1.72128128
 H     -1.20020985    0.25303532   -0.93152109
 H     -0.58458081   -1.38989231   -0.31420964
 H      0.58458147    1.38989206    0.31420801
-H      0.85641628   -3.18011602    1.65490378
+H      0.11014010   -2.20036427    2.93643123
 H      1.20020913   -0.25303490    0.93152265
 
-Product 2: CCC
+
+ARD terminated on Mon Mar  2 19:19:32 2020
+Total ARD run time: 30.4 s
+Product 3: CCC
 C     -1.35162701   -0.27556840    0.06242652
 C     -0.25540018    0.49242582    0.05810974
 C      1.12811832   -0.05219928   -0.07630695
@@ -100,8 +72,8 @@ H      1.22905804   -0.64808998   -0.98865641
 H     -2.33901531    0.16467363    0.16217817
 H     -1.28933200   -1.35564021   -0.02930047
 H     -0.35977788    1.57060324    0.15515253
-H     -0.40164590    0.82971467    3.02411615
-H     -1.11041644    0.64515832    2.91836516
+H     -0.40165281    0.82971837    3.02411557
+H     -1.11042364    0.64516331    2.91836427
 ****
 C     -1.18398115   -0.39832708    0.27266859
 C      0.09788309    0.39340146    0.46852376
@@ -115,31 +87,30 @@ H     -0.13270171    1.46450068    0.47607682
 H      0.53362041    0.14712318    1.44310978
 H     -1.89380878   -0.17550674    1.07540965
 
-Product 3: CC=C.[H][H]
-C     -1.35904023   -0.25915820   -0.02434636
-C     -0.25107979    0.47127660    0.14841170
-C      1.13125596   -0.05376751   -0.06008241
-H      1.55473163   -0.38980742    0.89096987
-H      1.77335102    0.73708686   -0.46049223
-H      1.14763721   -0.88669112   -0.77019389
-H     -2.34144687    0.17361493    0.13840378
-H     -1.31295411   -1.30414756   -0.31553862
-H     -0.34245482    1.51159340    0.45286815
-H      6.07479200    0.09227818    0.05287550
-H      5.36602146   -0.09227818   -0.05287550
-****
-C     -0.44306259    0.30905263    0.10987477
-C     -0.22145271    0.78322136   -1.12214184
-C      0.39413896   -0.73765808    0.76853888
-H      1.21548462   -1.07362422    0.12769515
-H      0.82298441   -0.34352483    1.69489302
-H      0.60202319    0.42555011   -1.73244365
-H     -1.28098572    0.69766463    0.68445427
-H     -0.22278249   -1.60659816    1.01698066
-H     -0.86634768    1.54591655   -1.54785126
-H      5.72122978   -0.33889863   -0.14847508
-H      5.72461823    0.33889863    0.14847508
 
+ARD terminated on Mon Mar  2 19:19:36 2020
+Total ARD run time: 3.9 s
+Generating all possible products...
+142 possible products generated
 
-ARD terminated on Wed Feb 26 20:43:37 2020
-Total ARD run time: 38.7 s
+Filtering reactions...
+6 products remaining
+
+1 products remaining after isomorphic screening
+
+Generating all possible products...
+128 possible products generated
+
+Filtering reactions...
+8 products remaining
+
+1 products remaining after isomorphic screening
+
+Generating all possible products...
+118 possible products generated
+
+Filtering reactions...
+0 products remaining
+
+0 products remaining after isomorphic screening
+

@@ -95,6 +95,15 @@ def makeOutputSubdirectory(output_dir, folder):
     os.mkdir(subdir)
     return subdir
 
+def makeReactionSubdirectory(output_dir, folder):
+    """
+    make Subdirectory without delete exist directory
+    """
+    subdir = os.path.join(output_dir, folder)
+    if not os.path.exists(subdir):
+        os.mkdir(subdir)
+    return subdir
+
 def timeFn(fn):
     @wraps(fn)
     def fnWithTime(*args, **kwargs):

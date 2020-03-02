@@ -9,7 +9,6 @@ state searches.
 
 from __future__ import print_function
 
-import rdkit
 import logging
 import os
 import time
@@ -72,6 +71,7 @@ class ARD(object):
         self.output_dir = output_dir
         log_level = logging.INFO
         self.logger = util.initializeLog(log_level, os.path.join(self.output_dir, 'ARD.log'), logname='main')
+        self.reactant_list = []
         try:
             self.add_bond = kwargs['add_bonds']
         except:
@@ -125,8 +125,8 @@ class ARD(object):
         start_time = time.time()
         reac_mol = self.initialize()
         # self.optimizeReactant(reac_mol, **kwargs)
-
-        gen = Generate(reac_mol)
+        self.reactant_list.append(reac_mol)
+        gen = Generate(reac_mol, self.reactant_list)
         self.logger.info('Generating all possible products...')
         gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
         prod_mols = gen.prod_mols
@@ -194,6 +194,7 @@ class ARD(object):
     def executeXYZ(self, **kwargs):
 
         reac_mol = self.reac_smi
+        """
         try:
             add_bond = self.add_bond
         except:
@@ -209,6 +210,7 @@ class ARD(object):
             except:
                 gen = Generate(reac_mol)
                 gen_2 = Generate(reac_mol)
+        """
         network = Network(reac_mol, forcefield = self.forcefield, **kwargs)
         network.genNetwork(reac_mol)
 
