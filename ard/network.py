@@ -138,9 +138,6 @@ class Network(object):
                     a.append(rxn_num)
                     self.reactions[rxn_idx] = a
                     self.gen_geometry(mol_object, prod_mol)
-                
-                self.network_log.info("self.reactions = {}".format(self.reactions))
-
                 self.next_num += det
                 for mol in filtered:
                     self.pre_product.append(mol)
@@ -176,7 +173,7 @@ class Network(object):
                 self.tmp = len(self.pre_product)
                 self.recurrently_gen(self.network_prod_mols, len(self.network_prod_mols) - self.tmp) 
             elif len(self.pre_product) == 0:
-                self.network_log.info("Network is finished.\n self.reactions = {}".format(self.reactions))
+                self.network_log.info("Network is finished.\nself.reactions = {}".format(self.reactions))
         elif count == check + self.tmp:
             if len(self.pre_product) !=0:
                 self.generation += 1
@@ -185,7 +182,7 @@ class Network(object):
                 self.tmp += len(self.pre_product)
                 self.recurrently_gen(self.network_prod_mols, len(self.network_prod_mols) - self.tmp) 
             elif len(self.pre_product) == 0:
-                self.network_log.info("Network is finished.\n self.reactions = {}".format(self.reactions))
+                self.network_log.info("Network is finished.\nself.reactions = {}".format(self.reactions))
 
 
     def finalize(self, start_time):
@@ -222,7 +219,7 @@ class Network(object):
         isomorphic_idx = []
         for idx_1, i in enumerate(compare):
             prod_rmg_mol = i.toRMGMolecule()
-            for idx_2, j in enumerate(base):
+            for j in base:
                 tmp = j.toRMGMolecule()
                 if prod_rmg_mol.isIsomorphic(tmp):
                     isomorphic_idx.append(idx_1)
@@ -236,13 +233,11 @@ class Network(object):
         isomorphic_idx = []
         for idx_1, i in enumerate(compare):
             prod_rmg_mol = i.toRMGMolecule()
-            for idx_2, j in enumerate(base[idx_1+1:]):
+            for j in base[idx_1+1:]:
                 tmp = j.toRMGMolecule()
                 if prod_rmg_mol.isIsomorphic(tmp):
                     isomorphic_idx.append(idx_1)
         isomorphic = set(isomorphic_idx)
-        prod_mols_filtered_idx = set([i for i in range(len(base))])
-        index = list(prod_mols_filtered_idx - isomorphic)
         result = [compare[i] for i in isomorphic]
         return result
 
@@ -313,12 +308,10 @@ class Network(object):
         reac_mol_copy = reactant_mol.copy()
         # Generate 3D geometries
         rxn_dir = util.makeReactionSubdirectory(self.output_dir, 'reactions')
-        """
         arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mols)
         msg = arrange3D.arrangeIn3D()
         if msg != '':
             self.logger.info(msg)
-        """
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reactant_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
@@ -386,8 +379,6 @@ class Network(object):
         Create input file for energy calculation and return path to file.
         """
         path = os.path.join(kwargs['output_dir'], 'energy.in')
-        ninput_atoms = len(_input.getListOfAtoms())
-
         with open(path, 'w') as f:
             f.write('$rem\njobtype = freq\nexchange = {}\nbasis = {}\n$end\n'.format(exchange, basis))
             f.write('\n$molecule\n{} {}\n{}\n$end'.format(spin, multiplicity, _input))
