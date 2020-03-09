@@ -1,26 +1,76 @@
 Here is the 1 generation
 
-There are 3 rounds need to generate possible products at next generation
+There are 4 rounds need to generate possible products at next generation
 
 starting generate geometry
 
+Finished 1 geometry
+
+Finished 2 geometry
+
+Finished 3 geometry
+
+Finished 4 geometry
+
+prod_mols_filtered = 4
+num = 0
 Add 0 new products into network
 
-Now network have 3 products
+Now network have 4 products
 
-Finished 1/3 rounds at 1 generations
-
-Add 0 new products into network
-
-Now network have 3 products
-
-Finished 2/3 rounds at 1 generations
+Finished 1/4 rounds at 1 generations
 
 Add 0 new products into network
 
-Now network have 3 products
+Now network have 4 products
 
-Finished 3/3 rounds at 1 generations
+Finished 2/4 rounds at 1 generations
+
+Add 1 new products into network
+
+Now network have 5 products
+
+starting generate geometry
+
+Finished 3/4 rounds at 1 generations
+
+Add 0 new products into network
+
+Now network have 5 products
+
+Finished 4/4 rounds at 1 generations
+
+Here is the 2 generation
+
+There are 1 rounds need to generate possible products at this generation
+
+prod_mols_filtered = 5
+num = 4
+Add 2 new products into network
+
+Now network have 7 products
+
+starting generate geometry
+
+Finished 5/5 rounds at 2 generations
+
+Here is the 3 generation
+
+There are 2 rounds need to generate possible products at this generation
+
+prod_mols_filtered = 7
+num = 5
+Add 0 new products into network
+
+Now network have 7 products
+
+Finished 6/7 rounds at 3 generations
+
+Add 0 new products into network
+
+Now network have 7 products
+
+Finished 7/7 rounds at 3 generations
 
 Network is finished.
- self.reactions = {'reaction2': ['00000', '00003'], 'reaction0': ['00000', '00001'], 'reaction1': ['00000', '00002']}
+self.reactions = {'reaction2': ['00000', '00003'], 'reaction3': ['00000', '00004'], 'reaction0': ['00000', '00001'], 'reaction1': ['00000', '00002'], 'reaction6': ['00000', '00003', '00005', '00007'], 'reaction4': ['00000', '00003', '00005'], 'reaction5': ['00000', '00003', '00005', '00006']}

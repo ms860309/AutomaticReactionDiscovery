@@ -33,7 +33,6 @@ class Network(object):
         self.pre_product = []
         self.reactant_list = []
         self.nround = -1
-        self.next_num = 0
         self.first_num = 0
         self.tmp = 0
         self._count = 0
@@ -111,10 +110,12 @@ class Network(object):
             self.network_log.info("There are {} rounds need to generate possible products at next generation\n".format(len(prod_mols_filtered)))
             self.first_num = len(prod_mols_filtered)
             self.network_log.info("starting generate geometry\n")
+            num = 0
             for idx, mol in enumerate(prod_mols_filtered):
+                num += 1
                 mol.gen3D(forcefield=self.forcefield, make3D=False)
                 self.network_prod_mols.append(mol)
-                self.gen_geometry(self.reac_mol, mol)
+                self.gen_geometry(mol_object, mol)
                 rxn_idx = 'reaction{}'.format(idx)
                 rxn_num = '{:05d}'.format(self.rxn_num)
                 self.reactions[rxn_idx] = ['00000', rxn_num]
@@ -126,38 +127,34 @@ class Network(object):
             filtered = []
             filtered = self.unique_key_filterIsomorphic(self.network_prod_mols, pre_products)
             det = len(filtered)
+            for mol in filtered:
+                self.pre_product.append(mol)
+                self.network_prod_mols.append(mol)
+            self.network_log.info("Add {} new products into network\n".format(det))
+            self.network_log.info("Now network have {} products\n".format(len(self.network_prod_mols)))
             if det != 0:
                 self.network_log.info("starting generate geometry\n")
                 index = self.network_prod_mols.index(mol_object)
                 rxn_idx = 'reaction{}'.format(index)
-                tmp_list = self.reactions[rxn_idx]                
+                tmp_list = self.reactions[rxn_idx]
+                num = 0                
                 for idx, prod_mol in enumerate(filtered):
+                    num += 1
                     a = copy.deepcopy(tmp_list)
                     rxn_idx = 'reaction{}'.format(self.rxn_num)
                     rxn_num = '{:05d}'.format(self.rxn_num + 1)
                     a.append(rxn_num)
                     self.reactions[rxn_idx] = a
                     self.gen_geometry(mol_object, prod_mol)
-                self.next_num += det
-                for mol in filtered:
-                    self.pre_product.append(mol)
-                    self.network_prod_mols.append(mol)
-                self.network_log.info("Add {} new products into network\n".format(det))
-                self.network_log.info("Now network have {} products\n".format(len(self.network_prod_mols)))
-            else:
-                self.next_num += det
-                for mol in filtered:
-                    self.pre_product.append(mol)
-                    self.network_prod_mols.append(mol)
-                self.network_log.info("Add {} new products into network\n".format(det))
-                self.network_log.info("Now network have {} products\n".format(len(self.network_prod_mols)))
-
+    
     def recurrently_gen (self, prod_mols_filtered, num):
         """
         For generate recyclely
         First gen geometry and then recurrently gen
         """
         self.pre_product = []
+        self.network_log.info('prod_mols_filtered = {}'.format(len(prod_mols_filtered)))
+        self.network_log.info('num = {}'.format(num))
         for mol in prod_mols_filtered[num:]:
             self.genNetwork(mol)    
             self._count += 1
@@ -180,7 +177,7 @@ class Network(object):
                 self.network_log.info("Here is the {} generation\n".format(self.generation))
                 self.network_log.info("There are {} rounds need to generate possible products at this generation\n".format(len(self.pre_product)))
                 self.tmp += len(self.pre_product)
-                self.recurrently_gen(self.network_prod_mols, len(self.network_prod_mols) - self.tmp) 
+                self.recurrently_gen(self.network_prod_mols, len(self.network_prod_mols) - len(self.pre_product)) 
             elif len(self.pre_product) == 0:
                 self.network_log.info("Network is finished.\nself.reactions = {}".format(self.reactions))
 
@@ -292,7 +289,7 @@ class Network(object):
         return result
 
 
-    def gen_geometry(self, reactant_mol, network_prod_mols, **kwargs):
+    def gen_geometry(self, reactant_mol, network_prod_mol, **kwargs):
         start_time = time.time()
         self.rxn_num += 1
         # These two lines are required so that new coordinates are
@@ -304,21 +301,23 @@ class Network(object):
         # product structures.
         Hatom = gen3D.readstring('smi', '[H]')
         ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
-
-        reac_mol_copy = reactant_mol.copy()
         # Generate 3D geometries
         rxn_dir = util.makeReactionSubdirectory(self.output_dir, 'reactions')
-        arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mols)
+        network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
+        """
+        arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
         msg = arrange3D.arrangeIn3D()
         if msg != '':
             self.logger.info(msg)
+        """
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reactant_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
-        network_prod_mols.gen3D(make3D=False)
+        network_prod_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
+
         reactant = reactant_mol.toNode()
-        product = network_prod_mols.toNode()
+        product = network_prod_mol.toNode()
 
         if self.rxn_num == 0:
             rxn_num = '{:05d}'.format(self.rxn_num)
@@ -336,7 +335,6 @@ class Network(object):
             self.makeInputFile(reactant, product, **kwargs)
             self.makeCalEnergyFile(product, **kwargs)
             self.makeDrawFile(product, **kwargs)
-            reactant_mol.setCoordsFromMol(reac_mol_copy)
             self.finalize(start_time)
         else:
             rxn_num = '{:05d}'.format(self.rxn_num)
@@ -347,7 +345,6 @@ class Network(object):
             self.makeInputFile(reactant, product, **kwargs)
             self.makeCalEnergyFile(product, **kwargs)
             self.makeDrawFile(product, **kwargs)
-            reactant_mol.setCoordsFromMol(reac_mol_copy)
             self.finalize(start_time)
 
 
