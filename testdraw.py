@@ -175,6 +175,7 @@ class NetworkDrawer(object):
             relative[energy] = self.energy[energy] - e_reactant
         return relative
 
+
     def draw(self, network, file_format, path=None):
         #network
         self.network = network
@@ -193,7 +194,7 @@ class NetworkDrawer(object):
         max_length_value = length[max_length_key]
         width = 80 * max_length_value + 2 * padding
         # Draw to the final surface
-        surface = create_new_surface(file_format=file_format, target=path, width=width, height=height)
+        surface = create_new_surface(file_format=file_format, target=path, width=width, height=1500)
         cr = cairo.Context(surface)
         #draw
         #draw reactant horizontal line
@@ -205,9 +206,6 @@ class NetworkDrawer(object):
         cr.move_to(padding, max_E_value - self.energy['00000'] + 20)
         cr.line_to(padding*2, max_E_value - self.energy['00000'] + 20)
         cr.save()
-        print(width)
-        print(height)
-        print(padding, max_E_value - self.energy['00000'] + 20)
         #draw energy number
         cr.move_to(padding, max_E_value - self.energy['00000'] + 18)
         cr.set_font_size(self.options['fontSizeNormal'])
@@ -226,39 +224,37 @@ class NetworkDrawer(object):
         for reaction in network:
             for num, intermediate in enumerate(network[reaction][1:]):
                 #draw intermediate and product horizontal line
-                num += 2
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
                 cr.set_line_width(1.0)
-                cr.move_to(padding + 50 * num, max_E_value - self.energy[intermediate] + 20)
-                cr.line_to(padding  * 2 + 50 * num, max_E_value - self.energy[intermediate] + 20)
+                cr.move_to(padding + 50 * (num+2), max_E_value - self.energy[intermediate] + 20)
+                cr.line_to(padding * 2 + 50 * (num+2), max_E_value - self.energy[intermediate] + 20)
                 cr.save()
                 #draw energy number
-                cr.move_to(padding + 50 * num, max_E_value - self.energy[intermediate] + 18)
+                cr.move_to(padding + 50 * (num+2), max_E_value - self.energy[intermediate] + 18)
                 cr.set_font_size(self.options['fontSizeNormal'])
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
                 cr.show_text(str(round(self.energy[intermediate] - self.energy['00000'], 3)))
                 cr.restore()
                 cr.save()
                 #draw dir label
-                cr.move_to(padding + 50 * num, max_E_value - self.energy[intermediate] + 25)
+                cr.move_to(padding + 50 * (num+2), max_E_value - self.energy[network[reaction][num+1]] + 25)
                 cr.set_font_size(self.options['fontSizeNormal'])
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
                 cr.show_text(intermediate)
                 cr.restore()
                 cr.save()
-                #draw line to connect reactant and intermediate or product
-                #only one reactant and one product
                 if len(network[reaction]) == 2:
                     cr.move_to(padding*2, max_E_value - self.energy['00000'] + 20)
-                    cr.line_to(padding + 50 * num, max_E_value - self.energy[intermediate] + 20)
+                    cr.line_to(padding + 50 * (num+2), max_E_value - self.energy[intermediate] + 20)
+                    cr.restore()
                     cr.save()
-                #more than one reactant
-                else:
-                    cr.move_to(padding  * 2 + 50 * num, max_E_value - self.energy[intermediate] + 20)
-                    next_intermediate = network[reaction][num - 1]
-                    cr.line_to(padding + 50 * (num + 1), max_E_value - self.energy[next_intermediate] + 20)
+                elif self.network[reaction][-1] != intermediate:
+                    cr.move_to(padding * 2 + 50 * (num+2), max_E_value - self.energy[intermediate] + 20)
+                    cr.line_to(padding + 50 * (num+3), max_E_value - self.energy[network[reaction][num+2]] + 20)
+                    cr.restore()
                     cr.save()
                 cr.stroke()
+                
             
-network = {'reaction2': ['00000', '00003'], 'reaction0': ['00000', '00001'], 'reaction1': ['00000', '00002']}
+network = {'reaction2': ['00000', '00003'], 'reaction3': ['00000', '00004'], 'reaction0': ['00000', '00001'], 'reaction1': ['00000', '00002'], 'reaction6': ['00000', '00003', '00005', '00007'], 'reaction4': ['00000', '00003', '00005'], 'reaction5': ['00000', '00003', '00005', '00006']}
 NetworkDrawer().draw(network, 'pdf', os.path.join(os.path.abspath(""), 'network.pdf'))
