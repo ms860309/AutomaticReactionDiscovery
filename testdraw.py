@@ -181,11 +181,10 @@ class NetworkDrawer(object):
         self.network = network
         #draw parameter
         padding = self.options['padding']
-        e_slope = self.options['Eslope']
         #determine the requiring height
         e_height = self._get_text_size('0.0', file_format=file_format)[3] + 6
         e0_min, e0_max = self._get_energy_range()
-        height = (e0_max - e0_min) * e_slope + 2 * padding + e_height + 30
+        height = (e0_max - e0_min) + 2 * padding + e_height +30
         length = {}
         for i in network:
             _length = len(network[i])
@@ -194,7 +193,7 @@ class NetworkDrawer(object):
         max_length_value = length[max_length_key]
         width = 80 * max_length_value + 2 * padding
         # Draw to the final surface
-        surface = create_new_surface(file_format=file_format, target=path, width=width, height=1500)
+        surface = create_new_surface(file_format=file_format, target=path, width=width, height=height)
         cr = cairo.Context(surface)
         #draw
         #draw reactant horizontal line
@@ -255,6 +254,6 @@ class NetworkDrawer(object):
                     cr.save()
                 cr.stroke()
                 
-            
+#network = {'reaction2': ['00000', '00003'], 'reaction0': ['00000', '00001'], 'reaction1': ['00000', '00002']}
 network = {'reaction2': ['00000', '00003'], 'reaction3': ['00000', '00004'], 'reaction0': ['00000', '00001'], 'reaction1': ['00000', '00002'], 'reaction6': ['00000', '00003', '00005', '00007'], 'reaction4': ['00000', '00003', '00005'], 'reaction5': ['00000', '00003', '00005', '00006']}
 NetworkDrawer().draw(network, 'pdf', os.path.join(os.path.abspath(""), 'network.pdf'))
