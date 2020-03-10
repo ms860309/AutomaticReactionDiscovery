@@ -184,14 +184,14 @@ class NetworkDrawer(object):
         #determine the requiring height
         e_height = self._get_text_size('0.0', file_format=file_format)[3] + 6
         e0_min, e0_max = self._get_energy_range()
-        height = (e0_max - e0_min) + 2 * padding + e_height +30
+        height = (e0_max - e0_min) + 2 * padding + e_height
         length = {}
         for i in network:
             _length = len(network[i])
             length[i] = _length
         max_length_key = max(length, key=lambda k: length[k])
         max_length_value = length[max_length_key]
-        width = 80 * max_length_value + 2 * padding
+        width = 55 * max_length_value + 2 * padding
         # Draw to the final surface
         surface = create_new_surface(file_format=file_format, target=path, width=width, height=height)
         cr = cairo.Context(surface)
@@ -205,11 +205,18 @@ class NetworkDrawer(object):
         cr.move_to(padding, max_E_value - self.energy['00000'] + 20)
         cr.line_to(padding*2, max_E_value - self.energy['00000'] + 20)
         cr.save()
-        #draw energy number
+        #draw energy number and Energy unit
         cr.move_to(padding, max_E_value - self.energy['00000'] + 18)
         cr.set_font_size(self.options['fontSizeNormal'])
         cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
         cr.show_text(str(round(self.energy['00000'] - self.energy['00000'], 3)))
+        cr.restore()
+        cr.save()
+        #unit
+        cr.move_to(width - 50, height - 10)
+        cr.set_font_size(self.options['fontSizeNormal'])
+        cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
+        cr.show_text(str('Unit: kcal/mol'))
         cr.restore()
         cr.save()
         #draw dir label
