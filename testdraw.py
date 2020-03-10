@@ -96,7 +96,7 @@ class NetworkDrawer(object):
                 for line in lines:
                     if line.strip().startswith('SCF   energy in the final basis set'):
                         SCF_Energy = line.split()[-1]
-                        self.energy[i] = float(SCF_Energy)*627.5095
+                        self.energy[i] = float(SCF_Energy)*627.5095*0.1
         return self.energy
 
 
@@ -216,7 +216,7 @@ class NetworkDrawer(object):
         cr.move_to(width - 50, height - 10)
         cr.set_font_size(self.options['fontSizeNormal'])
         cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
-        cr.show_text(str('Unit: kcal/mol'))
+        cr.show_text(str('Unit: 10 kcal/mol'))
         cr.restore()
         cr.save()
         #draw dir label

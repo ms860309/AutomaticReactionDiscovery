@@ -153,8 +153,6 @@ class Network(object):
         First gen geometry and then recurrently gen
         """
         self.pre_product = []
-        self.network_log.info('prod_mols_filtered = {}'.format(len(prod_mols_filtered)))
-        self.network_log.info('num = {}'.format(num))
         for mol in prod_mols_filtered[num:]:
             self.genNetwork(mol)    
             self._count += 1
