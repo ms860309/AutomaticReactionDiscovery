@@ -30,6 +30,7 @@ class Network(object):
         self.network_log = util.initializeLog(log_level, os.path.join(self.output_dir, 'NETWORK.log'), logname='sec')
         self.reactions = {}
         self.network_prod_mols = []
+        self.add_bonds = []
         self.pre_product = []
         self.reactant_list = []
         self.nround = -1
@@ -52,6 +53,7 @@ class Network(object):
         gen_2 = Generate(mol_object, self.reactant_list)
         gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
         prod_mols = gen.prod_mols
+        add_bonds = gen.add_bonds
         self.logger.info('{} possible products generated\n'.format(len(prod_mols)))
 
         # Load thermo database and choose which libraries to search
@@ -112,17 +114,17 @@ class Network(object):
             self.network_log.info("starting generate geometry\n")
             num = 0
             for idx, mol in enumerate(prod_mols_filtered):
+                index = prod_mols.index(mol)
+                self.add_bonds.append(add_bonds[index])
                 num += 1
-                mol.gen3D(forcefield=self.forcefield, make3D=False)
                 self.network_prod_mols.append(mol)
-                self.gen_geometry(mol_object, mol)
+                self.gen_geometry(mol_object, mol, add_bonds[index])
                 rxn_idx = 'reaction{}'.format(idx)
                 rxn_num = '{:05d}'.format(self.rxn_num)
                 self.reactions[rxn_idx] = ['00000', rxn_num]
             self.recurrently_gen(self.network_prod_mols, 0)
         else:
             for mol in prod_mols_filtered:
-                mol.gen3D(forcefield=self.forcefield, make3D=False)
                 pre_products.append(mol)
             filtered = []
             filtered = self.unique_key_filterIsomorphic(self.network_prod_mols, pre_products)
@@ -139,13 +141,15 @@ class Network(object):
                 tmp_list = self.reactions[rxn_idx]
                 num = 0                
                 for idx, prod_mol in enumerate(filtered):
+                    index = prod_mols.index(mol)
+                    self.add_bonds.append(add_bonds[index])
                     num += 1
                     a = copy.deepcopy(tmp_list)
                     rxn_idx = 'reaction{}'.format(self.rxn_num)
                     rxn_num = '{:05d}'.format(self.rxn_num + 1)
                     a.append(rxn_num)
                     self.reactions[rxn_idx] = a
-                    self.gen_geometry(mol_object, prod_mol)
+                    self.gen_geometry(mol_object, mol, add_bonds[index])
     
     def recurrently_gen (self, prod_mols_filtered, num):
         """
@@ -287,7 +291,7 @@ class Network(object):
         return result
 
 
-    def gen_geometry(self, reactant_mol, network_prod_mol, **kwargs):
+    def gen_geometry(self, reactant_mol, network_prod_mol, add_bonds, **kwargs):
         start_time = time.time()
         self.rxn_num += 1
         # These two lines are required so that new coordinates are
@@ -301,13 +305,14 @@ class Network(object):
         ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
         # Generate 3D geometries
         rxn_dir = util.makeReactionSubdirectory(self.output_dir, 'reactions')
+        reactant_mol.gen3D(forcefield=self.forcefield, make3D=False)
         network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
-        """
+
         arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
         msg = arrange3D.arrangeIn3D()
         if msg != '':
             self.logger.info(msg)
-        """
+
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reactant_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
@@ -323,7 +328,7 @@ class Network(object):
             kwargs['output_dir'] = output_dir
             kwargs['name'] = rxn_num
             self.makeCalEnergyFile(reactant, **kwargs)
-            self.makeDrawFile(reactant, **kwargs)
+            self.makeDrawFile(reactant, filename = 'reactant.xyz', **kwargs)
             self.rxn_num += 1
             rxn_num = '{:05d}'.format(self.rxn_num)
             output_dir = util.makeOutputSubdirectory(rxn_dir, rxn_num)
@@ -332,7 +337,9 @@ class Network(object):
             self.logger.info('Product {}: {}\n{}\n****\n{}\n'.format(self.rxn_num, product.toSMILES(), reactant, product))
             self.makeInputFile(reactant, product, **kwargs)
             self.makeCalEnergyFile(product, **kwargs)
-            self.makeDrawFile(product, **kwargs)
+            self.makeDrawFile(reactant, filename = 'reactant.xyz', **kwargs)
+            self.makeDrawFile(product, filename = 'product.xyz', **kwargs)
+            self.makeAdd_bondsFile(add_bonds, **kwargs)
             self.finalize(start_time)
         else:
             rxn_num = '{:05d}'.format(self.rxn_num)
@@ -342,7 +349,9 @@ class Network(object):
             self.logger.info('Product {}: {}\n{}\n****\n{}\n'.format(self.rxn_num, product.toSMILES(), reactant, product))
             self.makeInputFile(reactant, product, **kwargs)
             self.makeCalEnergyFile(product, **kwargs)
-            self.makeDrawFile(product, **kwargs)
+            self.makeDrawFile(reactant, 'reactant.xyz', **kwargs)
+            self.makeDrawFile(product, 'product.xyz', **kwargs)
+            self.makeAdd_bondsFile(add_bonds, **kwargs)
             self.finalize(start_time)
 
 
@@ -371,27 +380,35 @@ class Network(object):
     @staticmethod
     def makeCalEnergyFile(_input, exchange = 'b3lyp', basis = '6-31g*', spin = 0, multiplicity = 1, **kwargs):
         """
-        Create input file for energy calculation and return path to file.
+        Create input file for energy calculation.
         """
         path = os.path.join(kwargs['output_dir'], 'energy.in')
         with open(path, 'w') as f:
             f.write('$rem\njobtype = freq\nexchange = {}\nbasis = {}\n$end\n'.format(exchange, basis))
             f.write('\n$molecule\n{} {}\n{}\n$end'.format(spin, multiplicity, _input))
 
-        return path
-
     @staticmethod
-    def makeDrawFile(_input, **kwargs):
+    def makeDrawFile(_input, filename = 'draw.xyz', **kwargs):
         """
-        Create input file for network drawing and return path to file.
+        Create input file for network drawing.
         """
-        path = os.path.join(kwargs['output_dir'], 'draw.xyz')
+        path = os.path.join(kwargs['output_dir'], filename)
         ninput_atoms = len(_input.getListOfAtoms())
 
         with open(path, 'w') as f:
             f.write('{}\n\n{}'.format(ninput_atoms, _input))
 
-        return path
+    @staticmethod
+    def makeAdd_bondsFile(_input, **kwargs):
+        """
+        Create input file(add which bonds) for Single ended String Method (SSM) calculation.
+        """
+        path = os.path.join(kwargs['output_dir'], 'add_bonds.txt')
+        first_bond = _input[0]
+        second_bond = _input[1]
+
+        with open(path, 'w') as f:
+            f.write('ADD {} {}\nADD {} {}'.format(first_bond[0], first_bond[1], second_bond[0], second_bond[1]))
 
     def logHeader(self):
         """

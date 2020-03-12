@@ -4,16 +4,6 @@ There are 4 rounds need to generate possible products at next generation
 
 starting generate geometry
 
-Finished 1 geometry
-
-Finished 2 geometry
-
-Finished 3 geometry
-
-Finished 4 geometry
-
-prod_mols_filtered = 4
-num = 0
 Add 0 new products into network
 
 Now network have 4 products
@@ -44,8 +34,6 @@ Here is the 2 generation
 
 There are 1 rounds need to generate possible products at this generation
 
-prod_mols_filtered = 5
-num = 4
 Add 2 new products into network
 
 Now network have 7 products
@@ -58,8 +46,6 @@ Here is the 3 generation
 
 There are 2 rounds need to generate possible products at this generation
 
-prod_mols_filtered = 7
-num = 5
 Add 0 new products into network
 
 Now network have 7 products

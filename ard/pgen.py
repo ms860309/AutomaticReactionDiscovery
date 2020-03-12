@@ -47,6 +47,7 @@ class Generate(object):
         if add_bond != None:
             self.add_bond = self.string_to_list(add_bond)
         self.prod_mols = []
+        self.add_bonds = []
         self.initialize()
 
     def initialize(self):
@@ -225,6 +226,14 @@ class Generate(object):
                 prod_rmg_mol = mol.toRMGMolecule()
                 if prod_rmg_mol.toInChIKey() not in  self.reactant_inchikey:
                     self.prod_mols.append(mol)
+                    add_bond = list(set(bonds)-set(reactant_bonds))
+                    if len(add_bond) > nform:
+                        # reactant break double bond
+                        for i in add_bond:
+                            for j in reactant_bonds:
+                                if i[0] == j[0] and i[1] == j[1]:
+                                    add_bond.remove(i)
+                    self.add_bonds.append(add_bond)
                 """
                 if not prod_rmg_mol.isIsomorphic(reac_rmg_mol):
                     self.prod_mols.append(mol)

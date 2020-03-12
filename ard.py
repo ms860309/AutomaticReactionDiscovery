@@ -5,7 +5,6 @@
 if __name__ == '__main__':
     import argparse
     import os
-
     from ard.main import ARD, readInput, readXYZ, add_bond
 
     # Set up parser for reading the input filename from the command line
