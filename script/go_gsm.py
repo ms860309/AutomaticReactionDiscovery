@@ -41,13 +41,17 @@ def main():
     qstart_path = getQstartpath()
     gsm_py_path = os.path.join(os.path.abspath(""), "gsm.py")
     for i in range(len(xyz)):
+        # change workspace dir reaction/num
         if os.path.exists(rxn_dirs[i]):
             os.chdir(rxn_dirs[i])
-        #mkdir SSM
+        # mkdir SSM
         SSM_path = os.path.join(rxn_dirs[i], 'SSM')
         if os.path.exists(SSM_path):
             shutil.rmtree(SSM_path)
         os.mkdir(SSM_path)
+        # change workspace dir reaction/num/SSM
+        if os.path.exists(SSM_path):
+            os.chdir(SSM_path)
         cmd = 'python {} -xyzfile {} -isomers {}  -lot_inp_file {}'.format(gsm_py_path, xyz[i], addbonds[i], qstart_path)
         p = Popen([cmd], shell = True)
         p.wait()

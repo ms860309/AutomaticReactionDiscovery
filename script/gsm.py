@@ -29,7 +29,7 @@ def main():
     parser.add_argument('-lot_inp_file',type=str,default='qstart', help='external file to specify calculation e.g. qstart,gstart,etc. Highly package specific.',required=True)
     args = parser.parse_args()
 
-    cmd = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -coordinate_type {} -lot_inp_file {}'.format(args.xyzfile, args.isomers, args.coordinate_type, args.lot_inp_file)
+    cmd = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -lot_inp_file {}'.format(args.xyzfile, args.isomers, args.lot_inp_file)
     p = Popen([cmd], shell = True)
     p.wait()
 
