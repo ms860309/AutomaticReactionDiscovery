@@ -1,24 +1,37 @@
-import pygsm
+# standard library imports
+import sys
 import os
-import pybel as pb
-def getXYZfilepath():
-    """
-    return xyz path
-    """
-    xyz = []
-    abspath_pardir = os.path.abspath(os.pardir)
-    rxn_path = os.path.join(abspath_pardir, 'reactions')
-    dirs = os.listdir(rxn_path)
-    for i in dirs:
-        xyz_path = os.path.join(os.path.join(rxn_path, i), "reactant.xyz")
-        xyz.append(xyz_path)
-    return xyz
+from os import path
+import importlib
 
-def genDLCobject():
-    xyz_path_list = getXYZfilepath()
-    mols = []
-    for xyz_path in xyz_path_list:
-        mol=pb.readfile("xyz",xyz_path).next()
-        mols.append(mol)
+#third party
+import argparse
+import textwrap
+from subprocess import Popen
+#local application imports
+sys.path.append(os.path.join(os.path.join(path.dirname( path.dirname( path.abspath(__file__))),'pyGSM'), 'pygsm'))
 
-genDLCobject()
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Automatically run Single-Ended String Method(SSM)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=textwrap.dedent('''\
+                Example of use:
+                --------------------------------
+                python -xyzfile yourfile.xyz -add_bonds add_bonds.txt
+                ''')
+        )
+    parser.add_argument('-xyzfile', help='XYZ file containing reactant and, if DE-GSM, product.',  required=True)
+    parser.add_argument('-isomers', help='driving coordinate file', required=False)
+    parser.add_argument('-coordinate_type',type=str,default='DLC',help='Coordinate system (default %(default)s)',choices=['TRIC','DLC','HDLC'])
+    parser.add_argument('-lot_inp_file',type=str,default='qstart', help='external file to specify calculation e.g. qstart,gstart,etc. Highly package specific.',required=True)
+    args = parser.parse_args()
+
+    cmd = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -coordinate_type {} -lot_inp_file {}'.format(args.xyzfile, args.isomers, args.coordinate_type, args.lot_inp_file)
+    p = Popen([cmd], shell = True)
+    p.wait()
+
+if __name__=='__main__':
+    main()

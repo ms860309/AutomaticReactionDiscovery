@@ -1,0 +1,22 @@
+#/usr/bin/bash
+#PBS -l select=1:ncpus=2:mpiprocs=2
+
+cd /home/guest/guest94/jianyi/AutomaticReactionDiscovery/script/
+
+echo "=========================================================="
+echo "Starting on : $(date)"
+echo "Running on node : $(hostname)"
+echo "Current directory : $(pwd)"
+echo "Current job ID : $PBS_JOBID"
+#echo "ARRAY_ID: $PBS_ARRAYID"
+echo "=========================================================="
+
+source ~/.bashrc
+conda activate gsm_env
+source ~/.bashrc_qchem
+export QCSCRATCH=$QCSCRATCH/$PBS_JOBID 
+mkdir -p $QCSCRATCH 
+
+python go_gsm.py
+rm -r $QCSCRATCH 
+conda deactivate
