@@ -46,6 +46,9 @@ def main():
         mkdir_SSM = 'mkdir SSM'
         p = Popen([mkdir_SSM], shell = True)
         p.wait()
+        cd_SSM = 'cd SSM'
+        p = Popen([cd_SSM], shell = True)
+        p.wait()
         cmd = 'python gsm.py -xyzfile {} -isomers {}  -lot_inp_file {}'.format(xyz[i], addbonds[i], qstart_path)
         p = Popen([cmd], shell = True)
         p.wait()

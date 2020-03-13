@@ -14,9 +14,6 @@ echo "=========================================================="
 source ~/.bashrc
 conda activate gsm_env
 source ~/.bashrc_qchem
-export QCSCRATCH=$QCSCRATCH/$PBS_JOBID 
-mkdir -p $QCSCRATCH 
 
 python go_gsm.py
-rm -r $QCSCRATCH 
 conda deactivate
