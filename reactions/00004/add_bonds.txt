@@ -1,2 +1,2 @@
-ADD 0 1
-ADD 2 5
+ADD 1 2
+ADD 3 6

@@ -403,12 +403,15 @@ class Network(object):
         """
         Create input file(add which bonds) for Single ended String Method (SSM) calculation.
         """
-        path = os.path.join(kwargs['output_dir'], 'add_bonds.txt')
-        first_bond = _input[0]
-        second_bond = _input[1]
+        try:
+            path = os.path.join(kwargs['output_dir'], 'add_bonds.txt')
+            first_bond = _input[0]
+            second_bond = _input[1]
 
-        with open(path, 'w') as f:
-            f.write('ADD {} {}\nADD {} {}'.format(first_bond[0], first_bond[1], second_bond[0], second_bond[1]))
+            with open(path, 'w') as f:
+                f.write('ADD {} {}\nADD {} {}'.format(first_bond[0]+1, first_bond[1]+1, second_bond[0]+1, second_bond[1]+1))
+        except:
+            print("maybe list out of range, check add bond")
 
     def logHeader(self):
         """
