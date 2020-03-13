@@ -1,20 +1,20 @@
 import os
 from subprocess import Popen
-
+import shutil
 def getXYZfilepath():
     """
     return xyz path and dir path
     """
     xyz = []
-    dirs = []
+    rxn_dirs = []
     abspath_pardir = os.path.abspath(os.pardir)
     rxn_path = os.path.join(abspath_pardir, 'reactions')
     dirs = os.listdir(rxn_path)
     for i in dirs[1:]:
         xyz_path = os.path.join(os.path.join(rxn_path, i), "reactant.xyz")
         xyz.append(xyz_path)
-        dirs.append(os.path.join(rxn_path, i))
-    return xyz, dirs
+        rxn_dirs.append(os.path.join(rxn_path, i))
+    return xyz, rxn_dirs
 
 def getISOMERSfilepath():
     """
@@ -39,17 +39,16 @@ def main():
     xyz, rxn_dirs= getXYZfilepath()
     addbonds = getISOMERSfilepath()
     qstart_path = getQstartpath()
+    gsm_py_path = os.path.join(os.path.abspath(""), "gsm.py")
     for i in range(len(xyz)):
-        cd_rxn_dir = 'cd {}'.format(rxn_dirs[i])
-        p = Popen([cd_rxn_dir], shell = True)
-        p.wait()
-        mkdir_SSM = 'mkdir SSM'
-        p = Popen([mkdir_SSM], shell = True)
-        p.wait()
-        cd_SSM = 'cd SSM'
-        p = Popen([cd_SSM], shell = True)
-        p.wait()
-        cmd = 'python gsm.py -xyzfile {} -isomers {}  -lot_inp_file {}'.format(xyz[i], addbonds[i], qstart_path)
+        if os.path.exists(rxn_dirs[i]):
+            os.chdir(rxn_dirs[i])
+        #mkdir SSM
+        SSM_path = os.path.join(rxn_dirs[i], 'SSM')
+        if os.path.exists(SSM_path):
+            shutil.rmtree(SSM_path)
+        os.mkdir(SSM_path)
+        cmd = 'python {} -xyzfile {} -isomers {}  -lot_inp_file {}'.format(gsm_py_path, xyz[i], addbonds[i], qstart_path)
         p = Popen([cmd], shell = True)
         p.wait()
 
