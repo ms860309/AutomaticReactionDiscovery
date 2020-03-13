@@ -1,19 +1,11 @@
 #!/usr/bin/bash
 
-
-
 #PBS -l select=1:ncpus=2:ompthreads=2
-
 #PBS -P TRI1083709
-
 #PBS -q cf40
-
 #PBS -j oe
 
-
-
 cd /home/r08524036/AutomaticReactionDiscovery/script
-
 
 echo "=========================================================="
 echo "Starting on : $(date)"
@@ -22,10 +14,9 @@ echo "Current directory : $(pwd)"
 echo "Current job ID : $PBS_JOBID"
 echo "=========================================================="
 
-
-
 source /home/u1987198/group-sw/bashrc_qchem
 conda activate gsm_env
 
 python go_gsm.py
 conda deactivate
+
