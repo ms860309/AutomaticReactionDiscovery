@@ -15,6 +15,7 @@ from node import Node
 from pgen import Generate
 from mopac import mopac
 import copy
+import shutil
 
 class Network(object):
 
@@ -304,7 +305,6 @@ class Network(object):
         Hatom = gen3D.readstring('smi', '[H]')
         ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
         # Generate 3D geometries
-        rxn_dir = util.makeReactionSubdirectory(self.output_dir, 'reactions')
         reactant_mol.gen3D(forcefield=self.forcefield, make3D=False)
         network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
 
@@ -321,17 +321,20 @@ class Network(object):
 
         reactant = reactant_mol.toNode()
         product = network_prod_mol.toNode()
-
+        subdir = os.path.join(os.path.abspath(os.pardir), 'reactions')
         if self.rxn_num == 0:
+            if os.path.exists(subdir):
+                shutil.rmtree(subdir)
+            rxn_dir = os.mkdir(subdir)
             rxn_num = '{:05d}'.format(self.rxn_num)
-            output_dir = util.makeOutputSubdirectory(rxn_dir, rxn_num)
+            output_dir = util.makeOutputSubdirectory(subdir, rxn_num)
             kwargs['output_dir'] = output_dir
             kwargs['name'] = rxn_num
             self.makeCalEnergyFile(reactant, **kwargs)
             self.makeDrawFile(reactant, filename = 'reactant.xyz', **kwargs)
             self.rxn_num += 1
             rxn_num = '{:05d}'.format(self.rxn_num)
-            output_dir = util.makeOutputSubdirectory(rxn_dir, rxn_num)
+            output_dir = util.makeOutputSubdirectory(subdir, rxn_num)
             kwargs['output_dir'] = output_dir
             kwargs['name'] = rxn_num
             self.logger.info('Product {}: {}\n{}\n****\n{}\n'.format(self.rxn_num, product.toSMILES(), reactant, product))
@@ -343,7 +346,7 @@ class Network(object):
             self.finalize(start_time)
         else:
             rxn_num = '{:05d}'.format(self.rxn_num)
-            output_dir = util.makeOutputSubdirectory(rxn_dir, rxn_num)
+            output_dir = util.makeOutputSubdirectory(subdir, rxn_num)
             kwargs['output_dir'] = output_dir
             kwargs['name'] = rxn_num
             self.logger.info('Product {}: {}\n{}\n****\n{}\n'.format(self.rxn_num, product.toSMILES(), reactant, product))

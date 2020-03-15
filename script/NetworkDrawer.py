@@ -88,9 +88,9 @@ class NetworkDrawer(object):
         """
         PES energy is SCF energy, which could be calculate from qchem.
         """
-        dirs = os.listdir(os.path.join(os.path.abspath(""), 'reactions'))
+        dirs = os.listdir(os.path.join(os.path.abspath(os.pardir), 'reactions'))
         for i in dirs:
-            energy_path = os.path.join(os.path.join(os.path.join(os.path.abspath(""), 'reactions'), i), "energy.out")
+            energy_path = os.path.join(os.path.join(os.path.join(os.path.abspath(os.pardir), 'reactions'), i), "energy.out")
             with open(energy_path, 'r') as f:
                 lines = f.readlines()
                 for line in lines:
@@ -263,4 +263,4 @@ class NetworkDrawer(object):
                 
 #network = {'reaction2': ['00000', '00003'], 'reaction0': ['00000', '00001'], 'reaction1': ['00000', '00002']}
 network = {'reaction2': ['00000', '00003'], 'reaction3': ['00000', '00004'], 'reaction0': ['00000', '00001'], 'reaction1': ['00000', '00002'], 'reaction6': ['00000', '00003', '00005', '00007'], 'reaction4': ['00000', '00003', '00005'], 'reaction5': ['00000', '00003', '00005', '00006']}
-NetworkDrawer().draw(network, 'pdf', os.path.join(os.path.abspath(""), 'network.pdf'))
+NetworkDrawer().draw(network, 'pdf', os.path.join(os.getcwd(), 'network.pdf'))

@@ -4,8 +4,11 @@
 
 if __name__ == '__main__':
     import argparse
+    import sys
     import os
-    from ard.main import ARD, readInput, readXYZ, add_bond
+    from os import path
+    sys.path.append(path.join(path.dirname( path.dirname( path.abspath(__file__))),'ard'))
+    from main import ARD, readInput, readXYZ, add_bond
 
     # Set up parser for reading the input filename from the command line
     parser = argparse.ArgumentParser(description='Automatic Reaction Discovery')
@@ -16,14 +19,13 @@ if __name__ == '__main__':
     input_file = os.path.abspath(args.file)
     kwargs = readInput(input_file)
     if kwargs['xyz'] == '1':
-        current_path = os.path.abspath("")
-        OBMol = readXYZ(current_path+'/reactant.xyz')
-        add_bonds = add_bond(current_path+'/reactant.xyz')
+        OBMol = readXYZ(path.join(os.getcwd(),'reactant.xyz'))
+        add_bonds = add_bond(path.join(os.getcwd(),'reactant.xyz'))
         if add_bonds[1] != '':
             kwargs['add_bonds'] = add_bonds[1]
         kwargs['reac_smi']= OBMol
         # Set output directory
-        output_dir = os.path.abspath(os.path.dirname(input_file))
+        output_dir = path.abspath(path.dirname(input_file))
         kwargs['output_dir'] = output_dir
 
         # Execute job
@@ -31,7 +33,7 @@ if __name__ == '__main__':
         ard.executeXYZ(**kwargs)
     else:
         # Set output directory
-        output_dir = os.path.abspath(os.path.dirname(input_file))
+        output_dir = path.abspath(path.dirname(input_file))
         kwargs['output_dir'] = output_dir
 
         # Execute job
