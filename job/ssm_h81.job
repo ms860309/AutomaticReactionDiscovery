@@ -1,0 +1,13 @@
+#!/usr/bin/bash
+
+#PBS -l select=1:ncpus=2:mpiprocs=2
+
+cd /home/guest/guest94/jianyi/AutomaticReactionDiscovery/script/
+
+source ~/.bashrc
+conda activate gsm_env
+source ~/.bashrc_qchem
+
+python go_gsm.py
+
+conda deactivate

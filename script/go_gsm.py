@@ -10,7 +10,8 @@ def getXYZfilepath():
     abspath_pardir = os.path.abspath(os.pardir)
     rxn_path = os.path.join(abspath_pardir, 'reactions')
     dirs = os.listdir(rxn_path)
-    for i in dirs[1:]:
+    dirs.remove('00000')
+    for i in dirs:
         xyz_path = os.path.join(os.path.join(rxn_path, i), "reactant.xyz")
         xyz.append(xyz_path)
         rxn_dirs.append(os.path.join(rxn_path, i))
@@ -24,7 +25,8 @@ def getISOMERSfilepath():
     abspath_pardir = os.path.abspath(os.pardir)
     rxn_path = os.path.join(abspath_pardir, 'reactions')
     dirs = os.listdir(rxn_path)
-    for i in dirs[1:]:
+    dirs.remove('00000')
+    for i in dirs:
         add_bonds_path = os.path.join(os.path.join(rxn_path, i), "add_bonds.txt")
         add_bonds.append(add_bonds_path)
     return add_bonds
@@ -32,7 +34,6 @@ def getISOMERSfilepath():
 def getQstartpath():
     abspath_pardir = os.path.abspath(os.pardir)
     qstart_path = os.path.join(os.path.join(abspath_pardir, 'submmit_required'), 'qstart')
-
     return qstart_path
 
 def main():
@@ -52,9 +53,11 @@ def main():
         # change workspace dir reaction/num/SSM
         if os.path.exists(SSM_path):
             os.chdir(SSM_path)
-        cmd = 'python {} -xyzfile {} -isomers {}  -lot_inp_file {}'.format(gsm_py_path, xyz[i], addbonds[i], qstart_path)
-        p = Popen([cmd], shell = True)
-        p.wait()
-
+        try:
+            cmd = 'python {} -xyzfile {} -isomers {}  -lot_inp_file {}'.format(gsm_py_path, xyz[i], addbonds[i], qstart_path)
+            p = Popen([cmd], shell = True)
+            p.wait()
+        except:
+            continue
 if __name__=='__main__':
     main()
