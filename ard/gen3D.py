@@ -17,7 +17,8 @@ from rmgpy import settings
 from rmgpy.species import Species
 import rmgpy.molecule
 from rmgpy.data.thermo import ThermoDatabase
-
+from rmgpy.molecule.adjlist import to_adjacency_list
+from rmgpy.molecule.converter import from_ob_mol
 import constants
 import props
 import util
@@ -142,10 +143,6 @@ class Molecule(pybel.Molecule):
         """
         # Dictionary of RMG bond types
         bondtypes = {1: 'S', 2: 'D', 3: 'T'}
-
-        adjlist = 'name\n'
-        adjlist += 'multiplicity {}\n'.format(self.spin)
-
         for atom in self:
             number = atom.idx
             label = ''
@@ -169,16 +166,21 @@ class Molecule(pybel.Molecule):
                 bondlist += ' {{{},{}}}'.format(other_atom, bondtype)
 
             adjlist += '{:<2} {} {} u{} p{} c{}{}\n'.format(number, label, element, unpaired, pairs, charge, bondlist)
-
         return adjlist
 
     def toRMGSpecies(self):
         """
         Convert to :class:`rmgpy.species.Species` object and return the object.
         """
-        adjlist = self.toAdjlist()
-        spc = Species().fromAdjacencyList(adjlist)
+        rmg_mol = from_ob_mol(rmgpy.molecule.molecule.Molecule(), self.OBMol)
+        adjlist = rmg_mol.to_adjacency_list()
+        spc = Species().from_adjacency_list(adjlist)
         spc.label = ''
+        """
+        adjlist = self.toAdjlist()
+        spc = Species().from_adjacency_list(adjlist)
+        spc.label = ''
+        """
         return spc
 
     def toRMGMolecule(self):
@@ -186,9 +188,12 @@ class Molecule(pybel.Molecule):
         Convert to :class:`rmgpy.molecule.Molecule` object and return the
         object.
         """
+        rmg_mol = from_ob_mol(rmgpy.molecule.molecule.Molecule(), self.OBMol)
+        """
         adjlist = self.toAdjlist()
-        mol = rmgpy.molecule.Molecule().fromAdjacencyList(adjlist)
-        return mol
+        mol = rmgpy.molecule.Molecule().from_adjacency_list(adjlist)
+        """
+        return rmg_mol
 
     def assignSpinMultiplicity(self):
         """
@@ -244,9 +249,8 @@ class Molecule(pybel.Molecule):
         self.separateMol()
         for mol in self.mols:
             spc = mol.toRMGSpecies()
-            spc.thermo = thermo_db.getThermoData(spc)
-            H298 += spc.getEnthalpy(298.0) / constants.kcal_to_J
-
+            spc.thermo = thermo_db.get_thermo_data(spc)
+            H298 += spc.get_enthalpy(298.0) / constants.kcal_to_J
         # Return combined enthalpy of all molecules
         return H298
 

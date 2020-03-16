@@ -252,12 +252,12 @@ class Network(object):
         for i in base:
             mol = i.toRMGMolecule()
             #unique = mol.toAugmentedInChIKey()
-            unique = mol.toInChIKey()
+            unique = mol.to_inchi_key()
             base_unique.append(unique)
         for i in compare:
             mol = i.toRMGMolecule()
             #unique = mol.toAugmentedInChIKey()
-            unique = mol.toInChIKey()
+            unique = mol.to_inchi_key()
             compare_unique.append(unique)
         for idx_1, i in enumerate(compare_unique):
             if i not in base_unique:
@@ -277,12 +277,12 @@ class Network(object):
         for i in base:
             mol = i.toRMGMolecule()
             #unique = mol.toAugmentedInChIKey()
-            unique = mol.toInChIKey()
+            unique = mol.to_inchi_key()
             base_unique.append(unique)
         for i in compare:
             mol = i.toRMGMolecule()
             #unique = mol.toAugmentedInChIKey()
-            unique = mol.toInChIKey()
+            unique = mol.to_inchi_key()
             compare_unique.append(unique)
         for idx_1, i in enumerate(compare_unique):
             if i not in base_unique[idx_1+1:]:

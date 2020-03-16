@@ -9,7 +9,7 @@ Contains dictionaries of atomic properties, such as atomic numbers and masses.
 
 # Atomic numbers
 atomnum = {1: 'H', 6: 'C', 7: 'N', 8: 'O', 9: 'F', 14: 'Si', 15: 'P', 16: 'S', 17: 'Cl', 35: 'Br', 78: 'Pt'}
-atomnum_inv = dict((v, k) for k, v in atomnum.iteritems())
+atomnum_inv = dict((v, k) for k, v in atomnum.items())
 
 # Atomic weights in g/mol (from http://www.ciaaw.org/atomic-weights.htm#m)
 atomweights = {1: 1.007975, 6: 12.0106, 7: 14.006855, 8: 15.9994, 9: 18.9984031636, 14: 28.085, 15: 30.9737619985,

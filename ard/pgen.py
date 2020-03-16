@@ -41,7 +41,7 @@ class Generate(object):
     def __init__(self, reac_mol, total_reactant, add_bond=None):
         self.reac_mol = reac_mol
         self.reactant_list = total_reactant
-        self.reactant_inchikey = [i.toRMGMolecule().toInChIKey() for i in self.reactant_list]
+        self.reactant_inchikey = [i.toRMGMolecule().to_inchi_key() for i in self.reactant_list]
         #self.reac_smi = None
         self.atoms = None
         if add_bond != None:
@@ -224,7 +224,7 @@ class Generate(object):
                 mol.setCoordsFromMol(self.reac_mol)
 
                 prod_rmg_mol = mol.toRMGMolecule()
-                if prod_rmg_mol.toInChIKey() not in  self.reactant_inchikey:
+                if prod_rmg_mol.to_inchi_key() not in  self.reactant_inchikey:
                     self.prod_mols.append(mol)
                     add_bond = list(set(bonds)-set(reactant_bonds))
                     if len(add_bond) > nform:

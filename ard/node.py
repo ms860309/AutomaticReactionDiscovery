@@ -34,7 +34,7 @@ class Atom(object):
     """
 
     def __init__(self, atomicnum, coords, idx):
-        if isinstance(atomicnum, basestring):
+        if isinstance(atomicnum, str):
             if atomicnum.upper() in props.atomnum.values():
                 self.atomicnum = props.atomnum_inv[atomicnum]
         elif int(atomicnum) not in props.atomnum.keys():
@@ -83,7 +83,7 @@ class Node(object):
         # self.atoms can be generated from atomic numbers or from atom labels
         self.atoms = []
         for num in atoms:
-            if isinstance(num, basestring):
+            if isinstance(num, str):
                 if num.upper() in props.atomnum.values():
                     self.atoms.append(props.atomnum_inv[num])
                     continue
