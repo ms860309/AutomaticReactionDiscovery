@@ -1,0 +1,58 @@
+Here is the 1 generation
+
+There are 2 rounds need to generate possible products at next generation
+
+starting generate geometry
+
+Add 3 new products into network
+
+Now network have 5 products
+
+starting generate geometry
+
+Finished 1/2 rounds at 1 generations
+
+Add 2 new products into network
+
+Now network have 7 products
+
+starting generate geometry
+
+Finished 2/2 rounds at 1 generations
+
+Here is the 2 generation
+
+There are 5 rounds need to generate possible products at this generation
+
+Add 0 new products into network
+
+Now network have 7 products
+
+Finished 3/7 rounds at 2 generations
+
+Add 0 new products into network
+
+Now network have 7 products
+
+Finished 4/7 rounds at 2 generations
+
+Add 0 new products into network
+
+Now network have 7 products
+
+Finished 5/7 rounds at 2 generations
+
+Add 0 new products into network
+
+Now network have 7 products
+
+Finished 6/7 rounds at 2 generations
+
+Add 0 new products into network
+
+Now network have 7 products
+
+Finished 7/7 rounds at 2 generations
+
+Network is finished.
+self.reactions = {'reaction0': ['00000', '00001'], 'reaction1': ['00000', '00002'], 'reaction2': ['00000', '00001', '00003'], 'reaction3': ['00000', '00001', '00004'], 'reaction4': ['00000', '00001', '00005'], 'reaction5': ['00000', '00002', '00006'], 'reaction6': ['00000', '00002', '00007']}
