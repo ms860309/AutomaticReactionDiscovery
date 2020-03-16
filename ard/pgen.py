@@ -48,6 +48,7 @@ class Generate(object):
             self.add_bond = self.string_to_list(add_bond)
         self.prod_mols = []
         self.add_bonds = []
+        self.break_bonds = []
         self.initialize()
 
     def initialize(self):
@@ -231,8 +232,6 @@ class Generate(object):
                     """
                     break_bonds = []
                     form_bonds = []
-                    print(reactant_bonds)
-                    print(bonds)
                     a = set(reactant_bonds)
                     b = set(bonds)
                     for i in list(b.symmetric_difference(a)):
@@ -240,10 +239,23 @@ class Generate(object):
                             # which is breaked
                             break_bonds.append(i)
                         else:
+                            # which is formed
                             form_bonds.append(i)
-                    for i in range(len(break_bonds)):
-                        
-                    self.add_bonds.append(add_bond)
+                    # deal with double bonds
+                    for i in form_bonds:
+                        if i[2] > 1 and i in bonds:
+                            for j in break_bonds:
+                                if i[0] == j[0] and i[1] == j[1]:
+                                    break_bonds.remove(j)
+                    # deal with double bonds
+                    for i in break_bonds:
+                        if i[2] > 1 and i in reactant_bonds:
+                            for j in form_bonds:
+                                if i[0] == j[0] and i[1] == j[1]:
+                                    form_bonds.remove(j)
+                                    
+                    self.add_bonds.append(form_bonds)
+                    self.break_bonds.append(break_bonds)
                 """
                 if not prod_rmg_mol.isIsomorphic(reac_rmg_mol):
                     self.prod_mols.append(mol)
