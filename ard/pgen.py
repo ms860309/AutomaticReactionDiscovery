@@ -226,13 +226,23 @@ class Generate(object):
                 prod_rmg_mol = mol.toRMGMolecule()
                 if prod_rmg_mol.to_inchi_key() not in  self.reactant_inchikey:
                     self.prod_mols.append(mol)
-                    add_bond = list(set(bonds)-set(reactant_bonds))
-                    if len(add_bond) > nform:
-                        # reactant break double bond
-                        for i in add_bond:
-                            for j in reactant_bonds:
-                                if i[0] == j[0] and i[1] == j[1]:
-                                    add_bond.remove(i)
+                    """
+                    for SSM calculation
+                    """
+                    break_bonds = []
+                    form_bonds = []
+                    print(reactant_bonds)
+                    print(bonds)
+                    a = set(reactant_bonds)
+                    b = set(bonds)
+                    for i in list(b.symmetric_difference(a)):
+                        if i not in b:
+                            # which is breaked
+                            break_bonds.append(i)
+                        else:
+                            form_bonds.append(i)
+                    for i in range(len(break_bonds)):
+                        
                     self.add_bonds.append(add_bond)
                 """
                 if not prod_rmg_mol.isIsomorphic(reac_rmg_mol):

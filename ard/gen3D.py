@@ -19,6 +19,7 @@ import rmgpy.molecule
 from rmgpy.data.thermo import ThermoDatabase
 from rmgpy.molecule.adjlist import to_adjacency_list
 from rmgpy.molecule.converter import from_ob_mol
+
 import constants
 import props
 import util
