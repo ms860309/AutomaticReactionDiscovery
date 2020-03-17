@@ -130,19 +130,18 @@ class Generate(object):
             products_bonds = list(products_bonds)
             del_idx = []
             for idx,order in enumerate(nDouble_bonds):
-                for products in products_bonds:
-                    try:
-                        if order[3] != 0:
-                            order[2] += 2*order[3]
-                            if order[2] > DoU:
-                                del_idx.append(idx)
-                    except:
-                        pass
-                    try:
+                try:
+                    if order[3] != 0:
+                        order[2] += 2*order[3]
                         if order[2] > DoU:
                             del_idx.append(idx)
-                    except:
-                        pass
+                except:
+                    pass
+                try:
+                    if order[2] > DoU:
+                        del_idx.append(idx)
+                except:
+                    pass
             del_idx = set(del_idx)
             products_bonds_idx = [i for i in range(len(products_bonds))]
             products_bonds_idx = set(products_bonds_idx)
@@ -219,7 +218,6 @@ class Generate(object):
             #Filter the products_bonds which doesn't follow DoU rule
             #products_bonds = self.DoU(products_bonds)
 
-            reac_rmg_mol = self.reac_mol.toRMGMolecule()
             for bonds in products_bonds:
                 mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
                 mol.setCoordsFromMol(self.reac_mol)

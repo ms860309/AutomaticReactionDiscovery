@@ -115,12 +115,10 @@ class Network(object):
             self.network_log.info("There are {} rounds need to generate possible products at next generation\n".format(len(prod_mols_filtered)))
             self.first_num = len(prod_mols_filtered)
             self.network_log.info("starting generate geometry\n")
-            num = 0
             for idx, mol in enumerate(prod_mols_filtered):
                 index = prod_mols.index(mol)
                 self.add_bonds.append(add_bonds[index])
                 self.break_bonds.append(break_bonds[index])
-                num += 1
                 self.network_prod_mols.append(mol)
                 self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
                 rxn_idx = 'reaction{}'.format(idx)
@@ -131,7 +129,8 @@ class Network(object):
             for mol in prod_mols_filtered:
                 pre_products.append(mol)
             filtered = []
-            filtered = self.unique_key_filterIsomorphic(self.network_prod_mols, pre_products)
+            same = []
+            filtered, same = self.unique_key_filterIsomorphic(self.network_prod_mols, pre_products)
             det = len(filtered)
             for mol in filtered:
                 self.pre_product.append(mol)
@@ -142,20 +141,43 @@ class Network(object):
                 self.network_log.info("starting generate geometry\n")
                 index = self.network_prod_mols.index(mol_object)
                 rxn_idx = 'reaction{}'.format(index)
-                tmp_list = self.reactions[rxn_idx]
-                num = 0                
-                for idx, prod_mol in enumerate(filtered):
-                    index = prod_mols.index(mol)
-                    self.add_bonds.append(add_bonds[index])
-                    self.break_bonds.append(break_bonds[index])
-                    num += 1
+                tmp_list = self.reactions[rxn_idx]             
+                for prod_mol in filtered:
+                    idx = prod_mols.index(prod_mol)
+                    self.add_bonds.append(add_bonds[idx])
+                    self.break_bonds.append(break_bonds[idx])
                     a = copy.deepcopy(tmp_list)
                     rxn_idx = 'reaction{}'.format(self.rxn_num)
                     rxn_num = '{:05d}'.format(self.rxn_num + 1)
                     a.append(rxn_num)
                     self.reactions[rxn_idx] = a
-                    self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
-    
+                    self.gen_geometry(mol_object, prod_mol, add_bonds[idx], break_bonds[idx])
+                for same_prod in same:
+                    idx = prod_mols.index(same_prod)
+                    self.add_bonds.append(add_bonds[idx])
+                    self.break_bonds.append(break_bonds[idx])     
+                    a = copy.deepcopy(tmp_list)
+                    rxn_idx = 'reaction{}'.format(self.rxn_num)
+                    rxn_num = '{:05d}'.format(self.rxn_num + 1)
+                    a.append(rxn_num)
+                    self.reactions[rxn_idx] = a
+                    self.rxn_num += 1
+            else:
+                # filter = 0
+                index = self.network_prod_mols.index(mol_object)
+                rxn_idx = 'reaction{}'.format(index)
+                tmp_list = self.reactions[rxn_idx]
+                for same_prod in same:
+                    idx = prod_mols.index(same_prod)
+                    self.add_bonds.append(add_bonds[idx])
+                    self.break_bonds.append(break_bonds[idx])     
+                    a = copy.deepcopy(tmp_list)
+                    rxn_idx = 'reaction{}'.format(self.rxn_num)
+                    rxn_num = '{:05d}'.format(self.rxn_num + 1)
+                    a.append(rxn_num)
+                    self.reactions[rxn_idx] = a
+                    self.rxn_num += 1 
+
     def recurrently_gen (self, prod_mols_filtered, num):
         """
         For generate recyclely
@@ -250,9 +272,11 @@ class Network(object):
         Convert rmg molecule into inchi key(unique key) and check isomorphic
         """
         isomorphic_idx = []
+        same_idx = []
         base_unique = []
         compare_unique = []
         result = []
+        same = []
         for i in base:
             mol = i.toRMGMolecule()
             #unique = mol.toAugmentedInChIKey()
@@ -266,9 +290,15 @@ class Network(object):
         for idx_1, i in enumerate(compare_unique):
             if i not in base_unique:
                 isomorphic_idx.append(idx_1)
+            else:
+                same_idx.append(idx_1)
         for i in isomorphic_idx:
             result.append(compare[i])
-        return result
+        for i in same_idx:
+            same.append(compare[i])
+        print('132132132')
+        print(same)
+        return result, same
 
     def unique_key_filterIsomorphic_itself(self, base, compare):
         """
@@ -327,7 +357,7 @@ class Network(object):
         if self.rxn_num == 0:
             if os.path.exists(subdir):
                 shutil.rmtree(subdir)
-            rxn_dir = os.mkdir(subdir)
+            os.mkdir(subdir)
             rxn_num = '{:05d}'.format(self.rxn_num)
             output_dir = util.makeOutputSubdirectory(subdir, rxn_num)
             kwargs['output_dir'] = output_dir
