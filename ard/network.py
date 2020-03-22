@@ -130,7 +130,7 @@ class Network(object):
                 pre_products.append(mol)
             filtered = []
             same = []
-            filtered, same = self.unique_key_filterIsomorphic(self.network_prod_mols, pre_products)
+            filtered, same, same_key = self.unique_key_filterIsomorphic(self.network_prod_mols, pre_products)
             det = len(filtered)
             for mol in filtered:
                 self.pre_product.append(mol)
@@ -141,7 +141,7 @@ class Network(object):
                 self.network_log.info("starting generate geometry\n")
                 index = self.network_prod_mols.index(mol_object)
                 rxn_idx = 'reaction{}'.format(index)
-                tmp_list = self.reactions[rxn_idx]             
+                tmp_list = self.reactions[rxn_idx]          
                 for prod_mol in filtered:
                     idx = prod_mols.index(prod_mol)
                     self.add_bonds.append(add_bonds[idx])
@@ -152,13 +152,13 @@ class Network(object):
                     a.append(rxn_num)
                     self.reactions[rxn_idx] = a
                     self.gen_geometry(mol_object, prod_mol, add_bonds[idx], break_bonds[idx])
-                for same_prod in same:
+                for key, same_prod in enumerate(same):
                     idx = prod_mols.index(same_prod)
                     self.add_bonds.append(add_bonds[idx])
                     self.break_bonds.append(break_bonds[idx])     
                     a = copy.deepcopy(tmp_list)
                     rxn_idx = 'reaction{}'.format(self.rxn_num)
-                    rxn_num = '{:05d}'.format(self.rxn_num + 1)
+                    rxn_num = '{:05d}'.format(same_key[key]+1)
                     a.append(rxn_num)
                     self.reactions[rxn_idx] = a
                     self.rxn_num += 1
@@ -167,13 +167,13 @@ class Network(object):
                 index = self.network_prod_mols.index(mol_object)
                 rxn_idx = 'reaction{}'.format(index)
                 tmp_list = self.reactions[rxn_idx]
-                for same_prod in same:
+                for key, same_prod in enumerate(same):
                     idx = prod_mols.index(same_prod)
                     self.add_bonds.append(add_bonds[idx])
                     self.break_bonds.append(break_bonds[idx])     
                     a = copy.deepcopy(tmp_list)
                     rxn_idx = 'reaction{}'.format(self.rxn_num)
-                    rxn_num = '{:05d}'.format(self.rxn_num + 1)
+                    rxn_num = '{:05d}'.format(same_key[key]+1)
                     a.append(rxn_num)
                     self.reactions[rxn_idx] = a
                     self.rxn_num += 1 
@@ -277,6 +277,7 @@ class Network(object):
         compare_unique = []
         result = []
         same = []
+        same_key = []
         for i in base:
             mol = i.toRMGMolecule()
             #unique = mol.toAugmentedInChIKey()
@@ -291,14 +292,14 @@ class Network(object):
             if i not in base_unique:
                 isomorphic_idx.append(idx_1)
             else:
+                a = base_unique.index(i)
                 same_idx.append(idx_1)
+                same_key.append(a)
         for i in isomorphic_idx:
             result.append(compare[i])
         for i in same_idx:
             same.append(compare[i])
-        print('132132132')
-        print(same)
-        return result, same
+        return result, same, same_key
 
     def unique_key_filterIsomorphic_itself(self, base, compare):
         """
@@ -341,10 +342,12 @@ class Network(object):
         # Generate 3D geometries
         reactant_mol.gen3D(forcefield=self.forcefield, make3D=False)
         network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
+
         arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
         msg = arrange3D.arrangeIn3D()
         if msg != '':
             self.logger.info(msg)
+            
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reactant_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
