@@ -162,6 +162,7 @@ class Network(object):
                     a.append(rxn_num)
                     self.reactions[rxn_idx] = a
                     self.rxn_num += 1
+            """
             else:
                 # filter = 0
                 index = self.network_prod_mols.index(mol_object)
@@ -177,6 +178,7 @@ class Network(object):
                     a.append(rxn_num)
                     self.reactions[rxn_idx] = a
                     self.rxn_num += 1 
+            """
 
     def recurrently_gen (self, prod_mols_filtered, num):
         """

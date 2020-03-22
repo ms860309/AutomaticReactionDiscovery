@@ -96,7 +96,7 @@ class NetworkDrawer(object):
                 for line in lines:
                     if line.strip().startswith('SCF   energy in the final basis set'):
                         SCF_Energy = line.split()[-1]
-                        self.energy[i] = float(SCF_Energy)*627.5095*0.1
+                        self.energy[i] = float(SCF_Energy)*627.5095
         return self.energy
 
 
@@ -181,10 +181,11 @@ class NetworkDrawer(object):
         self.network = network
         #draw parameter
         padding = self.options['padding']
+        e_slope = self.options['Eslope']
         #determine the requiring height
         e_height = self._get_text_size('0.0', file_format=file_format)[3] + 6
         e0_min, e0_max = self._get_energy_range()
-        height = (e0_max - e0_min) + 2 * padding + e_height
+        height = (e0_max - e0_min) * e_slope + 2 * padding + e_height
         length = {}
         for i in network:
             _length = len(network[i])
@@ -202,26 +203,26 @@ class NetworkDrawer(object):
         max_E_value = self.energy[max_E_key]
         cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
         cr.set_line_width(1.0)
-        cr.move_to(padding, max_E_value - self.energy['00000'] + 20)
-        cr.line_to(padding*2, max_E_value - self.energy['00000'] + 20)
+        cr.move_to(padding, (max_E_value - self.energy['00000']) * 1.3 + 20)
+        cr.line_to(padding*2 - 5, (max_E_value - self.energy['00000']) * 1.3 + 20)
         cr.save()
         #draw energy number and Energy unit
-        cr.move_to(padding, max_E_value - self.energy['00000'] + 18)
-        cr.set_font_size(self.options['fontSizeNormal'])
+        cr.move_to(padding, (max_E_value - self.energy['00000']) * 1.3 + 18)
+        cr.set_font_size(3)
         cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
         cr.show_text(str(round(self.energy['00000'] - self.energy['00000'], 3)))
         cr.restore()
         cr.save()
         #unit
         cr.move_to(width - 50, height - 10)
-        cr.set_font_size(self.options['fontSizeNormal'])
+        cr.set_font_size(3)
         cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
         cr.show_text(str('Unit: 10 kcal/mol'))
         cr.restore()
         cr.save()
         #draw dir label
-        cr.move_to(padding, max_E_value - self.energy['00000'] + 25)
-        cr.set_font_size(self.options['fontSizeNormal'])
+        cr.move_to(padding, (max_E_value - self.energy['00000'])*1.3 + 23)
+        cr.set_font_size(3)
         cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
         cr.show_text('00000')
         cr.restore()
@@ -232,35 +233,38 @@ class NetworkDrawer(object):
                 #draw intermediate and product horizontal line
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
                 cr.set_line_width(1.0)
-                cr.move_to(padding + 50 * (num+2), max_E_value - self.energy[intermediate] + 20)
-                cr.line_to(padding * 2 + 50 * (num+2), max_E_value - self.energy[intermediate] + 20)
+                cr.move_to(padding + 50 * (num+2), (max_E_value - self.energy[intermediate])*1.3 + 20)
+                cr.line_to(padding * 2 + 50 * (num+2) - 5, (max_E_value - self.energy[intermediate])*1.3 + 20)
                 cr.save()
                 #draw energy number
-                cr.move_to(padding + 50 * (num+2), max_E_value - self.energy[intermediate] + 18)
-                cr.set_font_size(self.options['fontSizeNormal'])
+                """
+                cr.move_to(padding + 50 * (num+2), (max_E_value - self.energy[intermediate])*1.3 + 18)
+                cr.set_font_size(3)
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
                 cr.show_text(str(round(self.energy[intermediate] - self.energy['00000'], 3)))
                 cr.restore()
                 cr.save()
+                """
                 #draw dir label
-                cr.move_to(padding + 50 * (num+2), max_E_value - self.energy[network[reaction][num+1]] + 25)
-                cr.set_font_size(self.options['fontSizeNormal'])
+                cr.move_to(padding + 50 * (num+2), (max_E_value - self.energy[network[reaction][num+1]])*1.3 + 23)
+                cr.set_font_size(3)
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
-                cr.show_text(intermediate)
+                cr.show_text(intermediate + '('+ str(round(self.energy[intermediate] - self.energy['00000'], 3)) +')')
                 cr.restore()
                 cr.save()
                 if len(network[reaction]) == 2:
-                    cr.move_to(padding*2, max_E_value - self.energy['00000'] + 20)
-                    cr.line_to(padding + 50 * (num+2), max_E_value - self.energy[intermediate] + 20)
+                    cr.move_to(padding*2 - 5, (max_E_value - self.energy['00000'])*1.3 + 20)
+                    cr.line_to(padding + 50 * (num+2), (max_E_value - self.energy[intermediate])*1.3 + 20)
                     cr.restore()
                     cr.save()
                 elif self.network[reaction][-1] != intermediate:
-                    cr.move_to(padding * 2 + 50 * (num+2), max_E_value - self.energy[intermediate] + 20)
-                    cr.line_to(padding + 50 * (num+3), max_E_value - self.energy[network[reaction][num+2]] + 20)
+                    cr.move_to(padding * 2 + 50 * (num+2) - 5, (max_E_value - self.energy[intermediate])*1.3 + 20)
+                    cr.line_to(padding + 50 * (num+3), (max_E_value - self.energy[network[reaction][num+2]])*1.3 + 20)
                     cr.restore()
                     cr.save()
                 cr.stroke()
                 
 #network = {'reaction2': ['00000', '00003'], 'reaction0': ['00000', '00001'], 'reaction1': ['00000', '00002']}
-network = {'reaction2': ['00000', '00003'], 'reaction3': ['00000', '00004'], 'reaction0': ['00000', '00001'], 'reaction1': ['00000', '00002'], 'reaction6': ['00000', '00003', '00005', '00007'], 'reaction4': ['00000', '00003', '00005'], 'reaction5': ['00000', '00003', '00005', '00006']}
+network = {'reaction0': ['00000', '00001'], 'reaction1': ['00000', '00002'], 'reaction2': ['00000', '00001', '00003'], 'reaction3': ['00000', '00001', '00004'], 'reaction4': ['00000', '00001', '00005'], 'reaction5': ['00000', '00002', '00006'], 'reaction6': ['00000', '00002', '00007'], 'reaction7': ['00000', '00002', '00005']}
 NetworkDrawer().draw(network, 'pdf', os.path.join(os.getcwd(), 'network.pdf'))
+
