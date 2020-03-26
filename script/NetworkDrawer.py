@@ -185,14 +185,14 @@ class NetworkDrawer(object):
         #determine the requiring height
         e_height = self._get_text_size('0.0', file_format=file_format)[3] + 6
         e0_min, e0_max = self._get_energy_range()
-        height = (e0_max - e0_min) * e_slope + 2 * padding + e_height
+        height = (e0_max - e0_min) + 2 * padding + e_height
         length = {}
         for i in network:
             _length = len(network[i])
             length[i] = _length
         max_length_key = max(length, key=lambda k: length[k])
         max_length_value = length[max_length_key]
-        width = 55 * max_length_value + 2 * padding
+        width = 55 * max_length_value + 2 * padding - 40
         # Draw to the final surface
         surface = create_new_surface(file_format=file_format, target=path, width=width, height=height)
         cr = cairo.Context(surface)
@@ -203,25 +203,25 @@ class NetworkDrawer(object):
         max_E_value = self.energy[max_E_key]
         cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
         cr.set_line_width(1.0)
-        cr.move_to(padding, (max_E_value - self.energy['00000']) * 1.3 + 20)
-        cr.line_to(padding*2 - 5, (max_E_value - self.energy['00000']) * 1.3 + 20)
+        cr.move_to(padding, max_E_value - self.energy['00000'] + 20)
+        cr.line_to(padding + 10, max_E_value - self.energy['00000'] + 20)
         cr.save()
         #draw energy number and Energy unit
-        cr.move_to(padding, (max_E_value - self.energy['00000']) * 1.3 + 18)
+        cr.move_to(padding, max_E_value - self.energy['00000'] + 18)
         cr.set_font_size(3)
         cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
         cr.show_text(str(round(self.energy['00000'] - self.energy['00000'], 3)))
         cr.restore()
         cr.save()
         #unit
-        cr.move_to(width - 50, height - 10)
+        cr.move_to(width - 30, height - 5)
         cr.set_font_size(3)
         cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
-        cr.show_text(str('Unit: 10 kcal/mol'))
+        cr.show_text(str('Unit: kcal/mol'))
         cr.restore()
         cr.save()
         #draw dir label
-        cr.move_to(padding, (max_E_value - self.energy['00000'])*1.3 + 23)
+        cr.move_to(padding, max_E_value - self.energy['00000'] + 23)
         cr.set_font_size(3)
         cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
         cr.show_text('00000')
@@ -233,12 +233,12 @@ class NetworkDrawer(object):
                 #draw intermediate and product horizontal line
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
                 cr.set_line_width(1.0)
-                cr.move_to(padding + 50 * (num+2), (max_E_value - self.energy[intermediate])*1.3 + 20)
-                cr.line_to(padding * 2 + 50 * (num+2) - 5, (max_E_value - self.energy[intermediate])*1.3 + 20)
+                cr.move_to(padding + 55 * (num+1), max_E_value - self.energy[intermediate] + 20)
+                cr.line_to(padding + 55 * (num+1) + 10, max_E_value - self.energy[intermediate] + 20)
                 cr.save()
                 #draw energy number
                 """
-                cr.move_to(padding + 50 * (num+2), (max_E_value - self.energy[intermediate])*1.3 + 18)
+                cr.move_to(padding + 55 * (num+2), max_E_value - self.energy[intermediate] + 18)
                 cr.set_font_size(3)
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
                 cr.show_text(str(round(self.energy[intermediate] - self.energy['00000'], 3)))
@@ -246,20 +246,20 @@ class NetworkDrawer(object):
                 cr.save()
                 """
                 #draw dir label
-                cr.move_to(padding + 50 * (num+2), (max_E_value - self.energy[network[reaction][num+1]])*1.3 + 23)
+                cr.move_to(padding + 55 * (num+1), max_E_value - self.energy[network[reaction][num+1]] + 23)
                 cr.set_font_size(3)
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
                 cr.show_text(intermediate + '('+ str(round(self.energy[intermediate] - self.energy['00000'], 3)) +')')
                 cr.restore()
                 cr.save()
                 if len(network[reaction]) == 2:
-                    cr.move_to(padding*2 - 5, (max_E_value - self.energy['00000'])*1.3 + 20)
-                    cr.line_to(padding + 50 * (num+2), (max_E_value - self.energy[intermediate])*1.3 + 20)
+                    cr.move_to(padding + 10, max_E_value - self.energy['00000'] + 20)
+                    cr.line_to(padding + 55 * (num+1), max_E_value - self.energy[intermediate] + 20)
                     cr.restore()
                     cr.save()
                 elif self.network[reaction][-1] != intermediate:
-                    cr.move_to(padding * 2 + 50 * (num+2) - 5, (max_E_value - self.energy[intermediate])*1.3 + 20)
-                    cr.line_to(padding + 50 * (num+3), (max_E_value - self.energy[network[reaction][num+2]])*1.3 + 20)
+                    cr.move_to(padding + 55 * (num+1) + 10, max_E_value - self.energy[intermediate] + 20)
+                    cr.line_to(padding + 55 * (num+2), max_E_value - self.energy[network[reaction][num+2]] + 20)
                     cr.restore()
                     cr.save()
                 cr.stroke()
