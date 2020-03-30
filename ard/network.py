@@ -16,7 +16,9 @@ from pgen import Generate
 from mopac import mopac
 import copy
 import shutil
-
+#database
+from connect import Connector
+import pprint
 class Network(object):
 
     def __init__(self, reac_mol, forcefield, **kwargs):
@@ -42,6 +44,9 @@ class Network(object):
         self.generation = 1
         self.rxn_num = -1
         self.method = kwargs["dh_cutoff_method"]
+        self.client = Connector('mongodb+srv://jianyi:aa123@cluster0-wo5fn.gcp.mongodb.net/test?retryWrites=true&w=majority').client
+        self.db = self.client['network']
+        
 
     def genNetwork(self, mol_object, _round = 1, **kwargs):
         """
@@ -115,7 +120,9 @@ class Network(object):
             self.network_log.info("There are {} rounds need to generate possible products at next generation\n".format(len(prod_mols_filtered)))
             self.first_num = len(prod_mols_filtered)
             self.network_log.info("starting generate geometry\n")
+            collection = self.db['reactions']
             for idx, mol in enumerate(prod_mols_filtered):
+                data = {}
                 index = prod_mols.index(mol)
                 self.add_bonds.append(add_bonds[index])
                 self.break_bonds.append(break_bonds[index])
@@ -124,6 +131,8 @@ class Network(object):
                 rxn_idx = 'reaction{}'.format(idx)
                 rxn_num = '{:05d}'.format(self.rxn_num)
                 self.reactions[rxn_idx] = ['00000', rxn_num]
+                data[rxn_idx] = ['00000', rxn_num]
+                collection.insert_one(data)
             self.recurrently_gen(self.network_prod_mols, 0)
         else:
             for mol in prod_mols_filtered:
@@ -138,11 +147,13 @@ class Network(object):
             self.network_log.info("Add {} new products into network\n".format(det))
             self.network_log.info("Now network have {} products\n".format(len(self.network_prod_mols)))
             if det != 0:
+                collection = self.db['reactions']
                 self.network_log.info("starting generate geometry\n")
                 index = self.network_prod_mols.index(mol_object)
                 rxn_idx = 'reaction{}'.format(index)
                 tmp_list = self.reactions[rxn_idx]          
                 for prod_mol in filtered:
+                    data = {}
                     idx = prod_mols.index(prod_mol)
                     self.add_bonds.append(add_bonds[idx])
                     self.break_bonds.append(break_bonds[idx])
@@ -152,7 +163,10 @@ class Network(object):
                     a.append(rxn_num)
                     self.reactions[rxn_idx] = a
                     self.gen_geometry(mol_object, prod_mol, add_bonds[idx], break_bonds[idx])
+                    data[rxn_idx] = a
+                    collection.insert_one(data)
                 for key, same_prod in enumerate(same):
+                    data = {}
                     idx = prod_mols.index(same_prod)
                     self.add_bonds.append(add_bonds[idx])
                     self.break_bonds.append(break_bonds[idx])     
@@ -162,6 +176,8 @@ class Network(object):
                     a.append(rxn_num)
                     self.reactions[rxn_idx] = a
                     self.rxn_num += 1
+                    data[rxn_idx] = a
+                    collection.insert_one(data)
             """
             else:
                 # filter = 0
@@ -344,12 +360,12 @@ class Network(object):
         # Generate 3D geometries
         reactant_mol.gen3D(forcefield=self.forcefield, make3D=False)
         network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
-
+        """
         arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
         msg = arrange3D.arrangeIn3D()
         if msg != '':
             self.logger.info(msg)
-            
+        """
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reactant_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
@@ -382,6 +398,7 @@ class Network(object):
             self.makeisomerFile(add_bonds, break_bonds, **kwargs)
             self.finalize(start_time)
         else:
+            data = {}
             rxn_num = '{:05d}'.format(self.rxn_num)
             output_dir = util.makeOutputSubdirectory(subdir, rxn_num)
             kwargs['output_dir'] = output_dir

@@ -7,8 +7,6 @@ includes filtering reactions, generating 3D geometries, and running transition
 state searches.
 """
 
-from __future__ import print_function
-
 import logging
 import os
 import time
@@ -30,6 +28,7 @@ from imaginary import Imaginary
 from filter_rule import _filter
 import openbabel as ob
 import multiprocessing as mp
+
 ###############################################################################
 
 class ARD(object):

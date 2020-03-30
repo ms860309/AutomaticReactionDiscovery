@@ -8,6 +8,7 @@ if __name__ == '__main__':
     import os
     from os import path
     sys.path.append(path.join(path.dirname( path.dirname( path.abspath(__file__))),'ard'))
+    sys.path.append(path.join(path.dirname( path.dirname( path.abspath(__file__))),'database'))
     from main import ARD, readInput, readXYZ, add_bond
 
     # Set up parser for reading the input filename from the command line
