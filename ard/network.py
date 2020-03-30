@@ -44,7 +44,7 @@ class Network(object):
         self.generation = 1
         self.rxn_num = -1
         self.method = kwargs["dh_cutoff_method"]
-        self.client = Connector('mongodb+srv://jianyi:aa123@cluster0-wo5fn.gcp.mongodb.net/test?retryWrites=true&w=majority').client
+        self.client = Connector().client
         self.db = self.client['network']
         
 
@@ -348,6 +348,9 @@ class Network(object):
     def gen_geometry(self, reactant_mol, network_prod_mol, add_bonds, break_bonds, **kwargs):
         start_time = time.time()
         self.rxn_num += 1
+        #database
+        collect = self.db['molecules']
+        
         # These two lines are required so that new coordinates are
         # generated for each new product. Otherwise, Open Babel tries to
         # use the coordinates of the previous molecule if it is isomorphic
@@ -376,6 +379,7 @@ class Network(object):
         product = network_prod_mol.toNode()
         subdir = os.path.join(os.path.abspath(os.pardir), 'reactions')
         if self.rxn_num == 0:
+
             if os.path.exists(subdir):
                 shutil.rmtree(subdir)
             os.mkdir(subdir)
@@ -385,6 +389,9 @@ class Network(object):
             kwargs['name'] = rxn_num
             self.makeCalEnergyFile(reactant, **kwargs)
             self.makeDrawFile(reactant, filename = 'reactant.xyz', **kwargs)
+
+            collect.insert_one({'dir':rxn_num, 'path' : output_dir, "energy_status":"job_unrun"})
+
             self.rxn_num += 1
             rxn_num = '{:05d}'.format(self.rxn_num)
             output_dir = util.makeOutputSubdirectory(subdir, rxn_num)
@@ -396,6 +403,9 @@ class Network(object):
             self.makeDrawFile(reactant, filename = 'reactant.xyz', **kwargs)
             self.makeDrawFile(product, filename = 'product.xyz', **kwargs)
             self.makeisomerFile(add_bonds, break_bonds, **kwargs)
+
+            collect.insert_one({'dir':rxn_num, 'path' : output_dir, "energy_status":"job_unrun"})
+
             self.finalize(start_time)
         else:
             data = {}
@@ -409,6 +419,9 @@ class Network(object):
             self.makeDrawFile(reactant, 'reactant.xyz', **kwargs)
             self.makeDrawFile(product, 'product.xyz', **kwargs)
             self.makeisomerFile(add_bonds, break_bonds, **kwargs)
+
+            collect.insert_one({'dir':rxn_num, 'path' : output_dir, "energy_status":"job_unrun"})
+
             self.finalize(start_time)
 
 

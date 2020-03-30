@@ -28,8 +28,8 @@ H      0.71257466    1.22944107    0.89667091
 H      0.93198454   -0.49799326    0.64738918
 
 
-ARD terminated on Mon Mar 30 17:46:49 2020
-Total ARD run time: 0.3 s
+ARD terminated on Tue Mar 31 03:36:00 2020
+Total ARD run time: 0.2 s
 Product 2: [CH2].[OH].[CH].[H][H]
 C      1.91462866   -0.09295233    0.04769302
 C      1.84448042    0.69226960   -1.03065467
@@ -52,7 +52,7 @@ H      0.20914622    1.44613264   -1.08489445
 H      1.07526778   -0.57086944    0.96983412
 
 
-ARD terminated on Mon Mar 30 17:46:49 2020
+ARD terminated on Tue Mar 31 03:36:00 2020
 Total ARD run time: 0.1 s
 Generating all possible products...
 91 possible products generated
@@ -84,7 +84,7 @@ H      0.47620100    1.23979782    0.70267682
 H      0.69876280   -0.51169869    0.45010657
 
 
-ARD terminated on Mon Mar 30 17:46:53 2020
+ARD terminated on Tue Mar 31 03:36:03 2020
 Total ARD run time: 0.1 s
 Product 4: COC
 C      1.17473169    0.48772786    0.23685359
@@ -108,7 +108,7 @@ H      0.80665298    1.35023707    0.93712519
 H      0.83539076   -0.39503583    1.26428652
 
 
-ARD terminated on Mon Mar 30 17:46:53 2020
+ARD terminated on Tue Mar 31 03:36:03 2020
 Total ARD run time: 0.1 s
 Product 5: O.[CH3].[CH]
 C      1.17473169    0.48772786    0.23685359
@@ -132,7 +132,7 @@ H      0.98878020    1.33749185    0.99167176
 H      0.75502425   -0.41050874    0.72218213
 
 
-ARD terminated on Mon Mar 30 17:46:53 2020
+ARD terminated on Tue Mar 31 03:36:03 2020
 Total ARD run time: 0.1 s
 Generating all possible products...
 78 possible products generated
@@ -164,7 +164,7 @@ H      0.20914622    1.44613264   -1.08489445
 H      1.32461603   -0.65807692    1.10877285
 
 
-ARD terminated on Mon Mar 30 17:46:57 2020
+ARD terminated on Tue Mar 31 03:36:06 2020
 Total ARD run time: 0.1 s
 Product 7: [CH2][O].[CH2].[H].[H]
 C      1.45171445   -0.05364670    0.09341551
@@ -188,7 +188,7 @@ H      0.20914622    1.44613264   -1.08489445
 H      0.76954822   -1.02156251    0.36640861
 
 
-ARD terminated on Mon Mar 30 17:46:58 2020
+ARD terminated on Tue Mar 31 03:36:06 2020
 Total ARD run time: 0.1 s
 Generating all possible products...
 75 possible products generated
