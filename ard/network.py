@@ -390,7 +390,7 @@ class Network(object):
             self.makeCalEnergyFile(reactant, **kwargs)
             self.makeDrawFile(reactant, filename = 'reactant.xyz', **kwargs)
 
-            collect.insert_one({'dir':rxn_num, 'path' : output_dir, "energy_status":"job_unrun"})
+            collect.insert_one({'dir':rxn_num, 'path' : output_dir, "energy_status":"job_unrun", "ssm_status":"job_unrun"})
 
             self.rxn_num += 1
             rxn_num = '{:05d}'.format(self.rxn_num)
@@ -404,7 +404,7 @@ class Network(object):
             self.makeDrawFile(product, filename = 'product.xyz', **kwargs)
             self.makeisomerFile(add_bonds, break_bonds, **kwargs)
 
-            collect.insert_one({'dir':rxn_num, 'path' : output_dir, "energy_status":"job_unrun"})
+            collect.insert_one({'dir':rxn_num, 'path' : output_dir, "energy_status":"job_unrun", "ssm_status":"job_unrun"})
 
             self.finalize(start_time)
         else:
@@ -420,7 +420,7 @@ class Network(object):
             self.makeDrawFile(product, 'product.xyz', **kwargs)
             self.makeisomerFile(add_bonds, break_bonds, **kwargs)
 
-            collect.insert_one({'dir':rxn_num, 'path' : output_dir, "energy_status":"job_unrun"})
+            collect.insert_one({'dir':rxn_num, 'path' : output_dir, "energy_status":"job_unrun", "ssm_status":"job_unrun"})
 
             self.finalize(start_time)
 
