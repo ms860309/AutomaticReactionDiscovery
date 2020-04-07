@@ -113,8 +113,6 @@ def check_energy_jobs():
 
 			collect.update_one(target, {"$set": update_field}, True)
 
-check_energy_jobs()
-
 def select_ssm_target():
 	"""
 	This method is to inform job checker which targets 
@@ -217,4 +215,7 @@ def generate_ssm_product_xyz(path):
 	parent_ssm_product_path  = path.join(path.abspath(os.pardir), 'ssm_product.xyz')
 	with open(parent_ssm_product_path,'w') as q:
 		q.write('{}\n{}'.format(lines[idx-1], ''.join(lines[idx+1:])))
+
+check_energy_jobs()
+check_ssm_jobs()
 	
