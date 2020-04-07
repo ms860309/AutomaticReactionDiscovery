@@ -1,4 +1,4 @@
-from connect import Connector
+from connect import db
 import subprocess
 import os
 from os import path
@@ -13,8 +13,6 @@ Submmit energy calculation job
 3. update status "job_launched"
 """
 def select_calE_target():
-    remote_client = Connector().client
-    db = remote_client['network']
     collect = db['molecules']
     reg_query = {"energy_status":"job_unrun"}
     targets = list(collect.find(reg_query))
@@ -33,14 +31,11 @@ def launch_energy_jobs():
         if os.path.exists(target):
             os.chdir(target)
         subfile = create_energy_sub_file(target)
-        try:
-            cmd = 'qsub {}'.format(subfile)
-            process = subprocess.Popen([cmd],
-								stdout=subprocess.PIPE,
-								stderr=subprocess.PIPE, shell = True)
-            stdout, stderr = process.communicate()
-        except:
-            continue
+        cmd = 'qsub {}'.format(subfile)
+        process = subprocess.Popen([cmd],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, shell = True)
+        stdout, stderr = process.communicate()
         # get job id from stdout, e.g., "106849.h81"
         job_id = stdout.decode()
         # update status job_launched
@@ -62,8 +57,6 @@ def create_energy_sub_file(path, ncpus = 1, mpiprocs = 1):
     return subfile
     
 def update_energy_status(target, job_id):
-    remote_client = Connector().client
-    db = remote_client['network']
     collect = db['molecules']
     reg_query = {"path":target}
     update_field = {"energy_status":"job_launched", "energy_jobid":job_id}
@@ -77,8 +70,6 @@ Submmit SSM calculation job
 """
     
 def select_ssm_target():
-    remote_client = Connector().client
-    db = remote_client['network']
     collect = db['molecules']
     reg_query = {"ssm_status":"job_unrun"}
     targets = list(collect.find(reg_query))
@@ -98,14 +89,11 @@ def launch_ssm_jobs():
             os.chdir(target)
             
         subfile = create_ssm_sub_file(target)
-        try:
-            cmd = 'qsub {}'.format(subfile)
-            process = subprocess.Popen([cmd],
-								stdout=subprocess.PIPE,
-								stderr=subprocess.PIPE, shell = True)
-            stdout, stderr = process.communicate()
-        except:
-            continue
+        cmd = 'qsub {}'.format(subfile)
+        process = subprocess.Popen([cmd],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, shell = True)
+        stdout, stderr = process.communicate()
         # get job id from stdout, e.g., "106849.h81"
         job_id = stdout.decode()
         # update status job_launched
@@ -131,8 +119,6 @@ def create_ssm_sub_file(path, ncpus = 1, mpiprocs = 1):
     return subfile
     
 def update_ssm_status(target, job_id):
-    remote_client = Connector().client
-    db = remote_client['network']
     collect = db['molecules']
     reg_query = {"path":target}
     update_field = {"ssm_status":"job_launched", "ssm_jobid":job_id}

@@ -17,7 +17,7 @@
 #		RUNNING: running: job_running
 #		else:   still job_launched 
 
-from connect import Connector
+from connect import db
 import subprocess
 import os
 from os import path
@@ -30,8 +30,6 @@ def select_energy_target():
 	1. status is job_launched or job_running
 	Returns a list of targe
 	"""
-    remote_client = Connector().client
-    db = remote_client['network']
     collect = db['molecules']
 	reg_query = {"energy_status":
 				{ "$in": 
@@ -69,7 +67,7 @@ def check_energy_status(job_id):
     
 def check_energy_content_status(path):
 
-    energy_path = os.path.join(path, "energy.out")
+    energy_path = path.join(path, "energy.out")
     if not path.exists(energy_path):
         return "job_aborted"
     else:
@@ -92,8 +90,6 @@ def check_energy_jobs():
 	# 1. select jobs to check
 	targets = select_energy_target()
  
-    remote_client = Connector().client
-    db = remote_client['network']
     collect = db['molecules']
     
 	# 2. check the job slurm-status
@@ -118,3 +114,107 @@ def check_energy_jobs():
 			collect.update_one(target, {"$set": update_field}, True)
 
 check_energy_jobs()
+
+def select_ssm_target():
+	"""
+	This method is to inform job checker which targets 
+	to check, which need meet one requirement:
+	1. status is job_launched or job_running
+	Returns a list of targe
+	"""
+    collect = db['molecules']
+	reg_query = {"ssm_status":
+				{ "$in": 
+					["job_launched", "job_running"] 
+				}
+			}
+    targets = list(collect.find(reg_query))
+
+    return targets
+
+def check_ssm_status(job_id):
+	"""
+	This method checks slurm status of a job given job_id
+	Returns off_queue or job_launched or job_running
+	"""
+
+	commands = ['qstat', '-f', job_id]
+	process = subprocess.Popen(commands,
+								stdout=subprocess.PIPE,
+								stderr=subprocess.PIPE)
+	stdout, stderr = process.communicate()
+
+	if "Unknown Job Id" in stderr.decode():
+		return "off_queue"
+
+	assert "JobId={0}".format(job_id) in stdout, 'PBS cannot show details for job_id {0}'.format(job_id)
+ 
+    # in pbs stdout is byte, so we need to decode it at first.
+    stdout = stdout.decode().strip().split()
+    idx = stdout.index('job_state')
+    if stdout[idx+2] == 'R':
+        return "job_running"
+    else:
+        return "job_launched"
+    
+def check_ssm_content_status(path):
+
+    ssm_path = path.join(path.join(path, 'SSM'), '0000_string.png')
+    if not path.exists(ssm_path):
+        return "job_fail"
+    else:
+		generate_ssm_product_xyz(path.join(path, 'SSM'))
+        return "job_success"
+
+def check_ssm_jobs():
+	"""
+	This method checks job with following steps:
+	1. select jobs to check
+	2. check the job pbs-status, e.g., qstat -f "job_id"
+	3. check job content
+	4s. update with new status
+	"""
+	# 1. select jobs to check
+	targets = select_ssm_target()
+ 
+    collect = db['molecules']
+    
+	# 2. check the job slurm-status
+	for target in targets:
+		job_id = target['ssm_jobid']
+		# 2. check the job slurm_status
+		new_status = check_ssm_status(job_id)
+		if new_status == "off_queue":
+			# 3. check job content
+			new_status = check_ssm_content_status(target['path'])
+		
+		# 4. check with original status which
+		# should be job_launched or job_running
+		# if any difference update status
+		orig_status = target['ssm_status']
+		if orig_status != new_status:
+			update_field = {
+					'ssm_status': new_status
+			}
+
+			collect.update_one(target, {"$set": update_field}, True)
+
+def generate_ssm_product_xyz(path):
+	opt_file = []
+	path_list=os.listdir(path)
+	path_list.sort()
+	for filename in path_list:
+		if filename.startswith('opt'):
+			opt_file.append(filename)
+	product_xyz = path.join(path,opt_file[-1])
+	with open(product_xyz, 'r') as f:
+    lines = f.readlines()
+    for i in reversed(lines):
+        a = i.split()
+        if len(a) == 1:
+            idx = lines.index(i)
+            break
+	parent_ssm_product_path  = path.join(path.abspath(os.pardir), 'ssm_product.xyz')
+	with open(parent_ssm_product_path,'w') as q:
+		q.write('{}\n{}'.format(lines[idx-1], ''.join(lines[idx+1:])))
+	
