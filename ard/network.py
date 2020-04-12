@@ -18,7 +18,6 @@ import copy
 import shutil
 #database
 from connect import db
-import pprint
 class Network(object):
 
     def __init__(self, reac_mol, forcefield, **kwargs):
@@ -131,8 +130,9 @@ class Network(object):
                 rxn_num = '{:05d}'.format(self.rxn_num)
                 self.reactions[rxn_idx] = ['00000', rxn_num]
                 data[rxn_idx] = ['00000', rxn_num]
+                data['for_ssm_check'] = rxn_num
                 collection.insert_one(data)
-            self.recurrently_gen(self.network_prod_mols, 0)
+                self.recurrently_gen(self.network_prod_mols, idx)
         else:
             for mol in prod_mols_filtered:
                 pre_products.append(mol)
@@ -163,6 +163,7 @@ class Network(object):
                     self.reactions[rxn_idx] = a
                     self.gen_geometry(mol_object, prod_mol, add_bonds[idx], break_bonds[idx])
                     data[rxn_idx] = a
+                    data['for_ssm_check'] = rxn_num
                     collection.insert_one(data)
                 for key, same_prod in enumerate(same):
                     data = {}
@@ -176,6 +177,7 @@ class Network(object):
                     self.reactions[rxn_idx] = a
                     self.rxn_num += 1
                     data[rxn_idx] = a
+                    data['for_ssm_check'] = rxn_num
                     collection.insert_one(data)
             """
             else:
@@ -200,12 +202,10 @@ class Network(object):
         For generate recyclely
         First gen geometry and then recurrently gen
         """
-        self.pre_product = []
-        for mol in prod_mols_filtered[num:]:
-            self.genNetwork(mol)    
-            self._count += 1
-            self.network_log.info("Finished {}/{} rounds at {} generations\n".format(self._count, self.first_num+self.tmp, self.generation))
-            self.checker(self.nround, self.first_num)
+        self.genNetwork(prod_mols_filtered[num])
+        self._count += 1
+        self.network_log.info("Finished {}/{} rounds at {} generations\n".format(self._count, self.first_num+self.tmp, self.generation))
+        self.checker(self.nround, self.first_num)
     
     def checker(self, count, check):
         if count == check:
@@ -214,7 +214,16 @@ class Network(object):
                 self.network_log.info("Here is the {} generation\n".format(self.generation))
                 self.network_log.info("There are {} rounds need to generate possible products at this generation\n".format(len(self.pre_product)))
                 self.tmp = len(self.pre_product)
-                self.recurrently_gen(self.network_prod_mols, len(self.network_prod_mols) - self.tmp) 
+                self.pre_product = []
+                # use database to check
+                collect = self.db['moleculues']
+                req = {'ssm_status':'job_success'}
+                targets = list(collect.find(req))
+                print(targets)
+                raise
+                for target in targets:
+                    number = int(target['dir'])
+                    self.recurrently_gen(self.network_prod_mols, number)
             elif len(self.pre_product) == 0:
                 self.network_log.info("Network is finished.\nself.reactions = {}".format(self.reactions))
         elif count == check + self.tmp:
@@ -223,7 +232,14 @@ class Network(object):
                 self.network_log.info("Here is the {} generation\n".format(self.generation))
                 self.network_log.info("There are {} rounds need to generate possible products at this generation\n".format(len(self.pre_product)))
                 self.tmp += len(self.pre_product)
-                self.recurrently_gen(self.network_prod_mols, len(self.network_prod_mols) - len(self.pre_product)) 
+                self.pre_product = []
+                # use database to check
+                collect = self.db['moleculues']
+                req = {'ssm_status':'job_success'}
+                targets = list(collect.find(req))
+                for target in targets:
+                    number = int(target['dir'])
+                    self.recurrently_gen(self.network_prod_mols, number)
             elif len(self.pre_product) == 0:
                 self.network_log.info("Network is finished.\nself.reactions = {}".format(self.reactions))
 

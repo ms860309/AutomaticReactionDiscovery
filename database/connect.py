@@ -17,7 +17,3 @@ class Connector(object):
 
 client = Connector()
 db = getattr(Connector(), 'db')
-collect = db['molecules']
-reg_query = {"energy_status":"job_unrun"}
-targets = list(collect.find(reg_query))
-print(targets)

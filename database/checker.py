@@ -196,6 +196,13 @@ def check_ssm_jobs():
 			}
 
 			collect.update_one(target, {"$set": update_field}, True)
+   			# update reactions collection information
+			collect1 = db['reactions']
+   			dir_name = target['dir']
+			reg_query = {"for_ssm_check":dir_name}
+			tt = collect.find_one(reg_query)
+			collect1.update_one(tt, {"$set": update_field}, True)
+			
 
 def generate_ssm_product_xyz(path):
 	opt_file = []
