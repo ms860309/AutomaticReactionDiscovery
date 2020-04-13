@@ -165,7 +165,6 @@ class Generate(object):
             [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
              for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
         ))
-        
         """
         for i in reactant_bond:
             np_1 = sorted(np.array([i[0], i[1]]))
