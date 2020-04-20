@@ -348,18 +348,14 @@ class Network(object):
         network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
         
         
-        """
-        reactant_bonds = tuple(sorted(
-            [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
-             for bond in pybel.ob.OBMolBondIter(network_prod_mol.OBMol)]
-        ))
-        self.logger.info(reactant_bonds)
-        self.logger.info('*********')
-        """
-        arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
-        msg = arrange3D.arrangeIn3D()
-        if msg != '':
-            self.logger.info(msg)
+        reactant_mol_copy, network_prod_mol_copy= reactant_mol.copy(), network_prod_mol.copy()
+        try:
+            arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
+            msg = arrange3D.arrangeIn3D()
+            if msg != '':
+                self.logger.info(msg)
+        except:
+            reactant_mol, network_prod_mol = reactant_mol_copy, network_prod_mol_copy
         
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reactant_mol.gen3D(make3D=False)
