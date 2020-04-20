@@ -394,7 +394,6 @@ class Network(object):
             self.finalize(start_time)
         else:
             rxn_num = '{:05d}'.format(self.rxn_num)
-            print(self.rxn_num)
             output_dir = util.makeOutputSubdirectory(subdir, rxn_num)
             kwargs['output_dir'] = output_dir
             kwargs['name'] = rxn_num
