@@ -12,7 +12,7 @@ echo "Current job ID : $PBS_JOBID"
 echo "=========================================================="
 
 source ~/.bashrc
-conda activate rmg_env
+conda activate rmg3
 
 python ./ard.py input.txt
 conda deactivate

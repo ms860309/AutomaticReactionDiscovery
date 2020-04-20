@@ -50,7 +50,7 @@ class Network(object):
         """
         Execute the automatic reaction discovery procedure.
         """
-        self.logger.info('Generating all possible products...')
+        #self.logger.info('Generating all possible products...')
         #Add all reactant to a list for pgen filter isomorphic
         if mol_object not in self.reactant_list:
             self.reactant_list.append(mol_object)
@@ -60,7 +60,7 @@ class Network(object):
         prod_mols = gen.prod_mols
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
-        self.logger.info('{} possible products generated\n'.format(len(prod_mols)))
+        #self.logger.info('{} possible products generated\n'.format(len(prod_mols)))
 
         # Load thermo database and choose which libraries to search
         thermo_db = ThermoDatabase()
@@ -71,43 +71,43 @@ class Network(object):
         if self.method == "mopac":
             H298_reactant = mopac(mol_object, self.forcefield)
             H298_reac = H298_reactant.mopac_get_H298(mol_object)
-            self.logger.info('Filtering reactions...')
+            #self.logger.info('Filtering reactions...')
             prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol, **kwargs)]
         else:
-            H298_reac = mol_object.getH298(thermo_db)
-            self.logger.info('Filtering reactions...')
+            H298_reac = self.reactant_list[0].getH298(thermo_db)
+            #self.logger.info('Filtering reactions...')
             prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
 
-        self.logger.info('{} products remaining\n'.format(len(prod_mols_filtered)))
+        #self.logger.info('{} products remaining\n'.format(len(prod_mols_filtered)))
         #check product isomorphic and filter them
         if self.nbreak == 3 and self.nform == 3:
             gen_2.generateProducts(nbreak=2, nform=2)
             prod_mols_2 = gen_2.prod_mols
-            self.logger.info('{} possible products generated with nbreak = 2 and nbreak = 2\n'.format(len(prod_mols_2)))
-            self.logger.info('Filtering reactions...')
+            #self.logger.info('{} possible products generated with nbreak = 2 and nbreak = 2\n'.format(len(prod_mols_2)))
+            #self.logger.info('Filtering reactions...')
             #prod_mols_filtered_2 after filter by delta H
             if self.method == "mopac":
                 prod_mols_filtered_2 = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol, **kwargs)]
             else:
                 prod_mols_filtered_2 = [mol for mol in prod_mols_2 if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
-            self.logger.info('{} products remaining with nbreak = 2 and nbreak = 2 after filter by delta H\n'.format(len(prod_mols_filtered_2)))
+            #self.logger.info('{} products remaining with nbreak = 2 and nbreak = 2 after filter by delta H\n'.format(len(prod_mols_filtered_2)))
             #prod_mols_filtered_2 after filter by isomorphic
 
             #prod_mols_filtered_2 = self.filterIsomorphic_itself(prod_mols_filtered_2, prod_mols_filtered_2)
             prod_mols_filtered_2 = self.unique_key_filterIsomorphic_itself(prod_mols_filtered_2, prod_mols_filtered_2)
-            self.logger.info('{} products remaining with nbreak = 2 and nbreak = 2 after isomorphic screening\n'.format(len(prod_mols_filtered_2)))
+            #self.logger.info('{} products remaining with nbreak = 2 and nbreak = 2 after isomorphic screening\n'.format(len(prod_mols_filtered_2)))
             #prod_mols_filtered = self.filterIsomorphic(prod_mols_filtered, prod_mols_filtered_2)#
             prod_mols_filtered = self.unique_key_filterIsomorphic(prod_mols_filtered, prod_mols_filtered_2)
-            self.logger.info('{} products remaining after isomorphic screening by nbreak=2 and nform=2\n'.format(len(prod_mols_filtered)))
+            #self.logger.info('{} products remaining after isomorphic screening by nbreak=2 and nform=2\n'.format(len(prod_mols_filtered)))
             #prod_mols_filtered = self.filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
             prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
-            self.logger.info('{} products remaining with nbreak = 3 and nbreak = 3 after isomorphic screening\n'.format(len(prod_mols_filtered)))
+            #self.logger.info('{} products remaining with nbreak = 3 and nbreak = 3 after isomorphic screening\n'.format(len(prod_mols_filtered)))
             prod_mols_filtered += prod_mols_filtered_2 
-            self.logger.info('{} total products remaining(break=2, form=2 + break=3, form=3)\n'.format(len(prod_mols_filtered)))
+            #self.logger.info('{} total products remaining(break=2, form=2 + break=3, form=3)\n'.format(len(prod_mols_filtered)))
         else:
             #prod_mols_filtered = self.filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
             prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
-            self.logger.info('{} products remaining after isomorphic screening\n'.format(len(prod_mols_filtered)))
+            #self.logger.info('{} products remaining after isomorphic screening\n'.format(len(prod_mols_filtered)))
 
         # append product_mol to network
         pre_products = []
@@ -165,17 +165,17 @@ class Network(object):
                     data[rxn_idx] = a
                     data['for_ssm_check'] = rxn_num
                     collection.insert_one(data)
+                    
                 for key, same_prod in enumerate(same):
                     data = {}
                     idx = prod_mols.index(same_prod)
                     self.add_bonds.append(add_bonds[idx])
                     self.break_bonds.append(break_bonds[idx])     
                     a = copy.deepcopy(tmp_list)
-                    rxn_idx = 'reaction{}'.format(self.rxn_num)
+                    rxn_idx = 'reaction{}'.format(self.rxn_num+key)
                     rxn_num = '{:05d}'.format(same_key[key]+1)
                     a.append(rxn_num)
-                    self.reactions[rxn_idx] = a
-                    self.rxn_num += 1
+                    self.reactions[rxn_idx] = a 
                     data[rxn_idx] = a
                     data['for_ssm_check'] = rxn_num
                     collection.insert_one(data)
@@ -248,8 +248,8 @@ class Network(object):
         """
         Finalize the job.
         """
-        self.logger.info('\nARD terminated on ' + time.asctime())
-        self.logger.info('Total ARD run time: {:.1f} s'.format(time.time() - start_time))
+        #self.logger.info('\nARD terminated on ' + time.asctime())
+        #self.logger.info('Total ARD run time: {:.1f} s'.format(time.time() - start_time))
 
     def filterThreshold(self, H298_reac, prod_mol, thermo_db, **kwargs):
         """
@@ -379,14 +379,10 @@ class Network(object):
         reactant_mol.gen3D(forcefield=self.forcefield, make3D=False)
         network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
 
-        reactant_mol_copy, network_prod_mol_copy= reactant_mol.copy(), network_prod_mol.copy()
-        try:
-            arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
-            msg = arrange3D.arrangeIn3D()
-            if msg != '':
-                self.logger.info(msg)
-        except:
-            reactant_mol, network_prod_mol = reactant_mol_copy, network_prod_mol_copy
+        arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
+        msg = arrange3D.arrangeIn3D()
+        if msg != '':
+            self.logger.info(msg)
             
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reactant_mol.gen3D(make3D=False)
@@ -416,7 +412,7 @@ class Network(object):
             output_dir = util.makeOutputSubdirectory(subdir, rxn_num)
             kwargs['output_dir'] = output_dir
             kwargs['name'] = rxn_num
-            self.logger.info('Product {}: {}\n{}\n****\n{}\n'.format(self.rxn_num, product.toSMILES(), reactant, product))
+            #self.logger.info('Product {}: {}\n{}\n****\n{}\n'.format(self.rxn_num, product.toSMILES(), reactant, product))
             self.makeInputFile(reactant, product, **kwargs)
             self.makeCalEnergyFile(product, **kwargs)
             self.makeDrawFile(reactant, filename = 'reactant.xyz', **kwargs)
@@ -431,7 +427,7 @@ class Network(object):
             output_dir = util.makeOutputSubdirectory(subdir, rxn_num)
             kwargs['output_dir'] = output_dir
             kwargs['name'] = rxn_num
-            self.logger.info('Product {}: {}\n{}\n****\n{}\n'.format(self.rxn_num, product.toSMILES(), reactant, product))
+            #self.logger.info('Product {}: {}\n{}\n****\n{}\n'.format(self.rxn_num, product.toSMILES(), reactant, product))
             self.makeInputFile(reactant, product, **kwargs)
             self.makeCalEnergyFile(product, **kwargs)
             self.makeDrawFile(reactant, 'reactant.xyz', **kwargs)
@@ -500,12 +496,12 @@ class Network(object):
         """
         Output a log file header.
         """
-        self.logger.info('######################################################################')
-        self.logger.info('#################### AUTOMATIC REACTION DISCOVERY ####################')
-        self.logger.info('######################################################################')
-        self.logger.info('Reactant SMILES: ' + self.reac_mol)
-        self.logger.info('Maximum number of bonds to be broken: ' + str(self.nbreak))
-        self.logger.info('Maximum number of bonds to be formed: ' + str(self.nform))
-        self.logger.info('Heat of reaction cutoff: {:.1f} kcal/mol'.format(self.dh_cutoff))
-        self.logger.info('Force field for 3D structure generation: ' + self.forcefield)
-        self.logger.info('######################################################################\n')
+        #self.logger.info('######################################################################')
+        #self.logger.info('#################### AUTOMATIC REACTION DISCOVERY ####################')
+        #self.logger.info('######################################################################')
+        #self.logger.info('Reactant SMILES: ' + self.reac_mol)
+        #self.logger.info('Maximum number of bonds to be broken: ' + str(self.nbreak))
+        #self.logger.info('Maximum number of bonds to be formed: ' + str(self.nform))
+        #self.logger.info('Heat of reaction cutoff: {:.1f} kcal/mol'.format(self.dh_cutoff))
+        #self.logger.info('Force field for 3D structure generation: ' + self.forcefield)
+        #self.logger.info('######################################################################\n')

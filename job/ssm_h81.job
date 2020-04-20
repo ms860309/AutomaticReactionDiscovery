@@ -5,7 +5,7 @@
 cd /home/guest/guest94/jianyi/AutomaticReactionDiscovery/script
 
 source ~/.bashrc
-conda activate gsm_env
+conda activate rmg3
 source ~/.bashrc_qchem
 
 python go_gsm.py
