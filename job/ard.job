@@ -1,8 +1,7 @@
 #/usr/bin/bash
-#PBS -l select=1:ncpus=2:mpiprocs=2
+#PBS -l select=1:ncpus=1:mpiprocs=1
 
-cd /home/guest/guest94/jianyi/AutomaticReactionDiscovery
-
+cd /home/hpc/ypli/jianyi/AutomaticReactionDiscovery/script
 echo "=========================================================="
 echo "Starting on : $(date)"
 echo "Running on node : $(hostname)"
@@ -11,8 +10,8 @@ echo "Current job ID : $PBS_JOBID"
 #echo "ARRAY_ID: $PBS_ARRAYID"
 echo "=========================================================="
 
-source ~/.bashrc_qchem
+source ~/.bashrc
 conda activate rmg3
 
-python ./ard.py input.txt
+python ard.py input.txt
 conda deactivate
