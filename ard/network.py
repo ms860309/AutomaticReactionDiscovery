@@ -16,6 +16,7 @@ from pgen import Generate
 from mopac import mopac
 import copy
 import shutil
+import time
 #database
 from connect import db
 class Network(object):
@@ -210,40 +211,49 @@ class Network(object):
     def checker(self, count, check):
         if count == check:
             if len(self.pre_product) !=0:
-                self.generation += 1
-                self.network_log.info("Here is the {} generation\n".format(self.generation))
-                self.network_log.info("There are {} rounds need to generate possible products at this generation\n".format(len(self.pre_product)))
-                self.tmp = len(self.pre_product)
-                self.pre_product = []
-                # use database to check
-                collect = self.db['moleculues']
-                req = {'ssm_status':'job_success'}
-                targets = list(collect.find(req))
-                print(targets)
-                raise
-                for target in targets:
-                    number = int(target['dir'])
-                    self.recurrently_gen(self.network_prod_mols, number)
+                self.recurrently_checker(count, check)
             elif len(self.pre_product) == 0:
                 self.network_log.info("Network is finished.\nself.reactions = {}".format(self.reactions))
         elif count == check + self.tmp:
             if len(self.pre_product) !=0:
-                self.generation += 1
-                self.network_log.info("Here is the {} generation\n".format(self.generation))
-                self.network_log.info("There are {} rounds need to generate possible products at this generation\n".format(len(self.pre_product)))
-                self.tmp += len(self.pre_product)
-                self.pre_product = []
-                # use database to check
-                collect = self.db['moleculues']
-                req = {'ssm_status':'job_success'}
-                targets = list(collect.find(req))
-                for target in targets:
-                    number = int(target['dir'])
-                    self.recurrently_gen(self.network_prod_mols, number)
+                self.recurrently_checker(count, check)
             elif len(self.pre_product) == 0:
                 self.network_log.info("Network is finished.\nself.reactions = {}".format(self.reactions))
 
-
+    def recurrently_checker(self, count, check):
+        """
+        Use database to check number,
+        if success + fail == target number:
+            recurrently_gen
+        else:
+            wait 5min (300s)
+            back to checker
+        """
+        collect = self.db['moleculues']
+        query = {"ssm_status":
+            {"$in":
+                ["job_success", "job_fail"]
+            }
+        }
+        req = {'ssm_status':'job_success',job_fail}
+        targets = list(collect.find(query))
+        
+        if len(targets) == count:
+            self.generation += 1
+            self.network_log.info("Here is the {} generation\n".format(self.generation))
+            self.network_log.info("There are {} rounds need to generate possible products at this generation\n".format(len(self.pre_product)))
+            self.tmp = len(self.pre_product)
+            self.pre_product = []
+            req = {'ssm_status':'job_success'}
+            targets = list(collect.find(query))
+            for target in targets:
+                number = int(target['dir'])
+                self.recurrently_gen(self.network_prod_mols, number)
+        else:
+            time.sleep(300)
+            self.checker(self.nround, self.first_num)
+        
+        
     def finalize(self, start_time):
         """
         Finalize the job.
