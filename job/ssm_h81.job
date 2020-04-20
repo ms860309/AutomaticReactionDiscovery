@@ -2,10 +2,10 @@
 
 #PBS -l select=1:ncpus=2:mpiprocs=2
 
-cd /home/guest/guest94/jianyi/AutomaticReactionDiscovery/script
+cd /home/hpc/ypli/jianyi/AutomaticReactionDiscovery/script
 
 source ~/.bashrc
-conda activate gsm_env
+conda activate rmg3
 source ~/.bashrc_qchem
 
 python go_gsm.py

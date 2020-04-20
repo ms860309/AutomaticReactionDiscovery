@@ -3,7 +3,7 @@ xyz               1                 # If input reactant format is xyz
 imaginarybond     0                 # Experimental function of imaginary bond
 nbreak            2                 # Maximum number of bonds to be broken
 nform             2                 # Maximum number of bonds to be formed
-dH_cutoff         20                # Heat of reaction cutoff
+dH_cutoff         10                # Heat of reaction cutoff
 nsteps            6                 # Number of gradient evaluations
 nnode             20                # Desired number of nodes
 lsf               0.7               # Line search factor

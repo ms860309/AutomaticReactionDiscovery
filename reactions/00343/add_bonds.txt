@@ -1,4 +1,0 @@
-ADD 1 5
-ADD 2 6
-BREAK 6 5
-BREAK 2 1
