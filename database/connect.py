@@ -7,6 +7,7 @@ class Connector(object):
         #self.host = host
         #self.port = port
         self.server = 'mongodb+srv://jianyi:aa123@cluster0-wo5fn.gcp.mongodb.net/test?retryWrites=true&w=majority'
+        #self.server = 'mongodb://localhost:27017/'
         #self.mongo_db = mongo_db
         self.client = self.connect()
         self.db = self.client['network']

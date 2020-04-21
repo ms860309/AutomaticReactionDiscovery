@@ -235,9 +235,7 @@ class Network(object):
                 ["job_success", "job_fail"]
             }
         }
-        req = {'ssm_status':'job_success',job_fail}
         targets = list(collect.find(query))
-        
         if len(targets) == count:
             self.generation += 1
             self.network_log.info("Here is the {} generation\n".format(self.generation))
