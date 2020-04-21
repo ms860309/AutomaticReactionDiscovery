@@ -44,7 +44,6 @@ class Network(object):
         self.generation = 1
         self.rxn_num = -1
         self.method = kwargs["dh_cutoff_method"]
-        self.db = db['network']
         
 
     def genNetwork(self, mol_object, _round = 1, **kwargs):
@@ -119,7 +118,7 @@ class Network(object):
             self.network_log.info("There are {} rounds need to generate possible products at next generation\n".format(len(prod_mols_filtered)))
             self.first_num = len(prod_mols_filtered)
             self.network_log.info("starting generate geometry\n")
-            collection = self.db['reactions']
+            collection = db['reactions']
             for idx, mol in enumerate(prod_mols_filtered):
                 data = {}
                 index = prod_mols.index(mol)
@@ -133,6 +132,7 @@ class Network(object):
                 data[rxn_idx] = ['00000', rxn_num]
                 data['for_ssm_check'] = rxn_num
                 collection.insert_one(data)
+            for idx, mol in enumerate(prod_mols_filtered):
                 self.recurrently_gen(self.network_prod_mols, idx)
         else:
             for mol in prod_mols_filtered:
@@ -147,7 +147,7 @@ class Network(object):
             self.network_log.info("Add {} new products into network\n".format(det))
             self.network_log.info("Now network have {} products\n".format(len(self.network_prod_mols)))
             if det != 0:
-                collection = self.db['reactions']
+                collection = db['reactions']
                 self.network_log.info("starting generate geometry\n")
                 index = self.network_prod_mols.index(mol_object)
                 rxn_idx = 'reaction{}'.format(index)
@@ -229,7 +229,7 @@ class Network(object):
             wait 5min (300s)
             back to checker
         """
-        collect = self.db['moleculues']
+        collect = db['moleculues']
         query = {"ssm_status":
             {"$in":
                 ["job_success", "job_fail"]
@@ -372,7 +372,7 @@ class Network(object):
         start_time = time.time()
         self.rxn_num += 1
         #database
-        collect = self.db['molecules']
+        collect = db['molecules']
         
         # These two lines are required so that new coordinates are
         # generated for each new product. Otherwise, Open Babel tries to
