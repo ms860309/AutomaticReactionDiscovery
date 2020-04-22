@@ -2,6 +2,7 @@ from connect import db
 import subprocess
 import os
 from os import path
+import shutil
 import sys
 sys.path.append(path.join(path.dirname( path.dirname( path.abspath(__file__))),'script'))
 # gsm is in script dir for launch gsm
@@ -30,6 +31,8 @@ def launch_energy_jobs():
     for target in targets:
         Energy_dir_path = path.join(target, 'Energy')
         if os.path.exists(Energy_dir_path):
+            shutil.rmtree(Energy_dir_path)
+            os.mkdir(Energy_dir_path)
             os.chdir(Energy_dir_path)
         else:
             os.mkdir(Energy_dir_path)
@@ -43,7 +46,7 @@ def launch_energy_jobs():
                             stderr=subprocess.PIPE, shell = True)
         stdout, stderr = process.communicate()
         # get job id from stdout, e.g., "106849.h81"
-        job_id = stdout.decode()
+        job_id = stdout.decode().replace("\n", "")
         # update status job_launched
         update_energy_status(target, job_id)
         
@@ -92,6 +95,8 @@ def launch_ssm_jobs():
     for target in targets:
         SSM_dir_path = path.join(target, 'SSM')
         if os.path.exists(SSM_dir_path):
+            shutil.rmtree(SSM_dir_path)
+            os.mkdir(SSM_dir_path)
             os.chdir(SSM_dir_path)
         else:
             os.mkdir(SSM_dir_path)
@@ -104,7 +109,7 @@ def launch_ssm_jobs():
                             stderr=subprocess.PIPE, shell = True)
         stdout, stderr = process.communicate()
         # get job id from stdout, e.g., "106849.h81"
-        job_id = stdout.decode()
+        job_id = stdout.decode().replace("\n", "")
         # update status job_launched
         update_ssm_status(target, job_id)
         
@@ -112,18 +117,16 @@ def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 1, mpiprocs = 1):
     subfile = path.join(SSM_dir_path, 'calculate_ssm.job')
     xyz_file = path.join(dir_path, 'reactant.xyz')
     isomers = path.join(dir_path, 'add_bonds.txt')
-    lot_inp_file = path.join(path.join(path.dirname( path.dirname( path.abspath(__file__))),'submmit_required'), 'qstart')
-    
+    lot_inp_file = path.join(path.join(os.path.abspath(os.path.join(os.getcwd(), '../../..')), 'submmit_required'), 'qstart')
+
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}'.format(ncpus, mpiprocs)
     target_path = 'cd {}'.format(SSM_dir_path)
-    nes1 = nes1 = 'source ~/.bashrc\nconda activate rmg3'
-    nes2 = 'export QCSCRATCH=/tmp/ypli/$PBS_JOBID'
-    nes3 = 'mkdir -p $QCSCRATCH'
-    nes4 = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -lot_inp_file {}'.format(xyz_file, isomers, lot_inp_file)
-    nes5 = 'rm -r $QCSCRATCH'
+    nes1 = 'source ~/.bashrc_qchem'
+    nes2 = 'conda activate rmg3'
+    nes3 = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -lot_inp_file {} >status.log'.format(xyz_file, isomers, lot_inp_file)
     with open(subfile, 'w') as f:
-        f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, nes2, nes3, nes4, nes5))
+        f.write('{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, nes2, nes3))
     return subfile
     
 def update_ssm_status(target, job_id):
