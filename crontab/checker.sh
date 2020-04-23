@@ -1,3 +1,4 @@
+#/usr/bin/bash
 echo $(date +%Y-%m-%d:%H:%M:%S)
 source ~/.bashrc
 conda activate rmg3
