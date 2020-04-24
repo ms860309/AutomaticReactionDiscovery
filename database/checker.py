@@ -56,8 +56,6 @@ def check_energy_status(job_id):
     if "Unknown Job Id" in stderr.decode():
         return "off_queue"
 
-    assert "JobId={0}".format(job_id) in stdout, 'PBS cannot show details for job_id {0}'.format(job_id)
-
     # in pbs stdout is byte, so we need to decode it at first.
     stdout = stdout.decode().strip().split()
     idx = stdout.index('job_state')
@@ -133,7 +131,6 @@ def check_ssm_status(job_id):
     This method checks slurm status of a job given job_id
     Returns off_queue or job_launched or job_running
     """
-	job_id = stdout.decode().replace("\n", "")
     commands = ['qstat', '-f', job_id]
     process = subprocess.Popen(commands,
                                         stdout=subprocess.PIPE,
@@ -152,13 +149,13 @@ def check_ssm_status(job_id):
     else:
         return "job_launched"
     
-def check_ssm_content_status(path):
+def check_ssm_content_status(target_path):
 
-    ssm_path = path.join(path.join(path, 'SSM'), '0000_string.png')
+    ssm_path = path.join(path.join(target_path, 'SSM'), '0000_string.png')
     if not path.exists(ssm_path):
         return "job_fail"
     else:
-        generate_ssm_product_xyz(path.join(path, 'SSM'))
+        generate_ssm_product_xyz(path.join(target_path, 'SSM'))
         return "job_success"
 
 def check_ssm_jobs():
@@ -197,18 +194,18 @@ def check_ssm_jobs():
             collect1 = db['reactions']
             dir_name = target['dir']
             reg_query = {"for_ssm_check":dir_name}
-            tt = collect.find_one(reg_query)
+            tt = collect1.find_one(reg_query)
             collect1.update_one(tt, {"$set": update_field}, True)
 	
 
-def generate_ssm_product_xyz(path):
+def generate_ssm_product_xyz(target_path):
     opt_file = []
-    path_list=os.listdir(path)
+    path_list=os.listdir(target_path)
     path_list.sort()
     for filename in path_list:
         if filename.startswith('opt'):
             opt_file.append(filename)
-    product_xyz = path.join(path, opt_file[-1])
+    product_xyz = path.join(target_path, opt_file[-1])
     with open(product_xyz, 'r') as f:
         lines = f.readlines()
         for i in reversed(lines):
@@ -216,7 +213,7 @@ def generate_ssm_product_xyz(path):
             if len(a) == 1:
                 idx = lines.index(i)
                 break
-    parent_ssm_product_path  = path.join(path.abspath(os.pardir), 'ssm_product.xyz')
+    parent_ssm_product_path  = path.join(path.abspath(os.path.join(target_path, '../')), 'ssm_product.xyz')
     with open(parent_ssm_product_path,'w') as q:
         q.write('{}\n{}'.format(lines[idx-1], ''.join(lines[idx+1:])))
 

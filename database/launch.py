@@ -124,9 +124,11 @@ def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 1, mpiprocs = 1):
     target_path = 'cd {}'.format(SSM_dir_path)
     nes1 = 'source ~/.bashrc_qchem'
     nes2 = 'conda activate rmg3'
-    nes3 = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -lot_inp_file {} >status.log'.format(xyz_file, isomers, lot_inp_file)
+    scratch = 'export QCSCRATCH=/tmp/ypli/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
+    command = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -lot_inp_file {} >status.log'.format(xyz_file, isomers, lot_inp_file)
+    clean_scratch = 'rm -r $QCSCRATCH'
     with open(subfile, 'w') as f:
-        f.write('{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, nes2, nes3))
+        f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, nes2, scratch, command, clean_scratch))
     return subfile
     
 def update_ssm_status(target, job_id):
