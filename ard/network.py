@@ -132,8 +132,8 @@ class Network(object):
                 data[rxn_idx] = ['00000', rxn_num]
                 data['for_ssm_check'] = rxn_num
                 collection.insert_one(data)
-            for idx, mol in enumerate(prod_mols_filtered):
-                self.recurrently_gen(self.network_prod_mols, idx)
+                
+            self.first_generation(self.network_prod_mols)
         else:
             for mol in prod_mols_filtered:
                 pre_products.append(mol)
@@ -250,7 +250,24 @@ class Network(object):
         else:
             time.sleep(300)
             self.checker(self.nround, self.first_num)
-        
+    
+    def first_generation(self, products):
+        collect = db['moleculues']
+        query = {"ssm_status":
+            {"$in":
+                ["job_success", "job_fail"]
+            }
+        }
+        targets = list(collect.find(query))
+        if len(targets) == len(products):
+            req = {'ssm_status':'job_success'}
+            targets = list(collect.find(query))
+            for target in targets:
+                number = int(target['dir'])
+                self.recurrently_gen(self.network_prod_mols, number)
+        else:
+            time.sleep(300)
+            self.first_generation(products)
         
     def finalize(self, start_time):
         """
