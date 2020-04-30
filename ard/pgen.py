@@ -38,14 +38,11 @@ class Generate(object):
           (beginAtomIdx, endAtomIdx, bondOrder)
     """
 
-    def __init__(self, reac_mol, total_reactant, add_bond=None):
+    def __init__(self, reac_mol, total_reactant):
         self.reac_mol = reac_mol
         self.reactant_list = total_reactant
         self.reactant_inchikey = [i.toRMGMolecule().to_inchi_key() for i in self.reactant_list]
-        #self.reac_smi = None
         self.atoms = None
-        if add_bond != None:
-            self.add_bond = self.string_to_list(add_bond)
         self.prod_mols = []
         self.add_bonds = []
         self.break_bonds = []
@@ -59,24 +56,6 @@ class Generate(object):
         #self.reac_smi = self.reac_mol.write('can').strip()
         self.atoms = tuple(atom.atomicnum for atom in self.reac_mol)
 
-    def string_to_list(self, add_bond):
-
-        save = ()
-        container = []
-        for index, i in enumerate(add_bond):
-            try:
-                b = int(i)
-                save += (b,) 
-            except:
-                if index == len(add_bond)-1:
-                    container.append(save)
-                    
-                if i == ' ':
-                    container.append(save)
-                    save = ()
-                else:
-                    continue
-        return container
 
     def DoU(self, products_bonds):
         """
@@ -165,22 +144,6 @@ class Generate(object):
             [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
              for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
         ))
-        """
-        for i in reactant_bond:
-            np_1 = sorted(np.array([i[0], i[1]]))
-            np_2 = np.array([i[2]])
-            bond = np.concatenate((np_1, np_2), axis=0).tolist()
-            reactant_bonds.append(tuple(bond))
-        
-        reactant_bonds = tuple(sorted(reactant_bonds))
-        #add user given bonds to reactant_bonds 
-        try:
-            for i in self.add_bond:
-                if i not in reactant_bonds:
-                    reactant_bonds += i,
-        except:
-            pass
-        """
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]
         
@@ -206,12 +169,6 @@ class Generate(object):
                     bonds_form_all
                 )
 
-        # Convert all products to Molecule objects and append to list of product molecules
-        for i in products_bonds:
-            if len(i)+2 < len(reactant_bonds):
-                products_bonds = list(products_bonds)
-                products_bonds.remove(i)
-                products_bonds = tuple(products_bonds)
             
         if products_bonds:
             #Filter the products_bonds which doesn't follow DoU rule
@@ -253,10 +210,7 @@ class Generate(object):
                                     
                     self.add_bonds.append(form_bonds)
                     self.break_bonds.append(break_bonds)
-                """
-                if not prod_rmg_mol.isIsomorphic(reac_rmg_mol):
-                    self.prod_mols.append(mol)
-                """
+
 
     def _generateProductsHelper(self, nbreak, nform, products, bonds, valences, bonds_form_all, bonds_broken=None):
         """
