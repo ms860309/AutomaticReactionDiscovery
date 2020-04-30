@@ -7,6 +7,8 @@ includes filtering reactions, generating 3D geometries, and running transition
 state searches.
 """
 
+from __future__ import print_function
+
 import logging
 import os
 import time
@@ -28,7 +30,6 @@ from imaginary import Imaginary
 from filter_rule import _filter
 import openbabel as ob
 import multiprocessing as mp
-
 ###############################################################################
 
 class ARD(object):
@@ -37,7 +38,6 @@ class ARD(object):
     thermo of reactant and products, generates force field 3D geometries, and
     runs transition state searches.
     The attributes are:
-
     =============== ======================== ==================================
     Attribute       Type                     Description
     =============== ======================== ==================================
@@ -52,7 +52,6 @@ class ARD(object):
     `output_dir`    ``str``                  The path to the output directory
     `logger`        :class:`logging.Logger`  The main logger
     =============== ======================== ==================================
-
     """
 
     def __init__(self, reac_smi, imaginarybond=0, nbreak=3, nform=3, dh_cutoff=20.0, theory_low=None,
@@ -71,181 +70,14 @@ class ARD(object):
         log_level = logging.INFO
         self.logger = util.initializeLog(log_level, os.path.join(self.output_dir, 'ARD.log'), logname='main')
         self.reactant_list = []
-        try:
-            self.add_bond = kwargs['add_bonds']
-        except:
-            pass
-    def initialize(self):
-        """
-        Initialize the ARD job. Return the :class:`gen3D.Molecule` object for
-        the reactant.
-        """
-        self.logger.info('\nARD initiated on ' + time.asctime() + '\n')
-        reac_mol = self.generateReactant3D()
-        self.reac_smi = reac_mol.write('can').strip()
-        self.logHeader()
-        return reac_mol
-
-    def generateReactant3D(self):
-        """
-        Convert the reactant SMILES to a :class:`gen3D.Molecule` object and
-        generate a 3D geometry. Return the object and store the corresponding
-        :class:`node.Node` object in `self.reactant`.
-        """
-        reac_mol = gen3D.readstring('smi', self.reac_smi)
-        reac_mol.addh()
-        reac_mol.gen3D(forcefield=self.forcefield)
-        return reac_mol
-
-    def preopt(self, mol, **kwargs):
-        """
-        Optimize `mol` at the low level of theory and return its energy in
-        kcal/mol. The optimization is done separately for each molecule in the
-        structure. If the optimization was unsuccessful or if no low level of
-        theory was specified, `None` is returned.
-        """
-        if self.theory_low is None:
-            return None
-
-        kwargs_copy = kwargs.copy()
-        kwargs_copy['theory'] = self.theory_low
-
-        try:
-            mol.optimizeGeometry(self.Qclass, name='preopt', **kwargs_copy)
-        except QuantumError:
-            return None
-
-        return mol.energy * constants.hartree_to_kcal_per_mol
-
-    def execute(self, **kwargs):
-        """
-        Execute the automatic reaction discovery procedure.
-        """
-        start_time = time.time()
-        reac_mol = self.initialize()
-        # self.optimizeReactant(reac_mol, **kwargs)
-        self.reactant_list.append(reac_mol)
-        gen = Generate(reac_mol, self.reactant_list)
-        self.logger.info('Generating all possible products...')
-        gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
-        prod_mols = gen.prod_mols
-        self.logger.info('{} possible products generated\n'.format(len(prod_mols)))
-
-        # Load thermo database and choose which libraries to search
-        thermo_db = ThermoDatabase()
-        thermo_db.load(os.path.join(settings['database.directory'], 'thermo'))
-        thermo_db.libraryOrder = ['primaryThermoLibrary', 'NISTThermoLibrary', 'thermo_DFT_CCSDTF12_BAC',
-                                  'CBS_QB3_1dHR', 'DFT_QCI_thermo', 'BurkeH2O2', 'GRI-Mech3.0-N', ]
-
-        # Filter reactions based on standard heat of reaction
-        H298_reac = reac_mol.getH298(thermo_db)
-        self.logger.info('Filtering reactions...')
-        prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
-        self.logger.info('{} products remaining\n'.format(len(prod_mols_filtered)))
-
-        # Generate 3D geometries
-        if prod_mols_filtered:
-            self.logger.info('Feasible products:\n')
-            rxn_dir = util.makeOutputSubdirectory(self.output_dir, 'reactions')
-
-            # These two lines are required so that new coordinates are
-            # generated for each new product. Otherwise, Open Babel tries to
-            # use the coordinates of the previous molecule if it is isomorphic
-            # to the current one, even if it has different atom indices
-            # participating in the bonds. a hydrogen atom is chosen
-            # arbitrarily, since it will never be the same as any of the
-            # product structures.
-            Hatom = gen3D.readstring('smi', '[H]')
-            ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
-
-            reac_mol_copy = reac_mol.copy()
-            for rxn, mol in enumerate(prod_mols_filtered):
-                mol.gen3D(forcefield=self.forcefield, make3D=False)
-                arrange3D = gen3D.Arrange3D(reac_mol, mol)
-                msg = arrange3D.arrangeIn3D()
-                if msg != '':
-                    self.logger.info(msg)
-
-                ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
-                reac_mol.gen3D(make3D=False)
-                ff.Setup(Hatom.OBMol)
-                mol.gen3D(make3D=False)
-                ff.Setup(Hatom.OBMol)
-
-                reactant = reac_mol.toNode()
-                product = mol.toNode()
-
-                rxn_num = '{:04d}'.format(rxn)
-                output_dir = util.makeOutputSubdirectory(rxn_dir, rxn_num)
-                kwargs['output_dir'] = output_dir
-                kwargs['name'] = rxn_num
-
-                self.logger.info('Product {}: {}\n{}\n****\n{}\n'.format(rxn, product.toSMILES(), reactant, product))
-                self.makeInputFile(reactant, product, **kwargs)
-
-                reac_mol.setCoordsFromMol(reac_mol_copy)
-        else:
-            self.logger.info('No feasible products found')
-
-        # Finalize
-        self.finalize(start_time)
 
     def executeXYZ(self, **kwargs):
-
+        
         reac_mol = self.reac_smi
-        """
-        try:
-            add_bond = self.add_bond
-        except:
-            pass
-        # self.optimizeReactant(reac_mol, **kwargs)
-        if self.imaginarybond:
-            gen = Imaginary(reac_mol)
-            gen_2 = Imaginary(reac_mol)
-        else:
-            try:
-                gen = Generate(reac_mol, add_bond)
-                gen_2 = Generate(reac_mol, add_bond)
-            except:
-                gen = Generate(reac_mol)
-                gen_2 = Generate(reac_mol)
-        """
+        reac_mol.gen3D(forcefield=self.forcefield)
         network = Network(reac_mol, forcefield = self.forcefield, **kwargs)
         network.genNetwork(reac_mol)
 
-    def finalize(self, start_time):
-        """
-        Finalize the job.
-        """
-        self.logger.info('\nARD terminated on ' + time.asctime())
-        self.logger.info('Total ARD run time: {:.1f} s'.format(time.time() - start_time))
-
-    def filterThreshold(self, H298_reac, prod_mol, thermo_db, **kwargs):
-        """
-        Filter threshold based on standard enthalpies of formation of reactants
-        and products. Returns `True` if the heat of reaction is less than
-        `self.dh_cutoff`, `False` otherwise.
-        """
-        H298_prod = prod_mol.getH298(thermo_db)
-        dH = H298_prod - H298_reac
-
-        if dH < self.dh_cutoff:
-            return True
-        return False
-
-    @staticmethod
-    def makeInputFile(reactant, product, **kwargs):
-        """
-        Create input file for TS search and return path to file.
-        """
-        path = os.path.join(kwargs['output_dir'], 'input.xyz')
-        nreac_atoms = len(reactant.getListOfAtoms())
-        nproduct_atoms = len(product.getListOfAtoms())
-
-        with open(path, 'w') as f:
-            f.write('{}\n\n{}\n{}\n\n{}\n'.format(nreac_atoms, reactant, nproduct_atoms, product))
-
-        return path
 
     def logHeader(self):
         """
@@ -286,7 +118,6 @@ def readInput(input_file):
         H                 -1.36941886   -0.25571437    0.49781777
         )
     If '#' is found in a line, the rest of the line will be ignored.
-
     A dictionary containing all input parameters and their values is returned.
     """
     # Allowed keywords
@@ -358,15 +189,8 @@ def readInput(input_file):
             raise Exception('Invalid jobtype: {}'.format(jobtype))
     return input_dict
 
-def add_bond(path):
-    with open(path, 'r') as f:
-        input_data = f.read().splitlines()
-    return input_data
 
 def readXYZ(xyz):
     mol = next(pybel.readfile('xyz', xyz))
-    #i = mol.write('smi').strip().split()
-    #print(i)
     mol = gen3D.Molecule(mol.OBMol)
-    #mol = mol.OBMol
     return mol
