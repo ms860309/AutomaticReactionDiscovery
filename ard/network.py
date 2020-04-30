@@ -74,7 +74,7 @@ class Network(object):
             #self.logger.info('Filtering reactions...')
             prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol, **kwargs)]
         else:
-            H298_reac = self.reactant_list[0].getH298(thermo_db)
+            H298_reac = self.reac_mol.getH298(thermo_db)
             #self.logger.info('Filtering reactions...')
             prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
 
@@ -92,21 +92,16 @@ class Network(object):
                 prod_mols_filtered_2 = [mol for mol in prod_mols_2 if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
             #self.logger.info('{} products remaining with nbreak = 2 and nbreak = 2 after filter by delta H\n'.format(len(prod_mols_filtered_2)))
             #prod_mols_filtered_2 after filter by isomorphic
-
-            #prod_mols_filtered_2 = self.filterIsomorphic_itself(prod_mols_filtered_2, prod_mols_filtered_2)
-            prod_mols_filtered_2 = self.unique_key_filterIsomorphic_itself(prod_mols_filtered_2, prod_mols_filtered_2)
+            prod_mols_filtered_2 = self.unique_key_filterIsomorphic_itself(prod_mols_filtered_2)
             #self.logger.info('{} products remaining with nbreak = 2 and nbreak = 2 after isomorphic screening\n'.format(len(prod_mols_filtered_2)))
-            #prod_mols_filtered = self.filterIsomorphic(prod_mols_filtered, prod_mols_filtered_2)#
             prod_mols_filtered = self.unique_key_filterIsomorphic(prod_mols_filtered, prod_mols_filtered_2)
             #self.logger.info('{} products remaining after isomorphic screening by nbreak=2 and nform=2\n'.format(len(prod_mols_filtered)))
-            #prod_mols_filtered = self.filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
-            prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
+            prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
             #self.logger.info('{} products remaining with nbreak = 3 and nbreak = 3 after isomorphic screening\n'.format(len(prod_mols_filtered)))
             prod_mols_filtered += prod_mols_filtered_2 
             #self.logger.info('{} total products remaining(break=2, form=2 + break=3, form=3)\n'.format(len(prod_mols_filtered)))
         else:
-            #prod_mols_filtered = self.filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
-            prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered, prod_mols_filtered)
+            prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
             #self.logger.info('{} products remaining after isomorphic screening\n'.format(len(prod_mols_filtered)))
 
         # append product_mol to network
@@ -269,25 +264,6 @@ class Network(object):
             time.sleep(300)
             self.first_generation(products)
         
-    def finalize(self, start_time):
-        """
-        Finalize the job.
-        """
-        #self.logger.info('\nARD terminated on ' + time.asctime())
-        #self.logger.info('Total ARD run time: {:.1f} s'.format(time.time() - start_time))
-
-    def filterThreshold(self, H298_reac, prod_mol, thermo_db, **kwargs):
-        """
-        Filter threshold based on standard enthalpies of formation of reactants
-        and products. Returns `True` if the heat of reaction is less than
-        `self.dh_cutoff`, `False` otherwise.
-        """
-        H298_prod = prod_mol.getH298(thermo_db)
-        dH = H298_prod - H298_reac
-
-        if dH < self.dh_cutoff:
-            return True
-        return False
     
     def filter_dh_mopac(self, H298_reac, prod_mol, **kwargs):
         H298_product = mopac(prod_mol, self.forcefield)
@@ -298,90 +274,30 @@ class Network(object):
             return True
         return False
 
-    def filterIsomorphic(self, base, compare):
-
-        isomorphic_idx = []
-        for idx_1, i in enumerate(compare):
-            prod_rmg_mol = i.toRMGMolecule()
-            for j in base:
-                tmp = j.toRMGMolecule()
-                if prod_rmg_mol.isIsomorphic(tmp):
-                    isomorphic_idx.append(idx_1)
-        isomorphic = set(isomorphic_idx)
-        prod_mols_filtered_idx = set([i for i in range(len(compare))])
-        index = list(prod_mols_filtered_idx - isomorphic)
-        result = [compare[i] for i in index]
-        return result
-
-    def filterIsomorphic_itself(self, base, compare):
-        isomorphic_idx = []
-        for idx_1, i in enumerate(compare):
-            prod_rmg_mol = i.toRMGMolecule()
-            for j in base[idx_1+1:]:
-                tmp = j.toRMGMolecule()
-                if prod_rmg_mol.isIsomorphic(tmp):
-                    isomorphic_idx.append(idx_1)
-        isomorphic = set(isomorphic_idx)
-        result = [compare[i] for i in isomorphic]
-        return result
 
     def unique_key_filterIsomorphic(self, base, compare):
         """
         Convert rmg molecule into inchi key(unique key) and check isomorphic
         """
-        isomorphic_idx = []
-        same_idx = []
-        base_unique = []
-        compare_unique = []
-        result = []
-        same = []
-        same_key = []
-        for i in base:
-            mol = i.toRMGMolecule()
-            #unique = mol.toAugmentedInChIKey()
-            unique = mol.to_inchi_key()
-            base_unique.append(unique)
-        for i in compare:
-            mol = i.toRMGMolecule()
-            #unique = mol.toAugmentedInChIKey()
-            unique = mol.to_inchi_key()
-            compare_unique.append(unique)
-        for idx_1, i in enumerate(compare_unique):
-            if i not in base_unique:
-                isomorphic_idx.append(idx_1)
-            else:
-                a = base_unique.index(i)
-                same_idx.append(idx_1)
-                same_key.append(a)
-        for i in isomorphic_idx:
-            result.append(compare[i])
-        for i in same_idx:
-            same.append(compare[i])
+        
+        base_unique = [mol.toRMGMolecule().to_inchi_key() for mol in base]
+        compare_unique = [mol.toRMGMolecule().to_inchi_key() for mol in compare]
+        isomorphic_idx = [compare_unique.index(i) for i in set(compare_unique) - set(base_unique)]
+        result = [compare[i] for i in isomorphic_idx]
+        same_idx = [compare_unique.index(i) for i in set(compare_unique) & set(base_unique)]
+        same_key = [base_unique.index(i) for i in set(compare_unique) & set(base_unique)]
+        same = [compare[i] for i in same_idx]
+        
         return result, same, same_key
 
-    def unique_key_filterIsomorphic_itself(self, base, compare):
+    def unique_key_filterIsomorphic_itself(self, base):
         """
         Convert rmg molecule into inchi key(unique key) and check isomorphic
         """
-        isomorphic_idx = []
-        base_unique = []
-        compare_unique = []
-        result = []
-        for i in base:
-            mol = i.toRMGMolecule()
-            #unique = mol.toAugmentedInChIKey()
-            unique = mol.to_inchi_key()
-            base_unique.append(unique)
-        for i in compare:
-            mol = i.toRMGMolecule()
-            #unique = mol.toAugmentedInChIKey()
-            unique = mol.to_inchi_key()
-            compare_unique.append(unique)
-        for idx_1, i in enumerate(compare_unique):
-            if i not in base_unique[idx_1+1:]:
-                isomorphic_idx.append(idx_1)
-        for i in isomorphic_idx:
-            result.append(compare[i])
+        
+        base_unique = [mol.toRMGMolecule().to_inchi_key() for mol in base]
+        result = [base[base_unique.index(i)] for i in set(base_unique)]
+        
         return result
 
 
@@ -450,7 +366,6 @@ class Network(object):
 
             collect.insert_one({'dir':rxn_num, 'path' : output_dir, "energy_status":"job_unrun", "ssm_status":"job_unrun"})
 
-            self.finalize(start_time)
         else:
             rxn_num = '{:05d}'.format(self.rxn_num)
             output_dir = util.makeOutputSubdirectory(subdir, rxn_num)
@@ -464,8 +379,6 @@ class Network(object):
             self.makeisomerFile(add_bonds, break_bonds, **kwargs)
 
             collect.insert_one({'dir':rxn_num, 'path' : output_dir, "energy_status":"job_unrun", "ssm_status":"job_unrun"})
-
-            self.finalize(start_time)
 
 
 
@@ -521,16 +434,3 @@ class Network(object):
         except:
             print("maybe list out of range, check add bond")
 
-    def logHeader(self):
-        """
-        Output a log file header.
-        """
-        #self.logger.info('######################################################################')
-        #self.logger.info('#################### AUTOMATIC REACTION DISCOVERY ####################')
-        #self.logger.info('######################################################################')
-        #self.logger.info('Reactant SMILES: ' + self.reac_mol)
-        #self.logger.info('Maximum number of bonds to be broken: ' + str(self.nbreak))
-        #self.logger.info('Maximum number of bonds to be formed: ' + str(self.nform))
-        #self.logger.info('Heat of reaction cutoff: {:.1f} kcal/mol'.format(self.dh_cutoff))
-        #self.logger.info('Force field for 3D structure generation: ' + self.forcefield)
-        #self.logger.info('######################################################################\n')

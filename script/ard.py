@@ -9,7 +9,7 @@ if __name__ == '__main__':
     from os import path
     sys.path.append(path.join(path.dirname( path.dirname( path.abspath(__file__))),'ard'))
     sys.path.append(path.join(path.dirname( path.dirname( path.abspath(__file__))),'database'))
-    from main import ARD, readInput, readXYZ, add_bond
+    from main import ARD, readInput, readXYZ
 
     # Set up parser for reading the input filename from the command line
     parser = argparse.ArgumentParser(description='Automatic Reaction Discovery')
@@ -21,9 +21,6 @@ if __name__ == '__main__':
     kwargs = readInput(input_file)
     if kwargs['xyz'] == '1':
         OBMol = readXYZ(path.join(os.getcwd(),'reactant.xyz'))
-        add_bonds = add_bond(path.join(os.getcwd(),'reactant.xyz'))
-        if add_bonds[1] != '':
-            kwargs['add_bonds'] = add_bonds[1]
         kwargs['reac_smi']= OBMol
         # Set output directory
         output_dir = path.abspath(path.dirname(input_file))
