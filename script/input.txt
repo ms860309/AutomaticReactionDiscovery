@@ -1,5 +1,4 @@
 reac_smi          0                 # Reactant SMILES
-xyz               1                 # If input reactant format is xyz
 imaginarybond     0                 # Experimental function of imaginary bond
 nbreak            2                 # Maximum number of bonds to be broken
 nform             2                 # Maximum number of bonds to be formed

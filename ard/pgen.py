@@ -10,6 +10,8 @@ import pybel
 import props
 import gen3D
 import numpy as np
+
+ELEMENT_TABLE = props.ElementData()
 ###############################################################################
 
 class StructureError(Exception):
@@ -146,7 +148,7 @@ class Generate(object):
         ))
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]
-
+        
         # Initialize set for storing bonds of products
         # A set is used to ensure that no duplicate products are added
         products_bonds = set()
@@ -168,6 +170,7 @@ class Generate(object):
                     reactant_valences,
                     bonds_form_all
                 )
+
             
         if products_bonds:
             #Filter the products_bonds which doesn't follow DoU rule
@@ -340,33 +343,13 @@ class Generate(object):
         valences_temp[bond[1]] += inc
 
         # Check if maximum valences are exceeded
-        if valences_temp[bond[0]] > props.maxvalences[self.atoms[bond[0]]]:
+        element0 = ELEMENT_TABLE.from_atomic_number(self.atoms[bond[0]])
+        element1 = ELEMENT_TABLE.from_atomic_number(self.atoms[bond[1]])
+        if valences_temp[bond[0]] > element0.max_bonds:
             raise StructureError('Maximum valence on atom {} exceeded'.format(bond[0]))
-        if valences_temp[bond[1]] > props.maxvalences[self.atoms[bond[1]]]:
+        if valences_temp[bond[1]] > element1.max_bonds:
             raise StructureError('Maximum valence on atom {} exceeded'.format(bond[1]))
 
         # Return valid valences
         return valences_temp
 
-    def writeMolblock(self, bonds, valences):
-        """
-        Convert a sequence of bonds and valences corresponding to the atoms in
-        `self.atoms` to an MDL molfile representation and return it as a
-        string.
-        Note: Atom indices in the MDL representation start at 1.
-        """
-        # Create counts line of MDL format
-        counts_line = '{:>3}{:>3}  0  0  0  0  0  0  0  0999 V2000\n'.format(len(self.atoms), len(bonds))
-
-        # Create atom block of MDL format
-        atom_block = ''
-        for idx, atom in enumerate(self.atoms):
-            atom_block += ('    0.0000    0.0000    0.0000 {:<3} 0  0  0  0  0{:>3}  0  0  0  0  0  0\n'.
-                           format(props.atomnum[atom], valences[idx]))
-
-        # Create bond block of MDL format
-        bond_block = ''
-        for bond in bonds:
-            bond_block += '{:>3}{:>3}{:>3}  0  0  0\n'.format(bond[0] + 1, bond[1] + 1, bond[2])
-
-        return '\n\n\n' + counts_line + atom_block + bond_block + 'M  END\n'
