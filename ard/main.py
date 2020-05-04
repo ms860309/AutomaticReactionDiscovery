@@ -69,7 +69,7 @@ class ARD(object):
         qprog = kwargs.get('qprog', 'gau')
         self.Qclass = util.assignQclass(qprog)
         self.output_dir = output_dir
-        log_level = logging.INFO
+        log_level = logging.WARNING
         self.logger = util.initializeLog(log_level, os.path.join(self.output_dir, 'ARD.log'), logname='main')
         self.reactant_list = []
 
@@ -79,21 +79,6 @@ class ARD(object):
         reac_mol.gen3D(forcefield=self.forcefield)
         network = Network(reac_mol, forcefield = self.forcefield, **kwargs)
         network.genNetwork(reac_mol)
-
-
-    def logHeader(self):
-        """
-        Output a log file header.
-        """
-        self.logger.info('######################################################################')
-        self.logger.info('#################### AUTOMATIC REACTION DISCOVERY ####################')
-        self.logger.info('######################################################################')
-        self.logger.info('Reactant SMILES: ' + self.reac_smi)
-        self.logger.info('Maximum number of bonds to be broken: ' + str(self.nbreak))
-        self.logger.info('Maximum number of bonds to be formed: ' + str(self.nform))
-        self.logger.info('Heat of reaction cutoff: {:.1f} kcal/mol'.format(self.dh_cutoff))
-        self.logger.info('Force field for 3D structure generation: ' + self.forcefield)
-        self.logger.info('######################################################################\n')
     
 
 
