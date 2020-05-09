@@ -1,0 +1,44 @@
+######################################################################
+#################### NETWORK EXPLORATION ####################
+######################################################################
+Reactant SMILES: OCC(C(C(C=O)O)O)O	/mnt/d/Lab/QMProject/AutomaticReactionDiscovery/script/reactant.xyz
+Maximum number of bonds to be broken: 2
+Maximum number of bonds to be formed: 2
+Heat of reaction cutoff: 10.0 kcal/mol
+######################################################################
+
+-----------------------------------------
+
+
+Generation : 1
+
+-----------------------------------------
+
+Need 55 Rounds
+
+-----------------------------------------
+
+Reactant SMILES : OC/C(=C\O)/O.OCC=O ---> Generate 49 possible products.
+Total products : 104
+Finished 1/55 rounds at 1 generations
+
+-----------------------------------------
+
+Reactant SMILES : O=CC[C@H]([C@H](C(O)O)O)O ---> Generate 49 possible products.
+Total products : 153
+Finished 2/55 rounds at 1 generations
+
+-----------------------------------------
+
+Reactant SMILES : O=CO[C@H]([C@@H](CO)O)CO ---> Generate 53 possible products.
+Total products : 206
+Finished 3/55 rounds at 1 generations
+
+-----------------------------------------
+
+Reactant SMILES : OC[C@H]([C@@H](C=O)O)C(O)O ---> Generate 45 possible products.
+Total products : 251
+Finished 4/55 rounds at 1 generations
+
+-----------------------------------------
+
