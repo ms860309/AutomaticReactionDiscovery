@@ -47,17 +47,19 @@ class Network(object):
         """
         Execute the automatic reaction discovery procedure.
         """
-        #self.logger.info('Generating all possible products...')
+        start_time = time.time()
+        self.logHeader(mol_object)
         #Add all reactant to a list for pgen filter isomorphic
         if mol_object not in self.reactant_list:
             self.reactant_list.append(mol_object)
         gen = Generate(mol_object, self.reactant_list)
-        #gen_2 = Generate(mol_object, self.reactant_list)
+        self.logger.info('Generating all possible products...')
         gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
         prod_mols = gen.prod_mols
+        self.logger.info('{} possible products generated\n'.format(len(prod_mols)))
+        self.reactant_list += prod_mols
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
-        #self.logger.info('{} possible products generated\n'.format(len(prod_mols)))
 
         # Load thermo database and choose which libraries to search
         thermo_db = ThermoDatabase()
@@ -68,60 +70,60 @@ class Network(object):
         if self.method == "mopac":
             H298_reactant = mopac(mol_object, self.forcefield)
             H298_reac = H298_reactant.mopac_get_H298(mol_object)
-            #self.logger.info('Filtering reactions...')
             prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol, **kwargs)]
         else:
             H298_reac = self.reac_mol.getH298(thermo_db)
-            #self.logger.info('Filtering reactions...')
+            self.logger.info('Filtering reactions..., dH cutoff')
             prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
+            self.logger.info('{} products remaining\n'.format(len(prod_mols_filtered)))
             
             
-
-        #self.logger.info('{} products remaining\n'.format(len(prod_mols_filtered)))
         #check product isomorphic and filter them
         if self.nbreak == 3 and self.nform == 3:
             gen_2.generateProducts(nbreak=2, nform=2)
             prod_mols_2 = gen_2.prod_mols
-            #self.logger.info('{} possible products generated with nbreak = 2 and nbreak = 2\n'.format(len(prod_mols_2)))
-            #self.logger.info('Filtering reactions...')
             #prod_mols_filtered_2 after filter by delta H
             if self.method == "mopac":
                 prod_mols_filtered_2 = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol, **kwargs)]
             else:
                 prod_mols_filtered_2 = [mol for mol in prod_mols_2 if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
-            #self.logger.info('{} products remaining with nbreak = 2 and nbreak = 2 after filter by delta H\n'.format(len(prod_mols_filtered_2)))
             prod_mols_filtered_2 = self.unique_key_filterIsomorphic_itself(prod_mols_filtered_2)
-            #self.logger.info('{} products remaining with nbreak = 2 and nbreak = 2 after isomorphic screening\n'.format(len(prod_mols_filtered_2)))
             prod_mols_filtered = self.unique_key_filterIsomorphic(prod_mols_filtered, prod_mols_filtered_2)
-            #self.logger.info('{} products remaining after isomorphic screening by nbreak=2 and nform=2\n'.format(len(prod_mols_filtered)))
             prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
-            #self.logger.info('{} products remaining with nbreak = 3 and nbreak = 3 after isomorphic screening\n'.format(len(prod_mols_filtered)))
             prod_mols_filtered += prod_mols_filtered_2 
-            #self.logger.info('{} total products remaining(break=2, form=2 + break=3, form=3)\n'.format(len(prod_mols_filtered)))
         else:
+            self.logger.info('Filtering reactions..., isomorphic')
             prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
-            #self.logger.info('{} products remaining after isomorphic screening\n'.format(len(prod_mols_filtered)))
-
+            self.logger.info('{} products remaining\n'.format(len(prod_mols_filtered)))
+            
         # append product_mol to network
         pre_products = []
         # initial round add all prod to self.network
         self.nround += _round
         if self.nround == 0:
-            self.network_log.info("Here is the {} generation\n".format(self.generation))
-            self.network_log.info("There are {} rounds need to generate possible products at next generation\n".format(len(prod_mols_filtered)))
+            self.logger.info('Feasible products:\n')
+            self.network_logHeader(mol_object)
+            self.network_log.info("-----------------------------------------\n")
+            self.network_log.info("\nGeneration : {}\n".format(self.generation))
+            self.network_log.info("-----------------------------------------\n")
+            self.network_log.info("Need {} Rounds\n".format(len(prod_mols_filtered)))
+            self.network_log.info("-----------------------------------------\n")
             self.first_num = len(prod_mols_filtered)
-            self.network_log.info("starting generate geometry\n")
             for idx, mol in enumerate(prod_mols_filtered):
                 index = prod_mols.index(mol)
                 self.add_bonds.append(add_bonds[index])
                 self.break_bonds.append(break_bonds[index])
                 self.network_prod_mols.append(mol)
                 self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
+                self.logger.info('Reactant SMILES {} : {}'.format(idx+1, mol.write('can').strip()))
                 rxn_idx = 'reaction{}'.format(idx)
                 rxn_num = '{:05d}'.format(self.rxn_num)
                 self.reactions[rxn_idx] = ['00000', rxn_num]
+            self.finalize(start_time)
+            self.logger.info('\n\nStart nerwork exploring......')
             self.recurrently_gen(self.network_prod_mols, 0)
         else:
+            self.logger.info('Feasible products:\n')
             for mol in prod_mols_filtered:
                 pre_products.append(mol)
             filtered = []
@@ -131,14 +133,13 @@ class Network(object):
             for mol in filtered:
                 self.pre_product.append(mol)
                 self.network_prod_mols.append(mol)
-            self.network_log.info("Add {} new products into network\n".format(det))
-            self.network_log.info("Now network have {} products\n".format(len(self.network_prod_mols)))
+            self.network_log.info('Reactant SMILES : {} ---> Generate {} possible products.'.format(mol_object.write('can').strip(), det))
+            self.network_log.info("Total products : {}".format(len(self.network_prod_mols)))
             if det != 0:
-                self.network_log.info("starting generate geometry\n")
                 index = self.network_prod_mols.index(mol_object)
                 rxn_idx = 'reaction{}'.format(index)
                 tmp_list = self.reactions[rxn_idx]          
-                for prod_mol in filtered:
+                for j, prod_mol in enumerate(filtered):
                     idx = prod_mols.index(prod_mol)
                     self.add_bonds.append(add_bonds[idx])
                     self.break_bonds.append(break_bonds[idx])
@@ -148,7 +149,9 @@ class Network(object):
                     a.append(rxn_num)
                     self.reactions[rxn_idx] = a
                     self.gen_geometry(mol_object, prod_mol, add_bonds[idx], break_bonds[idx])
-
+                    self.logger.info('Reactant SMILES {} : {}'.format(j+1, prod_mol.write('can').strip()))
+                self.finalize(start_time)
+                self.logger.info('\n\nStart nerwork exploring......')
                 for key, same_prod in enumerate(same):
                     idx = prod_mols.index(same_prod)
                     self.add_bonds.append(add_bonds[idx])
@@ -186,14 +189,18 @@ class Network(object):
             self.genNetwork(mol)    
             self._count += 1
             self.network_log.info("Finished {}/{} rounds at {} generations\n".format(self._count, self.first_num+self.tmp, self.generation))
+            self.network_log.info("-----------------------------------------\n")
             self.checker(self.nround, self.first_num)
     
     def checker(self, count, check):
         if count == check:
             if len(self.pre_product) !=0:
                 self.generation += 1
-                self.network_log.info("Here is the {} generation\n".format(self.generation))
-                self.network_log.info("There are {} rounds need to generate possible products at this generation\n".format(len(self.pre_product)))
+                self.network_log.info("-----------------------------------------\n")
+                self.network_log.info("Generation : {}\n".format(self.generation))
+                self.network_log.info("-----------------------------------------\n")
+                self.network_log.info("Need {} Rounds\n".format(len(self.pre_product)))
+                self.network_log.info("-----------------------------------------\n")
                 self.tmp = len(self.pre_product)
                 self.recurrently_gen(self.network_prod_mols, len(self.network_prod_mols) - self.tmp) 
             elif len(self.pre_product) == 0:
@@ -201,8 +208,11 @@ class Network(object):
         elif count == check + self.tmp:
             if len(self.pre_product) !=0:
                 self.generation += 1
-                self.network_log.info("Here is the {} generation\n".format(self.generation))
-                self.network_log.info("There are {} rounds need to generate possible products at this generation\n".format(len(self.pre_product)))
+                self.network_log.info("-----------------------------------------\n")
+                self.network_log.info("\nGeneration : {}\n".format(self.generation))
+                self.network_log.info("-----------------------------------------\n")
+                self.network_log.info("Need {} Rounds\n".format(len(self.pre_product)))
+                self.network_log.info("-----------------------------------------\n")
                 self.tmp += len(self.pre_product)
                 self.recurrently_gen(self.network_prod_mols, len(self.network_prod_mols) - len(self.pre_product)) 
             elif len(self.pre_product) == 0:
@@ -275,7 +285,7 @@ class Network(object):
         reactant_mol.gen3D(forcefield=self.forcefield, make3D=False)
         network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
         
-        
+        """
         reactant_mol_copy, network_prod_mol_copy= reactant_mol.copy(), network_prod_mol.copy()
         try:
             arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
@@ -284,6 +294,7 @@ class Network(object):
                 self.logger.info(msg)
         except:
             reactant_mol, network_prod_mol = reactant_mol_copy, network_prod_mol_copy
+        """
         
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reactant_mol.gen3D(make3D=False)
@@ -309,7 +320,6 @@ class Network(object):
             output_dir = util.makeOutputSubdirectory(subdir, rxn_num)
             kwargs['output_dir'] = output_dir
             kwargs['name'] = rxn_num
-            #self.logger.info('Product {}: {}\n{}\n****\n{}\n'.format(self.rxn_num, product.toSMILES(), reactant, product))
             self.makeInputFile(reactant, product, **kwargs)
             self.makeCalEnergyFile(product, **kwargs)
             self.makeDrawFile(reactant, filename = 'reactant.xyz', **kwargs)
@@ -320,15 +330,45 @@ class Network(object):
             output_dir = util.makeOutputSubdirectory(subdir, rxn_num)
             kwargs['output_dir'] = output_dir
             kwargs['name'] = rxn_num
-            #self.logger.info('Product {}: {}\n{}\n****\n{}\n'.format(self.rxn_num, product.toSMILES(), reactant, product))
             self.makeInputFile(reactant, product, **kwargs)
             self.makeCalEnergyFile(product, **kwargs)
             self.makeDrawFile(reactant, 'reactant.xyz', **kwargs)
             self.makeDrawFile(product, 'product.xyz', **kwargs)
             self.makeisomerFile(add_bonds, break_bonds, **kwargs)
 
+    def logHeader(self, mol_object):
+        """
+        Output a log file header.
+        """
+        self.logger.info('######################################################################')
+        self.logger.info('#################### AUTOMATIC REACTION DISCOVERY ####################')
+        self.logger.info('######################################################################')
+        self.logger.info('Reactant SMILES: ' + mol_object.write('can').strip())
+        self.logger.info('Maximum number of bonds to be broken: ' + str(self.nbreak))
+        self.logger.info('Maximum number of bonds to be formed: ' + str(self.nform))
+        self.logger.info('Heat of reaction cutoff: {:.1f} kcal/mol'.format(self.dh_cutoff))
+        self.logger.info('######################################################################\n')
 
-
+    def network_logHeader(self, mol_object):
+        """
+        Output a log file header.
+        """
+        self.network_log.info('######################################################################')
+        self.network_log.info('#################### NETWORK EXPLORATION ####################')
+        self.network_log.info('######################################################################')
+        self.network_log.info('Reactant SMILES: ' + mol_object.write('can').strip())
+        self.network_log.info('Maximum number of bonds to be broken: ' + str(self.nbreak))
+        self.network_log.info('Maximum number of bonds to be formed: ' + str(self.nform))
+        self.network_log.info('Heat of reaction cutoff: {:.1f} kcal/mol'.format(self.dh_cutoff))
+        self.network_log.info('######################################################################\n')
+        
+    def finalize(self, start_time):
+        """
+        Finalize the job.
+        """
+        self.logger.info('\nARD terminated on ' + time.asctime())
+        self.logger.info('Total ARD run time: {:.1f} s'.format(time.time() - start_time))
+        
     @staticmethod
     def makeInputFile(reactant, product, **kwargs):
         """
