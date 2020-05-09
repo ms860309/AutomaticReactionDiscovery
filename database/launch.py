@@ -125,8 +125,8 @@ def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 1, mpiprocs = 1):
     nes1 = 'source ~/.bashrc_qchem'
     nes2 = 'conda activate rmg3'
     scratch = 'export QCSCRATCH=/tmp/ypli/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
-    command = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -lot_inp_file {} >status.log'.format(xyz_file, isomers, lot_inp_file)
-    clean_scratch = 'rm -r $QCSCRATCH'
+    coord_type = 'DLC'
+    command = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -lot_inp_file {} -coordinate_type {} >status.log'.format(xyz_file, isomers, lot_inp_file, coord_type)    clean_scratch = 'rm -r $QCSCRATCH'
     with open(subfile, 'w') as f:
         f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, nes2, scratch, command, clean_scratch))
     return subfile
