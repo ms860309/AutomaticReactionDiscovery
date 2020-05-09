@@ -69,7 +69,7 @@ class ARD(object):
         qprog = kwargs.get('qprog', 'gau')
         self.Qclass = util.assignQclass(qprog)
         self.output_dir = output_dir
-        log_level = logging.WARNING
+        log_level = logging.INFO
         self.logger = util.initializeLog(log_level, os.path.join(self.output_dir, 'ARD.log'), logname='main')
         self.reactant_list = []
 
@@ -80,8 +80,6 @@ class ARD(object):
         network = Network(reac_mol, forcefield = self.forcefield, **kwargs)
         network.genNetwork(reac_mol)
     
-
-
 ###############################################################################
 
 def readInput(input_file):
