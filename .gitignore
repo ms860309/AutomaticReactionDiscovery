@@ -6,6 +6,7 @@
 *.so
 *.pyd
 nul
+*.log
 
 #Reactions folder
 result/

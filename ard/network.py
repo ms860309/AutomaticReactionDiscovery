@@ -1,6 +1,8 @@
 import logging
 import os
 import time
+import psutil
+
 
 import pybel
 from rmgpy import settings
@@ -16,6 +18,8 @@ from pgen import Generate
 from mopac import mopac
 import copy
 import shutil
+
+info = psutil.virtual_memory()
 
 class Network(object):
 
@@ -366,6 +370,9 @@ class Network(object):
         """
         Finalize the job.
         """
+        self.logger.info('\nTotal Memory : {}'.format(info.total))
+        self.logger.info('Memory used : {}'.format(psutil.Process(os.getpid()).memory_info().rss))
+        self.logger.info('Memory used percent : {}'.format(info.percent))
         self.logger.info('\nARD terminated on ' + time.asctime())
         self.logger.info('Total ARD run time: {:.1f} s'.format(time.time() - start_time))
         

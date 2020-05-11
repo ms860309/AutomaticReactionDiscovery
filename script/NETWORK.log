@@ -18,27 +18,17 @@ Need 55 Rounds
 
 -----------------------------------------
 
-Reactant SMILES : OC/C(=C\O)/O.OCC=O ---> Generate 49 possible products.
-Total products : 104
+Reactant SMILES : O[C@@H]1[C@@H](O)C[C@@H]1O.OC=O ---> Generate 37 possible products.
+Total products : 92
 Finished 1/55 rounds at 1 generations
 
 -----------------------------------------
 
-Reactant SMILES : O=CC[C@H]([C@H](C(O)O)O)O ---> Generate 49 possible products.
-Total products : 153
+Reactant SMILES : O[C@@H]1CO[C@@H]([C@@H]([C@@H]1O)O)O ---> Generate 47 possible products.
+Total products : 139
 Finished 2/55 rounds at 1 generations
 
 -----------------------------------------
 
-Reactant SMILES : O=CO[C@H]([C@@H](CO)O)CO ---> Generate 53 possible products.
-Total products : 206
-Finished 3/55 rounds at 1 generations
-
------------------------------------------
-
-Reactant SMILES : OC[C@H]([C@@H](C=O)O)C(O)O ---> Generate 45 possible products.
-Total products : 251
-Finished 4/55 rounds at 1 generations
-
------------------------------------------
-
+Reactant SMILES : O[C@@H]1C(=O)[C@H]([C@@H]([C@H]1O)O)O.[H][H] ---> Generate 12 possible products.
+Total products : 151
