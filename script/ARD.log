@@ -18,132 +18,502 @@ Filtering reactions..., isomorphic
 
 Feasible products:
 
-Reactant SMILES 1 : O[C@@H]1[C@@H](O)C[C@@H]1O.OC=O
-Reactant SMILES 2 : O[C@@H]1CO[C@@H]([C@@H]([C@@H]1O)O)O
-Reactant SMILES 3 : O[C@@H]1C(=O)[C@H]([C@@H]([C@H]1O)O)O.[H][H]
-Reactant SMILES 4 : OCC[C@@H]([C@@H](C(=O)O)O)O
-Reactant SMILES 5 : OC[C@@H](C(CC=O)(O)O)O
-Reactant SMILES 6 : O[C@@H]1[C@H](O)[C@@H]([C@@H]([C@@H]1O)O)O
-Reactant SMILES 7 : OCC[C@@H](C(C=O)(O)O)O
-Reactant SMILES 8 : OCO[C@@H]([C@H](CO)O)C=O
-Reactant SMILES 9 : O/C(=C\CO)/[C@@H](C=O)O.O
-Reactant SMILES 10 : O/C=C\O[C@H]([C@H](CO)O)O
-Reactant SMILES 11 : OC[C@H]([C@@H](C=O)O)C(O)O
-Reactant SMILES 12 : OCCC([C@@H](C=O)O)(O)O
-Reactant SMILES 13 : O=C[C@H](C[C@H](C(O)O)O)O
-Reactant SMILES 14 : OC[C@H]([C@@H](C(O)O)O)C=O
-Reactant SMILES 15 : OCO[C@H]([C@@H](C=O)O)CO
-Reactant SMILES 16 : OC[C@@H](OC[C@@H](C=O)O)O
+Reactant SMILES 1 : OCO[C@H]([C@@H](C=O)O)CO
+Reactant SMILES 2 : O=C[C@H](CC(CO)(O)O)O
+Reactant SMILES 3 : O=C[C@H](C(CO)(CO)O)O
+Reactant SMILES 4 : OC[C@@H]([C@@](C=O)(CO)O)O
+Reactant SMILES 5 : OC[C@@H](C(=O)[C@H](CO)O)O
+Reactant SMILES 6 : O[C@H]1COC(=O)[C@H]([C@H]1O)O.[H][H]
+Reactant SMILES 7 : O[C@H]([C@@H](C=O)O)COCO
+Reactant SMILES 8 : O=C[C@H](/C(=C/O)/O)O.CO
+Reactant SMILES 9 : O[C@H]([C@@H](C=O)O)OCCO
+Reactant SMILES 10 : OC[C@@H](O[C@H](C=O)CO)O
+Reactant SMILES 11 : O=CC(O)O.OC/C=C/O
+Reactant SMILES 12 : O[C@@H]([C@H](CO)O)OCC=O
+Reactant SMILES 13 : O=CO[C@H]([C@@H](CO)O)CO
+Reactant SMILES 14 : O/C(=C\CO)/[C@@H](C=O)O.O
+Reactant SMILES 15 : OC[C@@H](C[C@@H](C(=O)O)O)O
+Reactant SMILES 16 : O=C[C@H]1OC[C@@H]([C@@H]1O)O.O
 Reactant SMILES 17 : OC[C@@H]1OC(=O)[C@H]([C@H]1O)O.[H][H]
-Reactant SMILES 18 : OC[C@@H]([C@@H](CC(=O)O)O)O
-Reactant SMILES 19 : O[C@@H]([C@H](CO)O)COC=O
-Reactant SMILES 20 : O=C[C@H](/C(=C(/CO)\O)/O)O.[H][H]
-Reactant SMILES 21 : O=C[C@H](C([C@@H](O)C)(O)O)O
-Reactant SMILES 22 : O=C[C@H](C(CO)(CO)O)O
-Reactant SMILES 23 : O[C@H]([C@@H](C=O)O)OCCO
-Reactant SMILES 24 : C[C@@H]([C@@H]([C@@H](C(=O)O)O)O)O
-Reactant SMILES 25 : OC[C@H](CO[C@@H](C=O)O)O
-Reactant SMILES 26 : O[C@H]1CC(=O)[C@H]([C@@H]1O)O.O
-Reactant SMILES 27 : O=CC([C@H]([C@@H](O)C)O)(O)O
-Reactant SMILES 28 : O[C@H]1COC(=O)[C@H]([C@H]1O)O.[H][H]
-Reactant SMILES 29 : OC[C@@H]1O[C@H]([C@H]([C@H]1O)O)O
-Reactant SMILES 30 : O=C[C@H]([C@H](CC(O)O)O)O
-Reactant SMILES 31 : OC/C(=C\O)/O.OCC=O
-Reactant SMILES 32 : O/C=C/[C@@H](C=O)O.OCO
-Reactant SMILES 33 : O[C@@H]([C@H](CO)O)OCC=O
-Reactant SMILES 34 : OC[C@@H]([C@@](C=O)(CO)O)O
-Reactant SMILES 35 : OC[C@@H](C[C@@H](C(=O)O)O)O
-Reactant SMILES 36 : O=C[C@H](/C=C(/CO)\O)O.O
-Reactant SMILES 37 : OCC(O[C@@H](C=O)O)CO
-Reactant SMILES 38 : OCC([C@@H](CC=O)O)(O)O
-Reactant SMILES 39 : OC[C@@H]([C@@H](C(O)O)C=O)O
-Reactant SMILES 40 : CO[C@@H]([C@@H]([C@@H](C=O)O)O)O
-Reactant SMILES 41 : OC[C@@H]([C@@H](/C(=C/O)/O)O)O
-Reactant SMILES 42 : O=CC(O)O.OC/C=C/O
-Reactant SMILES 43 : O=C[C@H]1OC[C@@H]([C@@H]1O)O.O
-Reactant SMILES 44 : O=C[C@H](/C(=C\O)/O)O.CO
-Reactant SMILES 45 : OC[C@@H](CC(C=O)(O)O)O
-Reactant SMILES 46 : O=C[C@H](CC(CO)(O)O)O
-Reactant SMILES 47 : OC[C@H]1[C@H](O)[C@@H](C1=O)O.O
-Reactant SMILES 48 : OC[C@H](C(=O)[C@H](CO)O)O
-Reactant SMILES 49 : OC[C@]1(O)OC[C@H]([C@H]1O)O
-Reactant SMILES 50 : O=CO[C@H]([C@@H](CO)O)CO
-Reactant SMILES 51 : O[C@H]([C@@H](C=O)O)COCO
-Reactant SMILES 52 : OC[C@@H]([C@@H](C(=O)CO)O)O
-Reactant SMILES 53 : O=C[C@H]([C@H](C(O)(O)C)O)O
-Reactant SMILES 54 : OC[C@@H](O[C@H](C=O)CO)O
+Reactant SMILES 18 : OCO[C@@H]([C@H](CO)O)C=O
+Reactant SMILES 19 : OCC[C@@H](C(C=O)(O)O)O
+Reactant SMILES 20 : O=CC([C@H]([C@@H](O)C)O)(O)O
+Reactant SMILES 21 : OCC[C@@H]([C@@H](C(=O)O)O)O
+Reactant SMILES 22 : O[C@@H]1C(=O)[C@H]([C@H]([C@H]1O)O)O.[H][H]
+Reactant SMILES 23 : O[C@H]1CC(=O)[C@H]([C@H]1O)O.O
+Reactant SMILES 24 : OC[C@H]([C@@H](C=O)O)C(O)O
+Reactant SMILES 25 : OCC([C@@H](CC=O)O)(O)O
+Reactant SMILES 26 : OC[C@@H](CC(C=O)(O)O)O
+Reactant SMILES 27 : O[C@@H]1[C@H](O)[C@@H]([C@@H]([C@@H]1O)O)O
+Reactant SMILES 28 : O=C[C@H]([C@H](CC(O)O)O)O
+Reactant SMILES 29 : CO[C@@H]([C@@H]([C@@H](C=O)O)O)O
+Reactant SMILES 30 : O[C@@H]1[C@@H](O)C[C@@H]1O.OC=O
+Reactant SMILES 31 : OC[C@@H]([C@@H](/C(=C/O)/O)O)O
+Reactant SMILES 32 : OC[C@]1(O)OC[C@H]([C@H]1O)O
+Reactant SMILES 33 : OC[C@H](CO[C@@H](C=O)O)O
+Reactant SMILES 34 : OC[C@@H](OC[C@@H](C=O)O)O
+Reactant SMILES 35 : OC[C@H]([C@@H](C(O)O)O)C=O
+Reactant SMILES 36 : OC[C@@H]1O[C@H]([C@H]([C@H]1O)O)O
+Reactant SMILES 37 : OC[C@@H](C(CC=O)(O)O)O
+Reactant SMILES 38 : OC[C@@H]1[C@H](O)[C@@H](C1=O)O.O
+Reactant SMILES 39 : O[C@@H]([C@H](CO)O)COC=O
+Reactant SMILES 40 : O=C[C@H]([C@H](C(O)(O)C)O)O
+Reactant SMILES 41 : O/C=C/[C@@H](C=O)O.OCO
+Reactant SMILES 42 : O=C[C@H](/C(=C(/CO)\O)/O)O.[H][H]
+Reactant SMILES 43 : OC[C@@H]([C@@H](C(=O)CO)O)O
+Reactant SMILES 44 : O=C[C@H](C[C@H](C(O)O)O)O
+Reactant SMILES 45 : OC[C@@H]([C@@H](CC(=O)O)O)O
+Reactant SMILES 46 : O/C=C\O[C@H]([C@H](CO)O)O
+Reactant SMILES 47 : OCC(O[C@@H](C=O)O)CO
+Reactant SMILES 48 : C[C@@H]([C@@H]([C@@H](C(=O)O)O)O)O
+Reactant SMILES 49 : O=C[C@H](/C=C(/CO)\O)O.O
+Reactant SMILES 50 : OC[C@@H]([C@@H](C(O)O)C=O)O
+Reactant SMILES 51 : O[C@@H]1CO[C@@H]([C@@H]([C@@H]1O)O)O
+Reactant SMILES 52 : O=C[C@H](C([C@@H](O)C)(O)O)O
+Reactant SMILES 53 : OCCC([C@@H](C=O)O)(O)O
+Reactant SMILES 54 : OC/C(=C\O)/O.OCC=O
 Reactant SMILES 55 : O=CC[C@H]([C@H](C(O)O)O)O
-Total Memory : 17095577600
-Memory used : 387813376
-Memory used percent : 47.8
 
-ARD terminated on Mon May 11 18:34:01 2020
-Total ARD run time: 42.5 s
+Total Memory : 17095577600
+Memory used : 387874816
+Memory used percent : 42.3
+
+ARD terminated on Tue May 12 02:22:58 2020
+Total ARD run time: 38.1 s
 
 
 Start nerwork exploring......
 ######################################################################
 #################### AUTOMATIC REACTION DISCOVERY ####################
 ######################################################################
-Reactant SMILES: O[C@@H]1[C@@H](O)C[C@@H]1O.OC=O
+Reactant SMILES: OCO[C@H]([C@@H](C=O)O)CO
 Maximum number of bonds to be broken: 2
 Maximum number of bonds to be formed: 2
 Heat of reaction cutoff: 10.0 kcal/mol
 ######################################################################
 
 Generating all possible products...
-849 possible products generated
+835 possible products generated
 
 Filtering reactions..., dH cutoff
-72 products remaining
+55 products remaining
 
 Filtering reactions..., isomorphic
-37 products remaining
+39 products remaining
 
 Feasible products:
 
-Reactant SMILES 1 : OC(=O)O[C@H]1C[C@@H]([C@@H]1O)O.[H][H]
-Reactant SMILES 2 : OC1CC(C1)(O)O.OC=O
-Reactant SMILES 3 : OCO[C@]1(O)[C@@H](O)C[C@@H]1O
-Reactant SMILES 4 : O[C@@H]1[C@H](C[C@@H]1O)OC=O.O
-Reactant SMILES 5 : O[C@@H]1[C@@H](O)C[C@@H]1O.O=C=O.[H][H]
-Reactant SMILES 6 : OCC[C@@H]([C@@H](OC=O)O)O
-Reactant SMILES 7 : O[C@H]1C[C@@H]([C@@]1(O)C(=O)O)O.[H][H]
-Reactant SMILES 8 : O[C@H]1CCC1(O)O.OC=O
-Reactant SMILES 9 : C[C@H]1O[C@@H]([C@@H]1O)O.OC=O
-Reactant SMILES 10 : OC(=O)[C@@H]1[C@H](O)[C@@H]([C@@H]1O)O.[H][H]
-Reactant SMILES 11 : O[C@@H]1OC[C@H](C1)O.OC=O
-Reactant SMILES 12 : O[C@@H]1O[C@@H](O)[C@H](C[C@@H]1O)O
-Reactant SMILES 13 : O[C@H]1C[C@@H]([C@@H]1C(=O)O)O.O
-Reactant SMILES 14 : O/C=C/CC(O)O.OC=O
-Reactant SMILES 15 : OC[C@@H](C(=C)O)O.OC=O
-Reactant SMILES 16 : O[C@H](OC=O)C[C@@H](CO)O
-Reactant SMILES 17 : O[C@@H]1C[C@H](C1)O.OC(=O)O
-Reactant SMILES 18 : C[C@@H]([C@H]1O[C@H]1O)O.OC=O
-Reactant SMILES 19 : O[C@H]1C[C@@]([C@H]1O)(O)C(O)O
-Reactant SMILES 20 : OC[C@]1(O)C[C@@H]1O.OC=O
-Reactant SMILES 21 : C=C[C@H](C(O)O)O.OC=O
-Reactant SMILES 22 : O[C@H]1C[C@H](O)[C@@H]([C@@H](O1)O)O
-Reactant SMILES 23 : O[C@@H]1OCC[C@@H]1O.OC=O
-Reactant SMILES 24 : O[C@H]1CC[C@@H]1O.OC(=O)O
-Reactant SMILES 25 : O/C=C(/[C@@H](O)C)\O.OC=O
-Reactant SMILES 26 : OC([C@@H]1[C@H](O)[C@H]([C@H]1O)O)O
-Reactant SMILES 27 : O[C@H]1C[C@]([C@@H]1O)(O)C(=O)O.[H][H]
-Reactant SMILES 28 : OC([C@]1(O)[C@@H](O)C[C@@H]1O)O
-Reactant SMILES 29 : O[C@@H]1COC[C@@H]1O.OC=O
-Reactant SMILES 30 : O=CO[C@@H]1[C@@H](O)C[C@@H]1O.O
-Reactant SMILES 31 : OCC/C(=C/O)/O.OC=O
-Reactant SMILES 32 : O[C@@H]1[C@@H]([C@@]1(C)O)O.OC=O
-Reactant SMILES 33 : O[C@H]1C[C@@H]([C@@H]1O)C(=O)O.O
-Reactant SMILES 34 : OC([C@@H]1C[C@@H]1O)O.OC=O
-Reactant SMILES 35 : C[C@@H]([C@@H]([C@@H](OC=O)O)O)O
-Reactant SMILES 36 : OC(=O)O[C@@H]1[C@@H](O)C[C@@H]1O.[H][H]
-Reactant SMILES 37 : OCO[C@@]1(O)C[C@@H]([C@H]1O)O
-Total Memory : 17095577600
-Memory used : 514572288
-Memory used percent : 47.8
+Reactant SMILES 1 : OCC[C@@H](C(=O)OCO)O
+Reactant SMILES 2 : OCOC[C@](C=O)(CO)O
+Reactant SMILES 3 : OCO[C@@H](C(C=O)(O)O)C
+Reactant SMILES 4 : OCO[C@H]([C@@H](C=O)O)OC
+Reactant SMILES 5 : O[C@@H]([C@@H]1COCO1)C=O.O
+Reactant SMILES 6 : OCO[C@H]1CO[C@H]([C@H]1O)O
+Reactant SMILES 7 : OCO[C@@H](COC=O)CO
+Reactant SMILES 8 : O=C[C@H]([C@@H](OC(O)O)C)O
+Reactant SMILES 9 : OCO[C@H](O/C=C\O)CO
+Reactant SMILES 10 : CO[C@H]([C@@H](C=O)O)C(O)O
+Reactant SMILES 11 : OCO[C@@H]([C@H](C=O)CO)O
+Reactant SMILES 12 : O=C[C@H]([C@@](OC)(CO)O)O
+Reactant SMILES 13 : OCO[C@H](C(=O)CO)CO
+Reactant SMILES 14 : OC[C@H]1OCOC(=O)[C@H]1O.[H][H]
+Reactant SMILES 15 : O[C@H](C=O)CCO.OC=O
+Reactant SMILES 16 : O[C@@H](C(=C)OCO)C=O.O
+Reactant SMILES 17 : O=CCO[C@H](C(O)O)CO
+Reactant SMILES 18 : OC[C@@H]1O[C@@H](O)OC[C@H]1O
+Reactant SMILES 19 : OC[C@H]1OCO[C@H]([C@H]1O)O
+Reactant SMILES 20 : OCO[C@@H]([C@@H](C(=O)O)O)C
+Reactant SMILES 21 : O=CC[C@H](OC(O)O)CO
+Reactant SMILES 22 : OC[C@@H](C(C=O)(O)O)OC
+Reactant SMILES 23 : OC[C@@H]1OCC(=O)[C@H]1O.O
+Reactant SMILES 24 : CO[C@H]([C@@H](C(=O)O)O)CO
+Reactant SMILES 25 : O[C@H](C=O)OCCOCO
+Reactant SMILES 26 : OCC[C@@](OCO)(C=O)O
+Reactant SMILES 27 : OCO[C@H](CC(=O)O)CO
+Reactant SMILES 28 : OCC(OCOC=O)CO
+Reactant SMILES 29 : O=CC[C@](OCO)(CO)O
+Reactant SMILES 30 : OCOC(C=O)(CO)CO
+Reactant SMILES 31 : OCCOCO[C@@H](C=O)O
+Reactant SMILES 32 : OCO[C@@H](C(O)O)CC=O
+Reactant SMILES 33 : C[C@]([C@@H](C=O)O)(OCO)O
+Reactant SMILES 34 : O[C@H]1[C@H](COC1=O)OCO.[H][H]
+Reactant SMILES 35 : OCOC[C@@H](C(=O)CO)O
+Reactant SMILES 36 : O[C@H](OCO)C[C@@H](C=O)O
+Reactant SMILES 37 : OCO[C@@H]1[C@H](O)CO[C@H]1O
+Reactant SMILES 38 : OCO[C@H](/C(=C/O)/O)CO
+Reactant SMILES 39 : OC[C@@H]1OCO[C@@H]1C=O.O
 
-ARD terminated on Mon May 11 18:34:29 2020
+Total Memory : 17095577600
+Memory used : 524623872
+Memory used percent : 42.3
+
+ARD terminated on Tue May 12 02:23:27 2020
+Total ARD run time: 28.8 s
+
+
+Start nerwork exploring......
+######################################################################
+#################### AUTOMATIC REACTION DISCOVERY ####################
+######################################################################
+Reactant SMILES: O=C[C@H](CC(CO)(O)O)O
+Maximum number of bonds to be broken: 2
+Maximum number of bonds to be formed: 2
+Heat of reaction cutoff: 10.0 kcal/mol
+######################################################################
+
+Generating all possible products...
+825 possible products generated
+
+Filtering reactions..., dH cutoff
+78 products remaining
+
+Filtering reactions..., isomorphic
+53 products remaining
+
+Feasible products:
+
+Reactant SMILES 1 : OCC(C[C@H]1O[C@H]1O)(O)O
+Reactant SMILES 2 : O=C[C@H](CC(=O)O)O.CO
+Reactant SMILES 3 : O=C1CC(C[C@@H]1O)(O)O.O
+Reactant SMILES 4 : OC[C@]1(O)OC(=O)[C@H](C1)O.[H][H]
+Reactant SMILES 5 : O[C@H]1CC(O)(O)COC1=O.[H][H]
+Reactant SMILES 6 : OCC(=O)CC(CO)(O)O
+Reactant SMILES 7 : OC[C@@H](CC(O)(O)O)C=O
+Reactant SMILES 8 : O=C[C@H]1O[C@@H](C(C1)(O)O)O.[H][H]
+Reactant SMILES 9 : OCC(CC=C=O)(O)O.O
+Reactant SMILES 10 : OC(=O)[C@H](CC(O)(O)C)O
+Reactant SMILES 11 : O[C@@H]1CO[C@@H](C(C1)(O)O)O
+Reactant SMILES 12 : OCC([C@@](C=O)(O)C)(O)O
+Reactant SMILES 13 : O=C[C@H](CC(OC)(O)O)O
+Reactant SMILES 14 : O=COCCC(CO)(O)O
+Reactant SMILES 15 : OC[C@@]1(O)C[C@H]1O.OC=O
+Reactant SMILES 16 : O=CC(CC(O)(O)C)(O)O
+Reactant SMILES 17 : OC1CC(C1)(O)O.OC=O
+Reactant SMILES 18 : O=CCC(CC(O)O)(O)O
+Reactant SMILES 19 : O=C[C@H](CCC(O)(O)O)O
+Reactant SMILES 20 : O[C@H](C=O)CC(=O)CO.O
+Reactant SMILES 21 : OCC(COCC=O)(O)O
+Reactant SMILES 22 : O=CCCC(C(O)O)(O)O
+Reactant SMILES 23 : O[C@H]1CC([C@H](C1=O)O)(O)O.[H][H]
+Reactant SMILES 24 : O=C[C@H](O[C@](CO)(O)C)O
+Reactant SMILES 25 : O=C[C@H]([C@@H]1CC1(O)O)O.O
+Reactant SMILES 26 : O=C[C@]1(O)OCC(C1)(O)O.[H][H]
+Reactant SMILES 27 : O[C@@H]1OCC(C[C@@H]1O)(O)O
+Reactant SMILES 28 : OCO[C@H]1[C@@H](O)CC1(O)O
+Reactant SMILES 29 : OCC(C[C@@]1(O)CO1)(O)O
+Reactant SMILES 30 : OCO[C@@H](CC(O)O)C=O
+Reactant SMILES 31 : OC[C@@]1(O)C[C@@H](C1=O)O.O
+Reactant SMILES 32 : O=C[C@H]1OCC(C1)(O)O.O
+Reactant SMILES 33 : OCC(=O)[C@H](CC(O)O)O
+Reactant SMILES 34 : O=CC1(O)CC(C1)(O)O.O
+Reactant SMILES 35 : OCCC(COC=O)(O)O
+Reactant SMILES 36 : O=C[C@@H]1CC([C@H]1O)(O)O.O
+Reactant SMILES 37 : O=C[C@H](OCC(O)(O)C)O
+Reactant SMILES 38 : OC[C@@H]1OC(C[C@@H]1O)(O)O
+Reactant SMILES 39 : O=CC(O)O.OCC(=C)O
+Reactant SMILES 40 : O[C@H]1OCC(C1)(O)O.C=O
+Reactant SMILES 41 : C[C@@H](C=O)O.OCC(=O)O
+Reactant SMILES 42 : O=C[C@H](COCC(O)O)O
+Reactant SMILES 43 : O/C=C\OCC(CO)(O)O
+Reactant SMILES 44 : O/C=C(/CC(CO)(O)O)\O
+Reactant SMILES 45 : OCC([C@@H]1[C@@H]([C@@H]1O)O)(O)O
+Reactant SMILES 46 : OC[C@@](CC(O)O)(C=O)O
+Reactant SMILES 47 : OCC(O[C@H](C=O)C)(O)O
+Reactant SMILES 48 : OC[C@@H](C(CO)(O)O)C=O
+Reactant SMILES 49 : OCC[C@](OC=O)(CO)O
+Reactant SMILES 50 : OC[C@@]1(O)O[C@H]([C@H](C1)O)O
+Reactant SMILES 51 : O[C@H]1CC([C@H]([C@H]1O)O)(O)O
+Reactant SMILES 52 : OCC(C(=O)[C@H](O)C)(O)O
+Reactant SMILES 53 : OCC(CCC(=O)O)(O)O
+
+Total Memory : 17095577600
+Memory used : 597549056
+Memory used percent : 42.3
+
+ARD terminated on Tue May 12 02:24:01 2020
+Total ARD run time: 34.1 s
+
+
+Start nerwork exploring......
+######################################################################
+#################### AUTOMATIC REACTION DISCOVERY ####################
+######################################################################
+Reactant SMILES: O=C[C@H](C(CO)(CO)O)O
+Maximum number of bonds to be broken: 2
+Maximum number of bonds to be formed: 2
+Heat of reaction cutoff: 10.0 kcal/mol
+######################################################################
+
+Generating all possible products...
+611 possible products generated
+
+Filtering reactions..., dH cutoff
+45 products remaining
+
+Filtering reactions..., isomorphic
+21 products remaining
+
+Feasible products:
+
+Reactant SMILES 1 : OC[C@]1(O)[C@H](O)CO[C@H]1O
+Reactant SMILES 2 : O=CC[C@](C(O)O)(CO)O
+Reactant SMILES 3 : OC[C@](C(C=O)(O)O)(O)C
+Reactant SMILES 4 : O=C[C@H](/C(=C/O)/CO)O.O
+Reactant SMILES 5 : OCC(CC(=O)O)(CO)O
+Reactant SMILES 6 : OCC(COC=O)(CO)O
+Reactant SMILES 7 : OCC([C@@H](C(=O)O)O)CO
+Reactant SMILES 8 : OCC(C=C=O)(CO)O.O
+Reactant SMILES 9 : OC[C@@]1(O)CC(=O)[C@H]1O.O
+Reactant SMILES 10 : OCC(C(C=O)(O)O)CO
+Reactant SMILES 11 : OC[C@]1(O)COC(=O)[C@H]1O.[H][H]
+Reactant SMILES 12 : OCC(C(O)O)(C=O)CO
+Reactant SMILES 13 : OC[C@]1(O)CO[C@H]([C@H]1O)O
+Reactant SMILES 14 : OC[C@]([C@@H](C(=O)O)O)(O)C
+Reactant SMILES 15 : O[C@@H](C(=C)O)C=O.OCO
+Reactant SMILES 16 : OCC(OC=O)(CO)CO
+Reactant SMILES 17 : O=C[C@H]([C@](C(O)O)(O)C)O
+Reactant SMILES 18 : OCC(=O)C(CO)(CO)O
+Reactant SMILES 19 : OCC(OCC=O)(CO)O
+Reactant SMILES 20 : O/C=C\OC(CO)(CO)O
+Reactant SMILES 21 : O/C=C(/C(CO)(CO)O)\O
+
+Total Memory : 17095577600
+Memory used : 614166528
+Memory used percent : 42.3
+
+ARD terminated on Tue May 12 02:24:23 2020
+Total ARD run time: 21.8 s
+
+
+Start nerwork exploring......
+######################################################################
+#################### AUTOMATIC REACTION DISCOVERY ####################
+######################################################################
+Reactant SMILES: OC[C@@H]([C@@](C=O)(CO)O)O
+Maximum number of bonds to be broken: 2
+Maximum number of bonds to be formed: 2
+Heat of reaction cutoff: 10.0 kcal/mol
+######################################################################
+
+Generating all possible products...
+588 possible products generated
+
+Filtering reactions..., dH cutoff
+30 products remaining
+
+Filtering reactions..., isomorphic
+21 products remaining
+
+Feasible products:
+
+Reactant SMILES 1 : OC[C@@H]([C@@](C(=O)O)(O)C)O
+Reactant SMILES 2 : OC[C@]1(O)[C@H](O)COC1=O.[H][H]
+Reactant SMILES 3 : OC[C@H](C(=C)O)O.OC=O
+Reactant SMILES 4 : O[C@@]1(COC[C@@H]1O)C=O.O
+Reactant SMILES 5 : O=C[C@@](C(O)O)([C@@H](O)C)O
+Reactant SMILES 6 : CO[C@@H]([C@](C=O)(CO)O)O
+Reactant SMILES 7 : OC[C@@H]([C@@](C=O)(OC)O)O
+Reactant SMILES 8 : OCO/C=C(\[C@H](CO)O)/O
+Reactant SMILES 9 : O/C=C(\[C@@](C=O)(CO)O)/O.[H][H]
+Reactant SMILES 10 : OC[C@@H](/C(=C\O)/C=O)O.O
+Reactant SMILES 11 : OCC[C@@](C(O)O)(C=O)O
+Reactant SMILES 12 : O/C=C/[C@](C=O)(CO)O.O
+Reactant SMILES 13 : OC[C@@H](O/C=C(\CO)/O)O
+Reactant SMILES 14 : OC[C@@H]([C@H](CO)O)C(=O)O
+Reactant SMILES 15 : O=C[C@]([C@H](C(O)O)O)(O)C
+Reactant SMILES 16 : OC[C@]1(O)[C@H](O)CC1=O.O
+Reactant SMILES 17 : OC[C@](C(O)(O)C)(C=O)O
+Reactant SMILES 18 : OC[C@](C(=O)O)([C@H](O)C)O
+Reactant SMILES 19 : OCCO[C@@](C=O)(CO)O
+Reactant SMILES 20 : OC[C@@](C(=C)O)(C=O)O.O
+Reactant SMILES 21 : OCC[C@@](C(=O)O)(CO)O
+
+Total Memory : 17095577600
+Memory used : 624549888
+Memory used percent : 42.3
+
+ARD terminated on Tue May 12 02:24:45 2020
+Total ARD run time: 21.7 s
+
+
+Start nerwork exploring......
+######################################################################
+#################### AUTOMATIC REACTION DISCOVERY ####################
+######################################################################
+Reactant SMILES: OC[C@@H](C(=O)[C@H](CO)O)O
+Maximum number of bonds to be broken: 2
+Maximum number of bonds to be formed: 2
+Heat of reaction cutoff: 10.0 kcal/mol
+######################################################################
+
+Generating all possible products...
+625 possible products generated
+
+Filtering reactions..., dH cutoff
+52 products remaining
+
+Filtering reactions..., isomorphic
+18 products remaining
+
+Feasible products:
+
+Reactant SMILES 1 : OCC[C@H](C(=O)C(O)O)O
+Reactant SMILES 2 : O[C@H]1C[C@@H]([C@@H](C1=O)O)O.O
+Reactant SMILES 3 : OC[C@@H](/C(=C(\CO)/O)/O)O
+Reactant SMILES 4 : O[C@H]1OC[C@H](C1=O)O.CO
+Reactant SMILES 5 : OCO/C(=C\O)/[C@@H](CO)O
+Reactant SMILES 6 : O[C@@H]1COC[C@@H](C1=O)O.O
+Reactant SMILES 7 : OCC(C(=O)C(O)O)CO
+Reactant SMILES 8 : OC[C@@H]1OC[C@@H](C1=O)O.O
+Reactant SMILES 9 : OC[C@@H](C(=O)CC(O)O)O
+Reactant SMILES 10 : OCCOC(=O)[C@H](CO)O
+Reactant SMILES 11 : O[C@H]1CO[C@H]([C@@H](C1=O)O)O.[H][H]
+Reactant SMILES 12 : OCCC(=O)C(CO)(O)O
+Reactant SMILES 13 : OC[C@]1(O)OC[C@H](C1=O)O.[H][H]
+Reactant SMILES 14 : C[C@@H](C(=O)[C@H](C(O)O)O)O
+Reactant SMILES 15 : OC[C@@H](C(=O)C(O)(O)C)O
+Reactant SMILES 16 : OC[C@H](C(=O)[C@H](OC)O)O
+Reactant SMILES 17 : OCCC(=O)[C@H](C(O)O)O
+Reactant SMILES 18 : OCOCC(=O)[C@@H](CO)O
+
+Total Memory : 17095577600
+Memory used : 642191360
+Memory used percent : 42.3
+
+ARD terminated on Tue May 12 02:25:08 2020
+Total ARD run time: 23.5 s
+
+
+Start nerwork exploring......
+######################################################################
+#################### AUTOMATIC REACTION DISCOVERY ####################
+######################################################################
+Reactant SMILES: O[C@H]1COC(=O)[C@H]([C@H]1O)O.[H][H]
+Maximum number of bonds to be broken: 2
+Maximum number of bonds to be formed: 2
+Heat of reaction cutoff: 10.0 kcal/mol
+######################################################################
+
+Generating all possible products...
+868 possible products generated
+
+Filtering reactions..., dH cutoff
+58 products remaining
+
+Filtering reactions..., isomorphic
+43 products remaining
+
+Feasible products:
+
+Reactant SMILES 1 : O[C@H]1OC(=O)[C@H](C[C@H]1O)O.[H][H]
+Reactant SMILES 2 : O=C1OC[C@@H]([C@@H](OC1)O)O.[H][H]
+Reactant SMILES 3 : OCOC(=O)[C@H](/C=C/O)O.[H][H]
+Reactant SMILES 4 : OC[C@H](COC(=O)CO)O
+Reactant SMILES 5 : O=C1O[C@]([C@H]([C@@H]1O)O)(C)O.[H][H]
+Reactant SMILES 6 : O=C1OC[C@@H](C(C1)(O)O)O.[H][H]
+Reactant SMILES 7 : O=C1O[C@]([C@@H]1O)(O)[C@@H](O)C.[H][H]
+Reactant SMILES 8 : OC([C@@H]1COC(=O)[C@H]1O)O.[H][H]
+Reactant SMILES 9 : OC[C@H]1O[C@@H](O)COC1=O.[H][H]
+Reactant SMILES 10 : COC(=O)[C@H](/C(=C\O)/O)O.[H][H]
+Reactant SMILES 11 : O[C@H]([C@H]1COC1=O)C(O)O.[H][H]
+Reactant SMILES 12 : O=C1OCC(=C([C@H]1O)O)O.[H][H].[H][H]
+Reactant SMILES 13 : O[C@@H]1CO[C@@H]([C@H]1O)C(=O)O.[H][H]
+Reactant SMILES 14 : OC[C@H]1OC(=O)OC[C@@H]1O.[H][H]
+Reactant SMILES 15 : O[C@H]([C@@H]1OCOC1=O)CO.[H][H]
+Reactant SMILES 16 : COC(=O)[C@H]([C@H](CO)O)O
+Reactant SMILES 17 : O[C@H]1CCOC(=O)C1(O)O.[H][H]
+Reactant SMILES 18 : O=C1OC[C@@H]([C@@H](C1)O)O.O
+Reactant SMILES 19 : O[C@H]1[C@@H](O)OCCOC1=O.[H][H]
+Reactant SMILES 20 : O=C1C[C@@H](O)[C@H]([C@H](O1)O)O.[H][H]
+Reactant SMILES 21 : OC(=O)[C@H]([C@]1(O)C[C@@H]1O)O.[H][H]
+Reactant SMILES 22 : O[C@H]1OC[C@H]([C@@H](C1=O)O)O.[H][H]
+Reactant SMILES 23 : O[C@H]1COC(=O)[C@H](CO1)O.[H][H]
+Reactant SMILES 24 : O[C@H]1[C@@H](O)CCOC1=O.O
+Reactant SMILES 25 : OC([C@H]1[C@@H](O)COC1=O)O.[H][H]
+Reactant SMILES 26 : O[C@H]1OCC(=O)[C@H]([C@@H]1O)O.[H][H]
+Reactant SMILES 27 : O[C@@H]([C@@H]1COC(=O)O1)CO.[H][H]
+Reactant SMILES 28 : O[C@H]1[C@H](O)COCOC1=O.[H][H]
+Reactant SMILES 29 : OCC(=O)OC/C(=C\O)/O.[H][H]
+Reactant SMILES 30 : O[C@@H]1COC(=O)OC[C@@H]1O.[H][H]
+Reactant SMILES 31 : O=C1OCCC([C@@H]1O)(O)O.[H][H]
+Reactant SMILES 32 : OC1=C[C@@H](C(=O)OC1)O.O.[H][H]
+Reactant SMILES 33 : O=C1OCC([C@@H](C1)O)(O)O.[H][H]
+Reactant SMILES 34 : O[C@@H]1[C@@H](O)C[C@@H]1O.O=C=O.[H][H]
+Reactant SMILES 35 : O[C@H]1C[C@@]([C@H]1O)(O)C(=O)O.[H][H]
+Reactant SMILES 36 : O[C@H]1COC(=O)C(C1)(O)O.[H][H]
+Reactant SMILES 37 : O[C@H]1COC(=O)[C@H](OC1)O.[H][H]
+Reactant SMILES 38 : OC[C@H]1COC(=O)[C@H](O1)O.[H][H]
+Reactant SMILES 39 : O[C@H]1C[C@@H](O)COC1=O.O
+Reactant SMILES 40 : O/C=C/COC(=O)C(O)O.[H][H]
+Reactant SMILES 41 : OC(=O)OC[C@@H]1[C@@H]([C@H]1O)O.[H][H]
+Reactant SMILES 42 : O=C1OCC=C([C@@H]1O)O.O.[H][H]
+Reactant SMILES 43 : O[C@H]1C[C@H](O)[C@@H](C(=O)O1)O.[H][H]
+
+Total Memory : 17095577600
+Memory used : 684933120
+Memory used percent : 42.3
+
+ARD terminated on Tue May 12 02:25:53 2020
+Total ARD run time: 45.0 s
+
+
+Start nerwork exploring......
+######################################################################
+#################### AUTOMATIC REACTION DISCOVERY ####################
+######################################################################
+Reactant SMILES: O[C@H]([C@@H](C=O)O)COCO
+Maximum number of bonds to be broken: 2
+Maximum number of bonds to be formed: 2
+Heat of reaction cutoff: 10.0 kcal/mol
+######################################################################
+
+Generating all possible products...
+624 possible products generated
+
+Filtering reactions..., dH cutoff
+44 products remaining
+
+Filtering reactions..., isomorphic
+30 products remaining
+
+Feasible products:
+
+Reactant SMILES 1 : OCO[C@@H]([C@@H](CC=O)O)O
+Reactant SMILES 2 : OCOCC(CC=O)(O)O
+Reactant SMILES 3 : OCOC[C@@H](/C(=C/O)/O)O
+Reactant SMILES 4 : OCO/C=C/[C@@H](C=O)O.O
+Reactant SMILES 5 : O=CCOC[C@@H](C(O)O)O
+Reactant SMILES 6 : OCOC[C@@H](CC(=O)O)O
+Reactant SMILES 7 : OCOC[C@@H](O/C=C\O)O
+Reactant SMILES 8 : OCOC(=O)[C@H]([C@@H](O)C)O
+Reactant SMILES 9 : OCOCCC(C=O)(O)O
+Reactant SMILES 10 : O=COCOC[C@@H](CO)O
+Reactant SMILES 11 : O[C@@H]1OC[C@H]([C@H](CO1)O)O
+Reactant SMILES 12 : O=C[C@@H]1[C@@H](O)CO[C@@H]1O.O
+Reactant SMILES 13 : O[C@H]1[C@@H](O)COCO[C@H]1O
+Reactant SMILES 14 : OCO[C@@]([C@@H](O)C)(C=O)O
+Reactant SMILES 15 : O[C@H]1[C@@H](O)COC1=O.CO
+Reactant SMILES 16 : OCOCC[C@@H](C(=O)O)O
+Reactant SMILES 17 : C[C@@H]([C@@H](C=O)O)O.OC=O
+Reactant SMILES 18 : O=CC[C@H](COC(O)O)O
+Reactant SMILES 19 : O[C@H]1COC[C@@H]1O.OC=O
+Reactant SMILES 20 : O[C@H]1[C@@H](O)COCC1=O.O
+Reactant SMILES 21 : OCOC[C@H](OC=O)CO
+Reactant SMILES 22 : OCOC[C@@H](C(O)O)C=O
+Reactant SMILES 23 : O=C[C@H](CCOC(O)O)O
+Reactant SMILES 24 : COCC([C@@H](C=O)O)(O)O
+Reactant SMILES 25 : COCO[C@@H]([C@@H](C=O)O)O
+Reactant SMILES 26 : OCO[C@@H]1OC[C@H]([C@H]1O)O
+Reactant SMILES 27 : COC[C@@H](C(C=O)(O)O)O
+Reactant SMILES 28 : O=C[C@H]1OCOC[C@@H]1O.O
+Reactant SMILES 29 : COC[C@@H]([C@H](C(=O)O)O)O
+Reactant SMILES 30 : OCOC[C@@H](COC=O)O
+
+Total Memory : 17095577600
+Memory used : 704430080
+Memory used percent : 42.3
+
+ARD terminated on Tue May 12 02:26:21 2020
 Total ARD run time: 27.8 s
 
 
@@ -151,102 +521,262 @@ Start nerwork exploring......
 ######################################################################
 #################### AUTOMATIC REACTION DISCOVERY ####################
 ######################################################################
-Reactant SMILES: O[C@@H]1CO[C@@H]([C@@H]([C@@H]1O)O)O
+Reactant SMILES: O=C[C@H](/C(=C/O)/O)O.CO
 Maximum number of bonds to be broken: 2
 Maximum number of bonds to be formed: 2
 Heat of reaction cutoff: 10.0 kcal/mol
 ######################################################################
 
 Generating all possible products...
-863 possible products generated
+695 possible products generated
 
 Filtering reactions..., dH cutoff
-60 products remaining
+43 products remaining
 
 Filtering reactions..., isomorphic
-47 products remaining
+32 products remaining
 
 Feasible products:
 
-Reactant SMILES 1 : OC[C@@H]1OCO[C@@H]([C@@H]1O)O
-Reactant SMILES 2 : O[C@@H]1OC[C@@H]([C@@H](CO1)O)O
-Reactant SMILES 3 : C[C@H]([C@H]([C@@]1(O)O[C@@H]1O)O)O
-Reactant SMILES 4 : O[C@H]1OC[C@H]([C@H](OC1)O)O
-Reactant SMILES 5 : O[C@@H]1CCO[C@@H](C1(O)O)O
-Reactant SMILES 6 : OC([C@@H]([C@@H]1CO[C@@H]1O)O)O
-Reactant SMILES 7 : OC[C@@H]([C@H]1CO[C@@H](O1)O)O
-Reactant SMILES 8 : OC[C@H]([C@@H]1OC[C@H](O1)O)O
-Reactant SMILES 9 : O[C@@H]1COC[C@@H](C1(O)O)O
-Reactant SMILES 10 : OC[C@@]1(O)CO[C@@H]([C@@H]1O)O
-Reactant SMILES 11 : O[C@H]1OCC(C[C@H]1O)(O)O
-Reactant SMILES 12 : O[C@@H]1COCC([C@@H]1O)(O)O
-Reactant SMILES 13 : OC[C@H]1OC[C@H]([C@H](O1)O)O
-Reactant SMILES 14 : O[C@@H]1CCOC([C@@H]1O)(O)O
-Reactant SMILES 15 : O/C=C\[C@@H](COC(O)O)O
-Reactant SMILES 16 : O[C@H]1OCC([C@H](C1)O)(O)O
-Reactant SMILES 17 : O[C@@H]1[C@H](O)OCCO[C@@H]1O
-Reactant SMILES 18 : O[C@H]1OC[C@H](C(C1)(O)O)O
-Reactant SMILES 19 : OC([C@@H]1[C@H](O)CO[C@@H]1O)O
-Reactant SMILES 20 : O[C@H]1OC=C([C@H]([C@H]1O)O)O.[H][H]
-Reactant SMILES 21 : OC[C@]1(O)[C@H](O)CO[C@@H]1O
-Reactant SMILES 22 : O[C@@H]1COC(C[C@@H]1O)(O)O
-Reactant SMILES 23 : O[C@H]1[C@@H]2OC[C@H]([C@H]1O)O2.O
-Reactant SMILES 24 : O[C@H]1OCCC([C@H]1O)(O)O
-Reactant SMILES 25 : O[C@H]1[C@@H](O)OC=C[C@H]1O.O
-Reactant SMILES 26 : O[C@H]1O[C@@]([C@H]([C@H]1O)O)(C)O
-Reactant SMILES 27 : OC([C@H]1OC[C@H]([C@H]1O)O)O
-Reactant SMILES 28 : OC[C@H]1O[C@H](O)CO[C@@H]1O
-Reactant SMILES 29 : O[C@@H]1CC([C@@H]([C@@H]1O)O)(O)O
-Reactant SMILES 30 : OC[C@H]1O[C@@H](O)OC[C@H]1O
-Reactant SMILES 31 : O[C@H]1OC[C@H](C(=C1)O)O.O
-Reactant SMILES 32 : O[C@@H]1CO[C@@H](C(=C1)O)O.O
-Reactant SMILES 33 : O[C@@H]1CO[C@@H](C(=C1O)O)O.[H][H]
-Reactant SMILES 34 : O/C=C/[C@H](OCC(O)O)O
-Reactant SMILES 35 : OC([C@@H]([C@@H](C(=C)O)O)O)O
-Reactant SMILES 36 : OC[C@H]([C@H]1OCO[C@@H]1O)O
-Reactant SMILES 37 : O[C@@H]1CO[C@@H](C(C1)(O)O)O
-Reactant SMILES 38 : CO[C@@H]1O[C@H]([C@H]([C@H]1O)O)O
-Reactant SMILES 39 : OC([C@@H]([C@@]1(O)C[C@H]1O)O)O
-Reactant SMILES 40 : O[C@H]1O[C@]([C@H]1O)(O)[C@H](O)C
-Reactant SMILES 41 : O[C@@H]1COC([C@@H](C1)O)(O)O
-Reactant SMILES 42 : OC([C@@H]1CO[C@@H]([C@@H]1O)O)O
-Reactant SMILES 43 : OCCO[C@@H](/C(=C/O)/O)O
-Reactant SMILES 44 : O[C@@H]1[C@H](O)COCO[C@@H]1O
-Reactant SMILES 45 : O[C@@H]1CO[C@@H]([C@@H](OC1)O)O
-Reactant SMILES 46 : OC[C@H]1CO[C@@H]([C@@H](O1)O)O
-Reactant SMILES 47 : OCOC[C@H](/C(=C\O)/O)O
-Total Memory : 17095577600
-Memory used : 538681344
-Memory used percent : 47.8
+Reactant SMILES 1 : O=CC(O)O.O/C=C(/O)\C
+Reactant SMILES 2 : O=CC(C(=C)O)(O)O.CO
+Reactant SMILES 3 : O/C=C(\CC(=O)O)/O.CO
+Reactant SMILES 4 : O[C@H](C(=O)O)C(=C)O.CO
+Reactant SMILES 5 : OCC(=O)[C@H](/C(=C\O)/O)O.[H][H]
+Reactant SMILES 6 : O/C=C(\[C@@H](C(=O)O)O)/O.C
+Reactant SMILES 7 : O=C/C=C(/C(O)O)\O.CO
+Reactant SMILES 8 : O/C=C\[C@@H](C(=O)O)O.CO
+Reactant SMILES 9 : O=CC/C(=C\O)/O.OCO
+Reactant SMILES 10 : O=C[C@H](/C(=C(\O)/C)/O)O.O
+Reactant SMILES 11 : O/C=C\C(C=O)(O)O.CO
+Reactant SMILES 12 : O=C1OC=C([C@@H]1O)O.CO.[H][H]
+Reactant SMILES 13 : O/C=C(\[C@](C=O)(O)C)/O.O
+Reactant SMILES 14 : CO[C@@H]([C@H](/C(=C\O)/O)O)O
+Reactant SMILES 15 : CO/C=C(/[C@@H](C=O)O)\O.O
+Reactant SMILES 16 : O/C=C(/C(C=O)(O)O)\O.C
+Reactant SMILES 17 : OCC(=O)/C(=C\O)/O.CO
+Reactant SMILES 18 : O/C=C(/C(O)O)\O.CC=O
+Reactant SMILES 19 : O[C@@H]1OC=C([C@@H]1O)O.CO
+Reactant SMILES 20 : O/C=C(\[C@@H](C(=O)C)O)/O.O
+Reactant SMILES 21 : O/C(=C\OC=O)/CO.CO
+Reactant SMILES 22 : CO[C@@H](/C(=C\O)/O)C=O.O
+Reactant SMILES 23 : O=COC/C(=C\O)/O.CO
+Reactant SMILES 24 : O/C=C(\[C@H](O)C)/O.OC=O
+Reactant SMILES 25 : OC[C@@H](/C(=C\O)/O)C=O.O
+Reactant SMILES 26 : O/C=C(/[C@](C=O)(OC)O)\O.[H][H]
+Reactant SMILES 27 : O=C[C@H](/C(=C\O)/OC)O.O
+Reactant SMILES 28 : O=CO/C(=C/O)/CO.CO
+Reactant SMILES 29 : O=C[C@H](C(=C(O)O)O)O.C
+Reactant SMILES 30 : O/C=C(/C(O)O)\C=O.CO
+Reactant SMILES 31 : OC/C(=C\O)/O.COC=O
+Reactant SMILES 32 : O/C=C(\C(=C\O)\O)/O.CO
 
-ARD terminated on Mon May 11 18:35:08 2020
-Total ARD run time: 39.5 s
+Total Memory : 17095577600
+Memory used : 722038784
+Memory used percent : 42.3
+
+ARD terminated on Tue May 12 02:26:56 2020
+Total ARD run time: 35.2 s
 
 
 Start nerwork exploring......
 ######################################################################
 #################### AUTOMATIC REACTION DISCOVERY ####################
 ######################################################################
-Reactant SMILES: O[C@@H]1C(=O)[C@H]([C@@H]([C@H]1O)O)O.[H][H]
+Reactant SMILES: O[C@H]([C@@H](C=O)O)OCCO
 Maximum number of bonds to be broken: 2
 Maximum number of bonds to be formed: 2
 Heat of reaction cutoff: 10.0 kcal/mol
 ######################################################################
 
 Generating all possible products...
-778 possible products generated
+670 possible products generated
 
 Filtering reactions..., dH cutoff
-26 products remaining
+44 products remaining
 
 Filtering reactions..., isomorphic
-12 products remaining
+32 products remaining
 
 Feasible products:
 
-Reactant SMILES 1 : O[C@H]1C[C@H]([C@@H](C1=O)O)O.O
-Reactant SMILES 2 : O[C@H]1C[C@H](C(C1=O)(O)O)O.[H][H]
-Reactant SMILES 3 : O=C1CC([C@H]([C@@H]1O)O)(O)O.[H][H]
-Reactant SMILES 4 : OCC(=O)[C@H](/C(=C\O)/O)O.[H][H]
-Reactant SMILES 5 : O/C=C\1/O[C@@H]([C@H]([C@@H]1O)O)O.[H][H]
-Reactant SMILES 6 : O=C1C[C@@H](C([C@@H]1O)(O)O)O.[H][H]
+Reactant SMILES 1 : CO[C@@H]([C@@H](C(=O)CO)O)O
+Reactant SMILES 2 : OCC[C@@H]([C@@H](OC=O)O)O
+Reactant SMILES 3 : CCO[C@@H](C(C=O)(O)O)O
+Reactant SMILES 4 : OCCO[C@H](OC=O)CO
+Reactant SMILES 5 : OC[C@@H]1OC[C@H]([C@H](O1)O)O
+Reactant SMILES 6 : OCCOCC(C=O)(O)O
+Reactant SMILES 7 : O[C@]1(CCO[C@@H]1O)C=O.O
+Reactant SMILES 8 : O[C@@H]1C(=O)CCO[C@H]1O.O
+Reactant SMILES 9 : O[C@@H]1OC[C@H]([C@H](OC1)O)O
+Reactant SMILES 10 : OCCOC[C@@H](C(=O)O)O
+Reactant SMILES 11 : OCCO[C@@H](CC(=O)O)O
+Reactant SMILES 12 : OCCOC(CC=O)(O)O
+Reactant SMILES 13 : O=C[C@H](C(=O)O)O.CCO
+Reactant SMILES 14 : OCCO[C@@H](/C(=C/O)/O)O
+Reactant SMILES 15 : O[C@H]1OCC[C@@H]1O.OC=O
+Reactant SMILES 16 : O[C@@H](OCCO)COC=O
+Reactant SMILES 17 : OCCO[C@@H](C(=O)CO)O
+Reactant SMILES 18 : OCCO[C@@H](C(O)O)C=O
+Reactant SMILES 19 : CCO[C@@H]([C@@H](C(=O)O)O)O
+Reactant SMILES 20 : O[C@H](O[C@@H](C=O)O)CCO
+Reactant SMILES 21 : O[C@H]1[C@H](O)OC1=O.CCO
+Reactant SMILES 22 : O[C@@H]1[C@@H](O)OCCO[C@H]1O
+Reactant SMILES 23 : C[C@H](O[C@@H]([C@@H](C=O)O)O)O
+Reactant SMILES 24 : CO[C@@H]([C@@H](C=O)OCO)O
+Reactant SMILES 25 : O=C[C@H](C1OCCO1)O.O
+Reactant SMILES 26 : O[C@@H](OCCOC=O)CO
+Reactant SMILES 27 : CCOC([C@@H](C=O)O)(O)O
+Reactant SMILES 28 : O=C[C@@H]1OCCO[C@@H]1O.O
+Reactant SMILES 29 : O[C@@H](O[C@@H](CO)O)CC=O
+Reactant SMILES 30 : O=CCCO[C@@H](C(O)O)O
+Reactant SMILES 31 : OCCO[C@@H](O/C=C\O)O
+Reactant SMILES 32 : O=CC[C@H](OCC(O)O)O
+
+Total Memory : 17095577600
+Memory used : 740610048
+Memory used percent : 42.3
+
+ARD terminated on Tue May 12 02:27:26 2020
+Total ARD run time: 30.1 s
+
+
+Start nerwork exploring......
+######################################################################
+#################### AUTOMATIC REACTION DISCOVERY ####################
+######################################################################
+Reactant SMILES: OC[C@@H](O[C@H](C=O)CO)O
+Maximum number of bonds to be broken: 2
+Maximum number of bonds to be formed: 2
+Heat of reaction cutoff: 10.0 kcal/mol
+######################################################################
+
+Generating all possible products...
+633 possible products generated
+
+Filtering reactions..., dH cutoff
+40 products remaining
+
+Filtering reactions..., isomorphic
+28 products remaining
+
+Feasible products:
+
+Reactant SMILES 1 : OCC(C=O)CO.OC=O
+Reactant SMILES 2 : OCC[C@H](OC(O)O)C=O
+Reactant SMILES 3 : OCO/C=C\O[C@H](CO)O
+Reactant SMILES 4 : OC[C@H]1O[C@H](CC1=O)O.O
+Reactant SMILES 5 : OC[C@H]1O[C@@H](O)CO[C@H]1O
+Reactant SMILES 6 : OCCC(=O)O[C@H](CO)O
+Reactant SMILES 7 : OC[C@@H](O[C@@](C=O)(O)C)O
+Reactant SMILES 8 : O=C[C@H]1O[C@H](C[C@@H]1O)O.O
+Reactant SMILES 9 : OC[C@@H](C(=O)O)O[C@@H](O)C
+Reactant SMILES 10 : O=C[C@@H](O[C@H](C(O)O)O)C
+Reactant SMILES 11 : OC[C@@H](O/C(=C\O)/CO)O
+Reactant SMILES 12 : OC[C@@H]1CO[C@@H]([C@@H](O1)O)O
+Reactant SMILES 13 : OC[C@@H](OCC(O)O)C=O
+Reactant SMILES 14 : O[C@H]1COC[C@H](O1)C=O.O
+Reactant SMILES 15 : O=C[C@H](C(O)O)O[C@@H](O)C
+Reactant SMILES 16 : OC[C@@H]1CO[C@@](O1)(O)CO
+Reactant SMILES 17 : OC[C@@H]1O[C@H]([C@@H](O1)O)CO
+Reactant SMILES 18 : OC[C@H]1O[C@H](O[C@@H]1CO)O
+Reactant SMILES 19 : OC[C@@H]1OC[C@@H](O1)C=O.O
+Reactant SMILES 20 : OC[C@H]1OC(=O)[C@@H](O1)CO.[H][H]
+Reactant SMILES 21 : O=C[C@H]1O[C@H]([C@@H](C1)O)O.O
+Reactant SMILES 22 : OC[C@](O[C@@H](O)C)(C=O)O
+Reactant SMILES 23 : OCC(=O)O.OCCC=O
+Reactant SMILES 24 : OC[C@H](OC(O)(O)C)C=O
+Reactant SMILES 25 : OCC(=O)CO[C@H](CO)O
+Reactant SMILES 26 : OCCO[C@H](C(=O)O)CO
+Reactant SMILES 27 : CO[C@H](O[C@H](CO)O)C=O
+Reactant SMILES 28 : OC[C@@H](O[C@H](C(=O)O)C)O
+
+Total Memory : 17095577600
+Memory used : 752017408
+Memory used percent : 42.3
+
+ARD terminated on Tue May 12 02:27:54 2020
+Total ARD run time: 28.1 s
+
+
+Start nerwork exploring......
+######################################################################
+#################### AUTOMATIC REACTION DISCOVERY ####################
+######################################################################
+Reactant SMILES: O=CC(O)O.OC/C=C/O
+Maximum number of bonds to be broken: 2
+Maximum number of bonds to be formed: 2
+Heat of reaction cutoff: 10.0 kcal/mol
+######################################################################
+
+Generating all possible products...
+744 possible products generated
+
+Filtering reactions..., dH cutoff
+55 products remaining
+
+Filtering reactions..., isomorphic
+37 products remaining
+
+Feasible products:
+
+Reactant SMILES 1 : O/C=C/[C@H]([C@H](C(O)O)O)O
+Reactant SMILES 2 : O/C=C/[C@H](OCC(O)O)O
+Reactant SMILES 3 : O/C=C\O[C@@H](C(O)O)CO
+Reactant SMILES 4 : OC/C=C/OC=O.OCO
+Reactant SMILES 5 : OC/C=C/O[C@H](C(O)O)O
+Reactant SMILES 6 : O=CC(O)(O)O.C/C=C\O
+Reactant SMILES 7 : O/C=C/CC(C=O)(O)O.O
+Reactant SMILES 8 : OC/C=C(\OCC(O)O)/O
+Reactant SMILES 9 : O/C=C/CC(O)O.OC=O
+Reactant SMILES 10 : O/C=C/CO[C@@H](C(O)O)O
+Reactant SMILES 11 : O=CC(O)O.CC=C(O)O
+Reactant SMILES 12 : OC(=O)C(O)O.OCC=C
+Reactant SMILES 13 : O/C=C/C(O)O.OCC=O
+Reactant SMILES 14 : O=CC(O)O.C=CC(O)O
+Reactant SMILES 15 : OC/C(=C\O)/C(C=O)(O)O.[H][H]
+Reactant SMILES 16 : O/C=C/CC(=O)C(O)O.O
+Reactant SMILES 17 : O/C=C/[C@H](C(C=O)(O)O)O.[H][H]
+Reactant SMILES 18 : O/C=C/CO[C@@H](C=O)O.O
+Reactant SMILES 19 : OCO[C@@H](C(O)O)/C=C/O
+Reactant SMILES 20 : O/C=C/[C@H](C(=O)C(O)O)O.[H][H]
+Reactant SMILES 21 : O/C=C/C(=O)C(O)O.CO
+Reactant SMILES 22 : OC/C=C/C(=O)C(O)O.O
+Reactant SMILES 23 : OC(O)O.O=CC/C=C/O
+Reactant SMILES 24 : O=COC/C=C\O.OCO
+Reactant SMILES 25 : OC(=O)C(O)O.C/C=C\O
+Reactant SMILES 26 : OC/C(=C/O)/[C@H](C(O)O)O
+Reactant SMILES 27 : OC/C=C/OC(=O)C(O)O.[H][H]
+Reactant SMILES 28 : O[C@H](C=O)O/C=C/CO.O
+Reactant SMILES 29 : OCC(=O)O.OC/C=C/O
+Reactant SMILES 30 : OC/C(=C\O)/C(=O)C(O)O.[H][H]
+Reactant SMILES 31 : OC/C=C(/[C@H](C(O)O)O)\O
+Reactant SMILES 32 : OC[C@H]1[C@H](O)O[C@H]1C(O)O
+Reactant SMILES 33 : O=CC(O)O.CO/C=C/O
+Reactant SMILES 34 : OC/C(=C\O)/OCC(O)O
+Reactant SMILES 35 : OC/C=C/C(C=O)(O)O.O
+Reactant SMILES 36 : OC/C=C/C(O)O.OC=O
+Reactant SMILES 37 : OC/C=C(/C(C=O)(O)O)\O.[H][H]
+
+Total Memory : 17095577600
+Memory used : 769916928
+Memory used percent : 42.3
+
+ARD terminated on Tue May 12 02:28:24 2020
+Total ARD run time: 29.9 s
+
+
+Start nerwork exploring......
+######################################################################
+#################### AUTOMATIC REACTION DISCOVERY ####################
+######################################################################
+Reactant SMILES: O[C@@H]([C@H](CO)O)OCC=O
+Maximum number of bonds to be broken: 2
+Maximum number of bonds to be formed: 2
+Heat of reaction cutoff: 10.0 kcal/mol
+######################################################################
+
+Generating all possible products...
+678 possible products generated
+
+Filtering reactions..., dH cutoff
