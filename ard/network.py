@@ -2,7 +2,10 @@ import logging
 import os
 import time
 import psutil
-
+import multiprocessing as mp
+#from multiprocessing import Pool
+from multiprocessing.dummy import Pool as ThreadPool
+from functools import partial
 
 import pybel
 from rmgpy import settings
@@ -35,8 +38,6 @@ class Network(object):
         self.network_log = util.initializeLog(log_level, os.path.join(self.output_dir, 'NETWORK.log'), logname='sec')
         self.reactions = {}
         self.network_prod_mols = []
-        self.add_bonds = []
-        self.break_bonds = []
         self.pre_product = []
         self.reactant_list = []
         self.nround = -1
@@ -78,27 +79,20 @@ class Network(object):
         else:
             H298_reac = self.reac_mol.getH298(thermo_db)
             self.logger.info('Filtering reactions..., dH cutoff')
-            prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
+            """
+            pool = ThreadPool(12)
+            func = partial(self.filterThreshold, H298_reac, thermo_db)
+            results = pool.map(func, prod_mols)
+            pool.close()
+            pool.join()
+            prod_mols_filtered = [mol for mol in prod_mols if results[prod_mols.index(mol)]]
+            """
+            prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, thermo_db, mol)]
             self.logger.info('{} products remaining\n'.format(len(prod_mols_filtered)))
             
-            
-        #check product isomorphic and filter them
-        if self.nbreak == 3 and self.nform == 3:
-            gen_2.generateProducts(nbreak=2, nform=2)
-            prod_mols_2 = gen_2.prod_mols
-            #prod_mols_filtered_2 after filter by delta H
-            if self.method == "mopac":
-                prod_mols_filtered_2 = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol, **kwargs)]
-            else:
-                prod_mols_filtered_2 = [mol for mol in prod_mols_2 if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
-            prod_mols_filtered_2 = self.unique_key_filterIsomorphic_itself(prod_mols_filtered_2)
-            prod_mols_filtered = self.unique_key_filterIsomorphic(prod_mols_filtered, prod_mols_filtered_2)
-            prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
-            prod_mols_filtered += prod_mols_filtered_2 
-        else:
-            self.logger.info('Filtering reactions..., isomorphic')
-            prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
-            self.logger.info('{} products remaining\n'.format(len(prod_mols_filtered)))
+        self.logger.info('Filtering reactions..., isomorphic')
+        prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
+        self.logger.info('{} products remaining\n'.format(len(prod_mols_filtered)))
             
         # append product_mol to network
         pre_products = []
@@ -113,16 +107,23 @@ class Network(object):
             self.network_log.info("Need {} Rounds\n".format(len(prod_mols_filtered)))
             self.network_log.info("-----------------------------------------\n")
             self.first_num = len(prod_mols_filtered)
+            """
+            with mp.Pool(mp.cpu_count()) as p:
+                for mol in prod_mols_filtered:
+                    index = prod_mols.index(mol)
+                    p.apply_async(self.gen_geometry, args=(mol_object, mol, add_bonds[index], break_bonds[index]))
+                p.close()
+                p.join()
+            """
             for idx, mol in enumerate(prod_mols_filtered):
                 index = prod_mols.index(mol)
-                self.add_bonds.append(add_bonds[index])
-                self.break_bonds.append(break_bonds[index])
                 self.network_prod_mols.append(mol)
                 self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
                 self.logger.info('Reactant SMILES {} : {}'.format(idx+1, mol.write('can').strip()))
                 rxn_idx = 'reaction{}'.format(idx)
                 rxn_num = '{:05d}'.format(self.rxn_num)
                 self.reactions[rxn_idx] = ['00000', rxn_num]
+                
             self.finalize(start_time)
             self.logger.info('\n\nStart nerwork exploring......')
             self.recurrently_gen(self.network_prod_mols, 0)
@@ -142,18 +143,25 @@ class Network(object):
             if det != 0:
                 index = self.network_prod_mols.index(mol_object)
                 rxn_idx = 'reaction{}'.format(index)
-                tmp_list = self.reactions[rxn_idx]          
-                for j, prod_mol in enumerate(filtered):
-                    idx = prod_mols.index(prod_mol)
-                    self.add_bonds.append(add_bonds[idx])
-                    self.break_bonds.append(break_bonds[idx])
+                tmp_list = self.reactions[rxn_idx]
+                """
+                with Pool(mp.cpu_count()) as p:
+                    for mol in filtered:
+                        index = prod_mols.index(mol)
+                        p.apply_async(self.gen_geometry, args=(mol_object, mol, add_bonds[index], break_bonds[index]))
+                    p.close()
+                    p.join() 
+                """       
+                for j, mol in enumerate(filtered):
+                    index = prod_mols.index(mol)
                     a = copy.deepcopy(tmp_list)
                     rxn_idx = 'reaction{}'.format(self.rxn_num)
                     rxn_num = '{:05d}'.format(self.rxn_num + 1)
                     a.append(rxn_num)
                     self.reactions[rxn_idx] = a
-                    self.gen_geometry(mol_object, prod_mol, add_bonds[idx], break_bonds[idx])
-                    self.logger.info('Reactant SMILES {} : {}'.format(j+1, prod_mol.write('can').strip()))
+                    self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
+                    self.logger.info('Reactant SMILES {} : {}'.format(j+1, mol.write('can').strip()))
+                    
                 self.finalize(start_time)
                 self.logger.info('\n\nStart nerwork exploring......')
                 for key, same_prod in enumerate(same):
@@ -224,7 +232,7 @@ class Network(object):
 
 
 
-    def filterThreshold(self, H298_reac, prod_mol, thermo_db, **kwargs):
+    def filterThreshold(self, H298_reac, thermo_db, prod_mol):
         """
         Filter threshold based on standard enthalpies of formation of reactants
         and products. Returns `True` if the heat of reaction is less than
@@ -232,19 +240,18 @@ class Network(object):
         """
         H298_prod = prod_mol.getH298(thermo_db)
         dH = H298_prod - H298_reac
-        
         if dH < self.dh_cutoff:
-            return True
-        return False
-    
+            return 1
+        return 0
+        
     def filter_dh_mopac(self, H298_reac, prod_mol, **kwargs):
         H298_product = mopac(prod_mol, self.forcefield)
         H298_prod = H298_product.mopac_get_H298(prod_mol)
         dH = H298_prod - H298_reac
 
         if dH < self.dh_cutoff:
-            return True
-        return False
+            return 1
+        return 0
 
 
     def unique_key_filterIsomorphic(self, base, compare):
@@ -274,7 +281,6 @@ class Network(object):
 
 
     def gen_geometry(self, reactant_mol, network_prod_mol, add_bonds, break_bonds, **kwargs):
-        start_time = time.time()
         self.rxn_num += 1
         # These two lines are required so that new coordinates are
         # generated for each new product. Otherwise, Open Babel tries to
@@ -289,7 +295,7 @@ class Network(object):
         reactant_mol.gen3D(forcefield=self.forcefield, make3D=False)
         network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
         
-        """
+
         reactant_mol_copy, network_prod_mol_copy= reactant_mol.copy(), network_prod_mol.copy()
         try:
             arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
@@ -298,7 +304,7 @@ class Network(object):
                 self.logger.info(msg)
         except:
             reactant_mol, network_prod_mol = reactant_mol_copy, network_prod_mol_copy
-        """
+
         
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reactant_mol.gen3D(make3D=False)
