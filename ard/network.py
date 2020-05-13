@@ -120,12 +120,14 @@ class Network(object):
                 index = prod_mols.index(mol)
                 self.network_prod_mols.append(mol)
                 self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
-                self.logger.info('Reactant SMILES {} : {}'.format(idx+1, mol.write('can').strip()))
+                self.logger.info('Product SMILES {} : {}'.format(idx+1, mol.write('can').strip()))
                 rxn_idx = 'reaction{}'.format(idx)
                 rxn_num = '{:05d}'.format(self.rxn_num)
                 self.reactions[rxn_idx] = ['00000', rxn_num]
                 data[rxn_idx] = ['00000', rxn_num]
                 data['for_ssm_check'] = rxn_num
+                data['Reactant SMILES'] = mol_object.write('can').strip()
+                data['Product SMILES'] = mol.write('can').strip()
                 collection.insert_one(data)
             self.finalize(start_time)
             self.logger.info('\n\nStart nerwork exploring......')
@@ -141,7 +143,7 @@ class Network(object):
             for mol in filtered:
                 self.pre_product.append(mol)
                 self.network_prod_mols.append(mol)
-            self.network_log.info('Reactant SMILES : {} ---> Generate {} possible products.'.format(mol_object.write('can').strip(), det))
+            self.network_log.info('Product SMILES : {} ---> Generate {} possible products.'.format(mol_object.write('can').strip(), det))
             self.network_log.info("Total products : {}".format(len(self.network_prod_mols)))
             if det != 0:
                 collection = db['reactions']
@@ -157,15 +159,17 @@ class Network(object):
                     a.append(rxn_num)
                     self.reactions[rxn_idx] = a
                     self.gen_geometry(mol_object, mol, add_bonds[idx], break_bonds[idx])
-                    self.logger.info('Reactant SMILES {} : {}'.format(j+1, mol.write('can').strip()))
+                    self.logger.info('Product SMILES {} : {}'.format(j+1, mol.write('can').strip()))
                     data[rxn_idx] = a
                     data['for_ssm_check'] = rxn_num
+                    data['Reactant SMILES'] = mol_object.write('can').strip()
+                    data['Product SMILES'] = mol.write('can').strip()
                     collection.insert_one(data)
                 self.finalize(start_time)
                 self.logger.info('\n\nStart nerwork exploring......')
-                for key, same_prod in enumerate(same):
+                for key, mol in enumerate(same):
                     data = {}
-                    idx = prod_mols.index(same_prod)
+                    idx = prod_mols.index(mol)
                     self.add_bonds.append(add_bonds[idx])
                     self.break_bonds.append(break_bonds[idx])     
                     a = copy.deepcopy(tmp_list)
@@ -175,6 +179,8 @@ class Network(object):
                     self.reactions[rxn_idx] = a 
                     data[rxn_idx] = a
                     data['for_ssm_check'] = rxn_num
+                    data['Reactant SMILES'] = mol_object.write('can').strip()
+                    data['Product SMILES'] = mol.write('can').strip()
                     collection.insert_one(data)
             """
             else:
