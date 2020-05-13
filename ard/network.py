@@ -38,8 +38,6 @@ class Network(object):
         self.reactions = {}
         self.network_prod_mols = []
         self.add_bonds = []
-        self.break_bonds = []
-        self.pre_product = []
         self.reactant_list = []
         self.nround = -1
         self.first_num = 0
@@ -120,8 +118,6 @@ class Network(object):
             for idx, mol in enumerate(prod_mols_filtered):
                 data = {}
                 index = prod_mols.index(mol)
-                self.add_bonds.append(add_bonds[index])
-                self.break_bonds.append(break_bonds[index])
                 self.network_prod_mols.append(mol)
                 self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
                 self.logger.info('Reactant SMILES {} : {}'.format(idx+1, mol.write('can').strip()))
@@ -152,18 +148,16 @@ class Network(object):
                 index = self.network_prod_mols.index(mol_object)
                 rxn_idx = 'reaction{}'.format(index)
                 tmp_list = self.reactions[rxn_idx]          
-                for j, prod_mol in enumerate(filtered):
+                for j, mol in enumerate(filtered):
                     data = {}
-                    idx = prod_mols.index(prod_mol)
-                    self.add_bonds.append(add_bonds[idx])
-                    self.break_bonds.append(break_bonds[idx])
+                    idx = prod_mols.index(mol)
                     a = copy.deepcopy(tmp_list)
                     rxn_idx = 'reaction{}'.format(self.rxn_num)
                     rxn_num = '{:05d}'.format(self.rxn_num + 1)
                     a.append(rxn_num)
                     self.reactions[rxn_idx] = a
-                    self.gen_geometry(mol_object, prod_mol, add_bonds[idx], break_bonds[idx])
-                    self.logger.info('Reactant SMILES {} : {}'.format(j+1, prod_mol.write('can').strip()))
+                    self.gen_geometry(mol_object, mol, add_bonds[idx], break_bonds[idx])
+                    self.logger.info('Reactant SMILES {} : {}'.format(j+1, mol.write('can').strip()))
                     data[rxn_idx] = a
                     data['for_ssm_check'] = rxn_num
                     collection.insert_one(data)
@@ -387,7 +381,7 @@ class Network(object):
             self.makeDrawFile(product, 'product.xyz', **kwargs)
             self.makeisomerFile(add_bonds, break_bonds, **kwargs)
 
-            collect.insert_one({'dir':rxn_num, 'path' : output_dir, "energy_status":"job_unrun", "ssm_status":"job_unrun"})
+            collect.insert_one({'dir':rxn_num, 'path' : output_dir, "energy_status":"job_unrun", "ssm_status":"job_unrun", "ts_status":"job_unrun", "irc_status":"job_unrun"})
 
     def logHeader(self, mol_object):
         """

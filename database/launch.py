@@ -51,7 +51,7 @@ def launch_energy_jobs():
         update_energy_status(target, job_id)
         
 def create_energy_sub_file(path, Energy_dir_path, ncpus = 1, mpiprocs = 1):
-    subfile = os.path.join(Energy_dir_path, 'calculate_energy.job')
+    subfile = os.path.join(Energy_dir_path, 'cal_E.job')
     
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}'.format(ncpus, mpiprocs)
@@ -114,7 +114,7 @@ def launch_ssm_jobs():
         update_ssm_status(target, job_id)
         
 def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 1, mpiprocs = 1):
-    subfile = path.join(SSM_dir_path, 'calculate_ssm.job')
+    subfile = path.join(SSM_dir_path, 'cal_ssm.job')
     xyz_file = path.join(dir_path, 'reactant.xyz')
     isomers = path.join(dir_path, 'add_bonds.txt')
     lot_inp_file = path.join(path.join(os.path.abspath(os.path.join(os.getcwd(), '../../..')), 'submmit_required'), 'qstart')
@@ -126,7 +126,7 @@ def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 1, mpiprocs = 1):
     nes2 = 'conda activate rmg3'
     scratch = 'export QCSCRATCH=/tmp/ypli/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
     coord_type = 'DLC'
-    command = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -lot_inp_file {} -coordinate_type {} >status.log'.format(xyz_file, isomers, lot_inp_file, coord_type)    clean_scratch = 'rm -r $QCSCRATCH'
+    command = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -lot_inp_file {} -coordinate_type {} -max_gsm_iters 100 -max_opt_steps 30 -CONV_TOL 0.0005 -ADD_NODE_TOL 0.01 -DQMAG_MAX 0.8 -num_nodes 30 -conv_Ediff 300 >status.log'.format(xyz_file, isomers, lot_inp_file, coord_type)    clean_scratch = 'rm -r $QCSCRATCH'
     with open(subfile, 'w') as f:
         f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, nes2, scratch, command, clean_scratch))
     return subfile
@@ -134,7 +134,7 @@ def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 1, mpiprocs = 1):
 def update_ssm_status(target, job_id):
     collect = db['molecules']
     reg_query = {"path":target}
-    update_field = {"ssm_status":"job_launched", "ssm_jobid":job_id, "ts_status":"job_unrun"}
+    update_field = {"ssm_status":"job_launched", "ssm_jobid":job_id}
     collect.update_one(reg_query, {"$set": update_field}, True)
     
     
@@ -147,7 +147,7 @@ Submmit TS calculation job
     
 def select_ts_target():
     collect = db['molecules']
-    reg_query = {"ssm_status":"job_success"}
+    reg_query = {"ts_status":"job_unrun"}
     targets = list(collect.find(reg_query))
     selected_targets = []
     for target in targets:
@@ -185,7 +185,7 @@ def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 1, mpiprocs = 1):
     tsnode_path = path.join(SSM_dir_path, 'TSnode.xyz')
     ts_input_file = path.join(TS_dir_path, 'ts.in')
     ts_output_file = path.join(TS_dir_path, 'ts.out')
-    subfile = path.join(TS_dir_path, 'calculate_ts.job')
+    subfile = path.join(TS_dir_path, 'cal_ts.job')
 
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}'.format(ncpus, mpiprocs)
@@ -207,22 +207,38 @@ def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 1, mpiprocs = 1):
             f2.write('$end\n')
             # jobtype
             f2.write('$rem\n')
-            f2.write('jobtype freq\n')
-            f2.write('exchange ' + 'b3lyp' + '\n')
-            f2.write('basis ' + '6-31+G*' + '\n')
+            f2.write('JOBTYPE FREQ\n')
+            f2.write('METHOD B97-D3\n')
+            f2.write('DFT_D D3_BJ\n')
+            f2.write('BASIS def2-mSVP\n')
+            f2.write('SCF_ALGORITHM DIIS\n')
+            f2.write('MAX_SCF_CYCLES 150\n')
+            f2.write('SCF_CONVERGENCE 8\n')
+            f2.write('SYM_IGNORE TRUE\n')
+            f2.write('SYMMETRY FALSE\n')
+            f2.write('WAVEFUNCTION_ANALYSIS FALSE\n')
             f2.write('$end\n')
             f2.write('\n@@@\n\n')
             f2.write('$molecule\n')
             f2.write('read\n')
             f2.write('$end\n')
             f2.write('$rem\n')
-            f2.write('jobtype ' + 'ts' + '\n')
-            f2.write('exchange ' + 'b3lyp' + '\n')
-            f2.write('basis ' + '6-31+G*' + '\n')
-            f2.write('sym_ignore true\n')  # Have to disable symmetry to obtain input orientation
-            f2.write('geom_opt_max_cycles 100\n')
-            f2.write('scf_guess read\n')
-            f2.write('geom_opt_hessian read\n')
+            f2.write('JOBTYPE TS\n')
+            f2.write('METHOD B97-D3\n')
+            f2.write('DFT_D D3_BJ\n')
+            f2.write('BASIS def2-mSVP\n')
+            f2.write('SCF_GUESS READ\n')
+            f2.write('GEOM_OPT_HESSIAN READ\n')
+            f2.write('SCF_ALGORITHM DIIS\n')
+            f2.write('MAX_SCF_CYCLES 150\n')
+            f2.write('SCF_CONVERGENCE 8\n')
+            f2.write('SYM_IGNORE TRUE\n')
+            f2.write('SYMMETRY FALSE\n')
+            f2.write('GEOM_OPT_MAX_CYCLES 150\n')
+            f2.write('GEOM_OPT_TOL_GRADIENT 100\n')
+            f2.write('GEOM_OPT_TOL_DISPLACEMENT 400\n')
+            f2.write('GEOM_OPT_TOL_ENERGY 33\n')
+            f2.write('WAVEFUNCTION_ANALYSIS FALSE\n')
             f2.write('$end\n')
             
     with open(subfile, 'w') as f:
@@ -239,5 +255,5 @@ def update_ts_status(target, job_id):
     
     
 #launch_energy_jobs()
-#launch_ssm_jobs()
-launch_ts_jobs()
+launch_ssm_jobs()
+#launch_ts_jobs()
