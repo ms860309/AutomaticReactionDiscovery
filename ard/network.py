@@ -75,11 +75,11 @@ class Network(object):
         if self.method == "mopac":
             H298_reactant = mopac(mol_object, self.forcefield)
             H298_reac = H298_reactant.mopac_get_H298(mol_object)
-            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol, **kwargs)]
+            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol)]
         else:
             H298_reac = self.reac_mol.getH298(thermo_db)
             self.logger.info('Filtering reactions..., dH cutoff')
-            prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
+            prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, mol, thermo_db)]
             self.logger.info('{} products remaining\n'.format(len(prod_mols_filtered)))
 
         #check product isomorphic and filter them
@@ -88,9 +88,9 @@ class Network(object):
             prod_mols_2 = gen_2.prod_mols
             #prod_mols_filtered_2 after filter by delta H
             if self.method == "mopac":
-                prod_mols_filtered_2 = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol, **kwargs)]
+                prod_mols_filtered_2 = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol)]
             else:
-                prod_mols_filtered_2 = [mol for mol in prod_mols_2 if self.filterThreshold(H298_reac, mol, thermo_db, **kwargs)]
+                prod_mols_filtered_2 = [mol for mol in prod_mols_2 if self.filterThreshold(H298_reac, mol, thermo_db)]
             #prod_mols_filtered_2 after filter by isomorphic
             prod_mols_filtered_2 = self.unique_key_filterIsomorphic_itself(prod_mols_filtered_2)
             prod_mols_filtered = self.unique_key_filterIsomorphic(prod_mols_filtered, prod_mols_filtered_2)
@@ -275,15 +275,26 @@ class Network(object):
             time.sleep(300)
             self.first_generation(products)
         
+    def filterThreshold(self, H298_reac, prod_mol, thermo_db):
+        """
+        Filter threshold based on standard enthalpies of formation of reactants
+        and products. Returns `True` if the heat of reaction is less than
+        `self.dh_cutoff`, `False` otherwise.
+        """
+        H298_prod = prod_mol.getH298(thermo_db)
+        dH = H298_prod - H298_reac
+        if dH < self.dh_cutoff:
+            return 1
+        return 0
     
-    def filter_dh_mopac(self, H298_reac, prod_mol, **kwargs):
+    def filter_dh_mopac(self, H298_reac, prod_mol):
         H298_product = mopac(prod_mol, self.forcefield)
         H298_prod = H298_product.mopac_get_H298(prod_mol)
         dH = H298_prod - H298_reac
 
         if dH < self.dh_cutoff:
-            return True
-        return False
+            return 1
+        return 0
 
 
     def unique_key_filterIsomorphic(self, base, compare):
@@ -387,7 +398,7 @@ class Network(object):
             self.makeDrawFile(product, 'product.xyz', **kwargs)
             self.makeisomerFile(add_bonds, break_bonds, **kwargs)
 
-            collect.insert_one({'dir':rxn_num, 'path' : output_dir, "energy_status":"job_unrun", "ssm_status":"job_unrun", "ts_status":"job_unrun", "irc_status":"job_unrun"})
+            collect.insert_one({'dir':rxn_num, 'path' : output_dir, "energy_status":"job_unrun", "ssm_status":"job_unrun"})
 
     def logHeader(self, mol_object):
         """

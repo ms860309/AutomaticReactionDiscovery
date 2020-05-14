@@ -151,13 +151,36 @@ def check_ssm_status(job_id):
     
 def check_ssm_content_status(target_path):
 
-    ssm_path = path.join(path.join(target_path, 'SSM'), '0000_string.png')
-    if not path.exists(ssm_path):
+    ssm_path = path.join(target_path, 'SSM')
+    ssm_pic_path = path.join(ssm_path, '0000_string.png')
+    if not path.exists(ssm_pic_path):
         return "job_fail"
     else:
-        generate_ssm_product_xyz(path.join(target_path, 'SSM'))
-        return "job_success"
+        if check_ssm(ssm_path):
+            return "Exiting early"
+        else:
+            generate_ssm_product_xyz(ssm_path)
+            return "job_success"
 
+def check_ssm(ssm_path):
+    status_path = path.join(target_path, 'status.log')
+    
+    with open(status_path, 'r') as f:
+        f.seek(0, 2)
+        fsize = f.tell()
+        f.seek(max(fsize - 1024, 0), 0)  # Read last 1 kB of file
+        lines = f.readlines()
+        
+    for idx, i in enumerate(lines):
+        if i.startswith('Finished GSM!'):
+            break
+    
+    if lines[idx-1] == 'Exiting early\n'
+        return 1
+    else:
+        return 0
+    
+    
 def check_ssm_jobs():
     """
     This method checks job with following steps:

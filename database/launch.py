@@ -126,7 +126,8 @@ def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 1, mpiprocs = 1):
     nes2 = 'conda activate rmg3'
     scratch = 'export QCSCRATCH=/tmp/ypli/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
     coord_type = 'DLC'
-    command = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -lot_inp_file {} -coordinate_type {} -max_gsm_iters 100 -max_opt_steps 30 -CONV_TOL 0.0005 -ADD_NODE_TOL 0.01 -DQMAG_MAX 0.8 -num_nodes 30 -conv_Ediff 300 >status.log'.format(xyz_file, isomers, lot_inp_file, coord_type)    clean_scratch = 'rm -r $QCSCRATCH'
+    command = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -lot_inp_file {} -coordinate_type {} -max_gsm_iters 100 -max_opt_steps 30 -CONV_TOL 0.0005 -ADD_NODE_TOL 0.01 -DQMAG_MAX 0.8 -num_nodes 30 -conv_Ediff 300 >status.log'.format(xyz_file, isomers, lot_inp_file, coord_type)    
+    clean_scratch = 'rm -r $QCSCRATCH'
     with open(subfile, 'w') as f:
         f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, nes2, scratch, command, clean_scratch))
     return subfile
@@ -134,7 +135,7 @@ def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 1, mpiprocs = 1):
 def update_ssm_status(target, job_id):
     collect = db['molecules']
     reg_query = {"path":target}
-    update_field = {"ssm_status":"job_launched", "ssm_jobid":job_id}
+    update_field = {"ssm_status":"job_launched", "ssm_jobid":job_id, "ts_status":"job_unrun"}
     collect.update_one(reg_query, {"$set": update_field}, True)
     
     
@@ -250,7 +251,7 @@ def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 1, mpiprocs = 1):
 def update_ts_status(target, job_id):
     collect = db['molecules']
     reg_query = {"path":target}
-    update_field = {"ts_status":"job_launched", "ts_jobid":job_id}
+    update_field = {"ts_status":"job_launched", "ts_jobid":job_id, "irc_status":"job_unrun"}
     collect.update_one(reg_query, {"$set": update_field}, True)
     
     
