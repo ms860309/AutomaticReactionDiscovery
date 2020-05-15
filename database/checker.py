@@ -139,7 +139,6 @@ def check_ssm_status(job_id):
 
     if "Unknown Job Id" in stderr.decode():
         return "off_queue"
-    assert "JobId={0}".format(job_id) in stdout, 'PBS cannot show details for job_id {0}'.format(job_id)
 
     # in pbs stdout is byte, so we need to decode it at first.
     stdout = stdout.decode().strip().split()
@@ -163,7 +162,7 @@ def check_ssm_content_status(target_path):
             return "job_success"
 
 def check_ssm(ssm_path):
-    status_path = path.join(target_path, 'status.log')
+    status_path = path.join(ssm_path, 'status.log')
     
     with open(status_path, 'r') as f:
         f.seek(0, 2)
@@ -175,7 +174,7 @@ def check_ssm(ssm_path):
         if i.startswith('Finished GSM!'):
             break
     
-    if lines[idx-1] == 'Exiting early\n'
+    if lines[idx-1] == 'Exiting early\n':
         return 1
     else:
         return 0
@@ -208,9 +207,15 @@ def check_ssm_jobs():
         # if any difference update status
         orig_status = target['ssm_status']
         if orig_status != new_status:
-            update_field = {
-                            'ssm_status': new_status
-                           }
+
+            if new_status == 'job_success':
+                update_field = {
+                                'ssm_status': new_status, "ts_status":"job_unrun"
+                            }
+            else:
+                update_field = {
+                                'ssm_status': new_status
+                            }
 
             collect.update_one(target, {"$set": update_field}, True)
             # update reactions collection information
@@ -240,5 +245,127 @@ def generate_ssm_product_xyz(target_path):
     with open(parent_ssm_product_path,'w') as q:
         q.write('{}\n{}'.format(lines[idx-1], ''.join(lines[idx+1:])))
 
+
+def select_ts_target():
+    """
+    This method is to inform job checker which targets 
+    to check, which need meet one requirement:
+    1. status is job_launched or job_running
+    Returns a list of targe
+    """
+    collect = db['molecules']
+    reg_query = {"ts_status":
+                    {"$in": 
+                        ["job_launched", "job_running"] 
+                    }
+                }
+    targets = list(collect.find(reg_query))
+
+    return targets
+
+def check_ts_status(job_id):
+    """
+    This method checks slurm status of a job given job_id
+    Returns off_queue or job_launched or job_running
+    """
+    commands = ['qstat', '-f', job_id]
+    process = subprocess.Popen(commands,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    if "Unknown Job Id" in stderr.decode():
+        return "off_queue"
+
+    # in pbs stdout is byte, so we need to decode it at first.
+    stdout = stdout.decode().strip().split()
+    idx = stdout.index('job_state')
+    if stdout[idx+2] == 'R':
+        return "job_running"
+    else:
+        return "job_launched"
+    
+def check_ts_content_status(target_path):
+
+    ts_dir_path = path.join(target_path, 'TS')
+    ts_out_path = path.join(ts_dir_path, 'ts.out')
+    ts_geo_path = path.join(ts_dir_path, 'ts_geo.xyz')
+
+    with open(ts_out_path, 'r') as f:
+        f.seek(0, 2)
+        fsize = f.tell()
+        f.seek(max(fsize - 6144, 0), 0)  # Read last 6 kB of file
+        lines = f.readlines()
+
+    for idx, i in enumerate(lines):
+        if i.startswith(' **  OPTIMIZATION CONVERGED  **\n'):
+            break
+    for idx2, i in enumerate(lines):
+        if i.startswith('Z-matrix Print:\n'):
+            break
+
+    
+    if lines[idx] != ' **  OPTIMIZATION CONVERGED  **\n':
+        # here 0 is just let ts_energy do not error
+        return "job_fail", 0
+    else:
+        # generate geometry xyz file
+        geo = []
+        for i in lines[idx+5:idx2-1]:
+            atom = i.split()[1:]
+            geo.append('  '.join(atom))
+            
+        with open(ts_geo_path, 'w') as f:
+            f.write(str(len(geo)))
+            f.write('\n\n')
+            f.write('\n'.join(geo))
+        # get ts energy
+        ts_energy = lines[idx-4].split()[-1]
+
+        return "job_success", ts_energy
+
+    
+    
+def check_ts_jobs():
+    """
+    This method checks job with following steps:
+    1. select jobs to check
+    2. check the job pbs-status, e.g., qstat -f "job_id"
+    3. check job content
+    4. update with new status
+    """
+    # 1. select jobs to check
+    targets = select_ts_target()
+
+    collect = db['molecules']
+    
+    # 2. check the job slurm-status
+    for target in targets:
+        job_id = target['ts_jobid']
+        # 2. check the job slurm_status
+        new_status = check_ts_status(job_id)
+        if new_status == "off_queue":
+            # 3. check job content
+            new_status, ts_energy= check_ts_content_status(target['path'])
+
+        # 4. check with original status which
+        # should be job_launched or job_running
+        # if any difference update status
+        orig_status = target['ts_status']
+        if orig_status != new_status:
+
+            if new_status == 'job_success':
+                update_field = {
+                                'ts_status': new_status, 'ts_energy':ts_energy, "irc_status":"job_unrun"
+                            }
+            else:
+                update_field = {
+                                'ts_status': new_status
+                            }
+
+            collect.update_one(target, {"$set": update_field}, True)
+
+
 #check_energy_jobs()
 check_ssm_jobs()
+#check_ts_jobs()
