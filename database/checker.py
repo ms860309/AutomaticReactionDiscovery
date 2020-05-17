@@ -155,8 +155,10 @@ def check_ssm_content_status(target_path):
     if not path.exists(ssm_pic_path):
         return "job_fail"
     else:
-        if check_ssm(ssm_path):
+        if check_ssm(ssm_path) == 'Exiting early':
             return "Exiting early"
+        elif check_ssm(ssm_path) == 'total dissociation':
+            return 'total dissociation'
         else:
             generate_ssm_product_xyz(ssm_path)
             return "job_success"
@@ -175,7 +177,9 @@ def check_ssm(ssm_path):
             break
     
     if lines[idx-1] == 'Exiting early\n':
-        return 1
+        return 'Exiting early'
+    elif lines[idx-2] == 'total dissociation\n':
+        return 'total dissociation'
     else:
         return 0
     
