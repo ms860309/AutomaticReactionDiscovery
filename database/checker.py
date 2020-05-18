@@ -64,9 +64,10 @@ def check_energy_status(job_id):
     else:
         return "job_launched"
     
-def check_energy_content_status(path):
-
-    energy_path = path.join(path, "energy.out")
+def check_energy_content_status(rxn_path):
+    
+    energy_dir = path.join(rxn_path, "Energy")
+    energy_path = path.join(energy_dir, "energy.out")
     if not path.exists(energy_path):
         return "job_aborted"
     else:
@@ -214,7 +215,7 @@ def check_ssm_jobs():
 
             if new_status == 'job_success':
                 update_field = {
-                                'ssm_status': new_status, "ts_status":"job_unrun"
+                                'ssm_status': new_status, "ts_status":"job_unrun", "energy_status":"job_unrun"
                             }
             else:
                 update_field = {
@@ -371,5 +372,5 @@ def check_ts_jobs():
 
 
 #check_energy_jobs()
-check_ssm_jobs()
+#check_ssm_jobs()
 #check_ts_jobs()

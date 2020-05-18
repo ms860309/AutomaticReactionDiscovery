@@ -54,7 +54,7 @@ class NetworkDrawer(object):
         self.options = {
             'structures': True,
             'fontFamily': 'sans',
-            'fontSizeNormal': 5,
+            'fontSizeNormal': 3,
             'Eunits': 'kJ/mol',
             'padding': 16,
             'wellWidth': 64,
@@ -90,7 +90,8 @@ class NetworkDrawer(object):
         """
         dirs = os.listdir(os.path.join(os.path.abspath(os.pardir), 'reactions'))
         for i in dirs:
-            energy_path = os.path.join(os.path.join(os.path.join(os.path.abspath(os.pardir), 'reactions'), i), "energy.out")
+            energy_dir_path = os.path.join(os.path.join(os.path.join(os.path.abspath(os.pardir), 'reactions'), i), "Energy")
+            energy_path = os.path.join(energy_dir_path, "energy.out")
             with open(energy_path, 'r') as f:
                 lines = f.readlines()
                 for line in lines:
@@ -232,7 +233,7 @@ class NetworkDrawer(object):
             for num, intermediate in enumerate(network[reaction][1:]):
                 #draw intermediate and product horizontal line
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
-                cr.set_line_width(1.0)
+                cr.set_line_width(0.5)
                 cr.move_to(padding + 55 * (num+1), max_E_value - self.energy[intermediate] + 20)
                 cr.line_to(padding + 55 * (num+1) + 10, max_E_value - self.energy[intermediate] + 20)
                 cr.save()
@@ -247,7 +248,7 @@ class NetworkDrawer(object):
                 """
                 #draw dir label
                 cr.move_to(padding + 55 * (num+1), max_E_value - self.energy[network[reaction][num+1]] + 23)
-                cr.set_font_size(3)
+                cr.set_font_size(1)
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
                 cr.show_text(intermediate + '('+ str(round(self.energy[intermediate] - self.energy['00000'], 3)) +')')
                 cr.restore()
@@ -265,6 +266,6 @@ class NetworkDrawer(object):
                 cr.stroke()
                 
 #network = {'reaction2': ['00000', '00003'], 'reaction0': ['00000', '00001'], 'reaction1': ['00000', '00002']}
-network = {'reaction0': ['00000', '00001'], 'reaction1': ['00000', '00002'], 'reaction2': ['00000', '00001', '00003'], 'reaction3': ['00000', '00001', '00004'], 'reaction4': ['00000', '00001', '00005'], 'reaction5': ['00000', '00002', '00006'], 'reaction6': ['00000', '00002', '00007'], 'reaction7': ['00000', '00002', '00005']}
+network = {'reaction0': ['00000', '00001'], 'reaction1': ['00000', '00004'], 'reaction2': ['00000', '00005'], 'reaction3': ['00000', '00007'], 'reaction4': ['00000', '00010'], 'reaction5': ['00000', '00012'], 'reaction6': ['00000', '00014'], 'reaction7': ['00000', '00015'], 'reaction8': ['00000', '00017'], 'reaction9': ['00000', '00021'], 'reaction10': ['00000', '00025'], 'reaction11': ['00000', '00027'], 'reaction12': ['00000', '00028'], 'reaction13': ['00000', '00030'], 'reaction14': ['00000', '00031'], 'reaction15': ['00000', '00034'], 'reaction16': ['00000', '00036'], 'reaction17': ['00000', '00037'], 'reaction18': ['00000', '00038'], 'reaction19': ['00000', '00040'], 'reaction20': ['00000', '00041'], 'reaction21':['00000', '00048'], 'reaction22': ['00000', '00050'], 'reaction23': ['00000', '00051'], 'reaction24': ['00000', '00052'], 'reaction25': ['00000', '00054']}
 NetworkDrawer().draw(network, 'pdf', os.path.join(os.getcwd(), 'network.pdf'))
 
