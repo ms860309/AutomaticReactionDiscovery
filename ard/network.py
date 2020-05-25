@@ -1,4 +1,3 @@
-import logging
 import os
 import time
 import psutil
@@ -32,36 +31,24 @@ class Network(object):
         self.forcefield = forcefield
         self.dh_cutoff = float(kwargs['dh_cutoff'])
         self.output_dir = kwargs['output_dir']
-        log_level = logging.INFO
-        self.logger = util.initializeLog(log_level, os.path.join(self.output_dir, 'ARD.log'), logname='main')
-        self.network_log = util.initializeLog(log_level, os.path.join(self.output_dir, 'NETWORK.log'), logname='sec')
         self.reactions = {}
         self.network_prod_mols = []
         self.add_bonds = []
         self.reactant_list = []
-        self.nround = -1
-        self.first_num = 0
-        self.tmp = 0
-        self._count = 0
-        self.generation = 1
-        self.rxn_num = -1
+        self.generations = kwargs['generations']
         self.method = kwargs["dh_cutoff_method"]
         
 
-    def genNetwork(self, mol_object, _round = 1, **kwargs):
+    def genNetwork(self, mol_object, **kwargs):
         """
         Execute the automatic reaction discovery procedure.
         """
-        start_time = time.time()
-        self.logHeader(mol_object)
         #Add all reactant to a list for pgen filter isomorphic
         if mol_object not in self.reactant_list:
             self.reactant_list.append(mol_object)
         gen = Generate(mol_object, self.reactant_list)
-        self.logger.info('Generating all possible products...')
         gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
         prod_mols = gen.prod_mols
-        self.logger.info('{} possible products generated\n'.format(len(prod_mols)))
         self.reactant_list += prod_mols
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
@@ -78,9 +65,7 @@ class Network(object):
             prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol)]
         else:
             H298_reac = self.reac_mol.getH298(thermo_db)
-            self.logger.info('Filtering reactions..., dH cutoff')
             prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, mol, thermo_db)]
-            self.logger.info('{} products remaining\n'.format(len(prod_mols_filtered)))
 
         #check product isomorphic and filter them
         if self.nbreak == 3 and self.nform == 3:
@@ -97,183 +82,23 @@ class Network(object):
             prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
             prod_mols_filtered += prod_mols_filtered_2 
         else:
-            self.logger.info('Filtering reactions..., isomorphic')
             prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
-            self.logger.info('{} products remaining\n'.format(len(prod_mols_filtered)))
 
-        # append product_mol to network
-        pre_products = []
         # initial round add all prod to self.network
-        self.nround += _round
-        if self.nround == 0:
-            self.logger.info('Feasible products:\n')
-            self.network_logHeader(mol_object)
-            self.network_log.info("-----------------------------------------\n")
-            self.network_log.info("\nGeneration : {}\n".format(self.generation))
-            self.network_log.info("-----------------------------------------\n")
-            self.network_log.info("Need {} Rounds\n".format(len(prod_mols_filtered)))
-            self.network_log.info("-----------------------------------------\n")
-            self.first_num = len(prod_mols_filtered)
-            collection = db['reactions']
-            for idx, mol in enumerate(prod_mols_filtered):
-                data = {}
-                index = prod_mols.index(mol)
-                self.network_prod_mols.append(mol)
-                self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
-                self.logger.info('Product SMILES {} : {}'.format(idx+1, mol.write('can').strip()))
-                rxn_idx = 'reaction{}'.format(idx)
-                rxn_num = '{:05d}'.format(self.rxn_num)
-                self.reactions[rxn_idx] = ['00000', rxn_num]
-                data[rxn_idx] = ['00000', rxn_num]
-                data['for_ssm_check'] = rxn_num
-                data['Reactant SMILES'] = mol_object.write('can').strip()
-                data['Product SMILES'] = mol.write('can').strip()
-                collection.insert_one(data)
-            self.finalize(start_time)
-            self.logger.info('\n\nStart nerwork exploring......')
-            self.first_generation(self.network_prod_mols)
-        else:
-            self.logger.info('Feasible products:\n')
-            for mol in prod_mols_filtered:
-                pre_products.append(mol)
-            filtered = []
-            same = []
-            filtered, same, same_key = self.unique_key_filterIsomorphic(self.network_prod_mols, pre_products)
-            det = len(filtered)
-            for mol in filtered:
-                self.pre_product.append(mol)
-                self.network_prod_mols.append(mol)
-            self.network_log.info('Product SMILES : {} ---> Generate {} possible products.'.format(mol_object.write('can').strip(), det))
-            self.network_log.info("Total products : {}".format(len(self.network_prod_mols)))
-            if det != 0:
-                collection = db['reactions']
-                index = self.network_prod_mols.index(mol_object)
-                rxn_idx = 'reaction{}'.format(index)
-                tmp_list = self.reactions[rxn_idx]          
-                for j, mol in enumerate(filtered):
-                    data = {}
-                    idx = prod_mols.index(mol)
-                    a = copy.deepcopy(tmp_list)
-                    rxn_idx = 'reaction{}'.format(self.rxn_num)
-                    rxn_num = '{:05d}'.format(self.rxn_num + 1)
-                    a.append(rxn_num)
-                    self.reactions[rxn_idx] = a
-                    self.gen_geometry(mol_object, mol, add_bonds[idx], break_bonds[idx])
-                    self.logger.info('Product SMILES {} : {}'.format(j+1, mol.write('can').strip()))
-                    data[rxn_idx] = a
-                    data['for_ssm_check'] = rxn_num
-                    data['Reactant SMILES'] = mol_object.write('can').strip()
-                    data['Product SMILES'] = mol.write('can').strip()
-                    collection.insert_one(data)
-                self.finalize(start_time)
-                self.logger.info('\n\nStart nerwork exploring......')
-                for key, mol in enumerate(same):
-                    data = {}
-                    idx = prod_mols.index(mol)
-                    self.add_bonds.append(add_bonds[idx])
-                    self.break_bonds.append(break_bonds[idx])     
-                    a = copy.deepcopy(tmp_list)
-                    rxn_idx = 'reaction{}'.format(self.rxn_num+key)
-                    rxn_num = '{:05d}'.format(same_key[key]+1)
-                    a.append(rxn_num)
-                    self.reactions[rxn_idx] = a 
-                    data[rxn_idx] = a
-                    data['for_ssm_check'] = rxn_num
-                    data['Reactant SMILES'] = mol_object.write('can').strip()
-                    data['Product SMILES'] = mol.write('can').strip()
-                    collection.insert_one(data)
-            """
-            else:
-                # filter = 0
-                index = self.network_prod_mols.index(mol_object)
-                rxn_idx = 'reaction{}'.format(index)
-                tmp_list = self.reactions[rxn_idx]
-                for key, same_prod in enumerate(same):
-                    idx = prod_mols.index(same_prod)
-                    self.add_bonds.append(add_bonds[idx])
-                    self.break_bonds.append(break_bonds[idx])     
-                    a = copy.deepcopy(tmp_list)
-                    rxn_idx = 'reaction{}'.format(self.rxn_num)
-                    rxn_num = '{:05d}'.format(same_key[key]+1)
-                    a.append(rxn_num)
-                    self.reactions[rxn_idx] = a
-                    self.rxn_num += 1 
-            """
+        collection = db['reactions']
+        
+        for idx, mol in enumerate(prod_mols_filtered):
+            index = prod_mols.index(mol)
+            self.network_prod_mols.append(mol)
+            # gen geo return path
+            dir_path = self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
+            reactant_name = mol_object.toRMGMolecule().to_inchi_key()
+            product_name = mol.toRMGMolecule().to_inchi_key()
+            rxn_idx = '{}_{}'.format(reactant_name, idx+1)
+            self.reactions[rxn_idx] = [reactant_name, product_name]
+            collection.insert_one({rxn_idx: [reactant_name, product_name], 'Reactant SMILES':mol_object.write('can').strip(), 'Product SMILES':mol.write('can').strip(), 'path':dir_path, 'ssm_status':'job_unrun', 'generations':self.generations})
 
-    def recurrently_gen (self, prod_mols_filtered, num):
-        """
-        For generate recyclely
-        First gen geometry and then recurrently gen
-        """
-        self.genNetwork(prod_mols_filtered[num])
-        self._count += 1
-        self.network_log.info("Finished {}/{} rounds at {} generations\n".format(self._count, self.first_num+self.tmp, self.generation))
-        self.network_log.info("-----------------------------------------\n")
-        self.checker(self.nround, self.first_num)
-    
-    def checker(self, count, check):
-        if count == check:
-            if len(self.pre_product) !=0:
-                self.recurrently_checker(count, check)
-            elif len(self.pre_product) == 0:
-                self.network_log.info("Network is finished.\nself.reactions = {}".format(self.reactions))
-        elif count == check + self.tmp:
-            if len(self.pre_product) !=0:
-                self.recurrently_checker(count, check)
-            elif len(self.pre_product) == 0:
-                self.network_log.info("Network is finished.\nself.reactions = {}".format(self.reactions))
 
-    def recurrently_checker(self, count, check):
-        """
-        Use database to check number,
-        if success + fail == target number:
-            recurrently_gen
-        else:
-            wait 5min (300s)
-            back to checker
-        """
-        collect = db['moleculues']
-        query = {"ssm_status":
-            {"$in":
-                ["job_success", "job_fail"]
-            }
-        }
-        targets = list(collect.find(query))
-        if len(targets) == count:
-            self.generation += 1
-            self.network_log.info("-----------------------------------------\n")
-            self.network_log.info("Generation : {}\n".format(self.generation))
-            self.network_log.info("-----------------------------------------\n")
-            self.network_log.info("Need {} Rounds\n".format(len(self.pre_product)))
-            self.network_log.info("-----------------------------------------\n")
-            self.tmp = len(self.pre_product)
-            self.pre_product = []
-            req = {'ssm_status':'job_success'}
-            targets = list(collect.find(query))
-            for target in targets:
-                number = int(target['dir'])
-                self.recurrently_gen(self.network_prod_mols, number)
-        else:
-            time.sleep(300)
-            self.checker(self.nround, self.first_num)
-    
-    def first_generation(self, products):
-        collect = db['moleculues']
-        query = {"ssm_status":
-            {"$in":
-                ["job_success", "job_fail"]
-            }
-        }
-        targets = list(collect.find(query))
-        if len(targets) == len(products):
-            req = {'ssm_status':'job_success'}
-            targets = list(collect.find(query))
-            for target in targets:
-                number = int(target['dir'])
-                self.recurrently_gen(self.network_prod_mols, number)
-        else:
-            time.sleep(300)
-            self.first_generation(products)
         
     def filterThreshold(self, H298_reac, prod_mol, thermo_db):
         """
@@ -324,8 +149,6 @@ class Network(object):
 
 
     def gen_geometry(self, reactant_mol, network_prod_mol, add_bonds, break_bonds, **kwargs):
-        start_time = time.time()
-        self.rxn_num += 1
         #database
         collect = db['molecules']
         
@@ -341,16 +164,16 @@ class Network(object):
         # Generate 3D geometries
         reactant_mol.gen3D(forcefield=self.forcefield, make3D=False)
         network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
-
+        """
         reactant_mol_copy, network_prod_mol_copy= reactant_mol.copy(), network_prod_mol.copy()
         try:
             arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
             msg = arrange3D.arrangeIn3D()
             if msg != '':
-                self.logger.info(msg)
+                print(msg)
         except:
             reactant_mol, network_prod_mol = reactant_mol_copy, network_prod_mol_copy
-            
+        """
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reactant_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
@@ -360,81 +183,20 @@ class Network(object):
         reactant = reactant_mol.toNode()
         product = network_prod_mol.toNode()
         subdir = os.path.join(os.path.abspath(os.pardir), 'reactions')
-        if self.rxn_num == 0:
-
-            if os.path.exists(subdir):
-                shutil.rmtree(subdir)
+        if not os.path.exists(subdir):
             os.mkdir(subdir)
-            rxn_num = '{:05d}'.format(self.rxn_num)
-            output_dir = util.makeOutputSubdirectory(subdir, rxn_num)
-            kwargs['output_dir'] = output_dir
-            kwargs['name'] = rxn_num
-            self.makeCalEnergyFile(reactant, **kwargs)
-            self.makeDrawFile(reactant, filename = 'reactant.xyz', **kwargs)
+        dirname = network_prod_mol.toRMGMolecule().to_inchi_key()
+        output_dir = util.makeOutputSubdirectory(subdir, dirname)
+        kwargs['output_dir'] = output_dir
+        self.makeInputFile(reactant, product, **kwargs)
+        self.makeCalEnergyFile(product, **kwargs)
+        self.makeDrawFile(reactant, 'reactant.xyz', **kwargs)
+        self.makeDrawFile(product, 'product.xyz', **kwargs)
+        self.makeisomerFile(add_bonds, break_bonds, **kwargs)
 
-            collect.insert_one({'dir':rxn_num, 'path' : output_dir, "ssm_status":"job_unrun"})
+        collect.insert_one({'dir':dirname, 'path' : output_dir})
+        return output_dir
 
-            self.rxn_num += 1
-            rxn_num = '{:05d}'.format(self.rxn_num)
-            output_dir = util.makeOutputSubdirectory(subdir, rxn_num)
-            kwargs['output_dir'] = output_dir
-            kwargs['name'] = rxn_num
-            self.makeInputFile(reactant, product, **kwargs)
-            self.makeCalEnergyFile(product, **kwargs)
-            self.makeDrawFile(reactant, filename = 'reactant.xyz', **kwargs)
-            self.makeDrawFile(product, filename = 'product.xyz', **kwargs)
-            self.makeisomerFile(add_bonds, break_bonds, **kwargs)
-
-            collect.insert_one({'dir':rxn_num, 'path' : output_dir, "ssm_status":"job_unrun"})
-
-        else:
-            rxn_num = '{:05d}'.format(self.rxn_num)
-            output_dir = util.makeOutputSubdirectory(subdir, rxn_num)
-            kwargs['output_dir'] = output_dir
-            kwargs['name'] = rxn_num
-            self.makeInputFile(reactant, product, **kwargs)
-            self.makeCalEnergyFile(product, **kwargs)
-            self.makeDrawFile(reactant, 'reactant.xyz', **kwargs)
-            self.makeDrawFile(product, 'product.xyz', **kwargs)
-            self.makeisomerFile(add_bonds, break_bonds, **kwargs)
-
-            collect.insert_one({'dir':rxn_num, 'path' : output_dir, "ssm_status":"job_unrun"})
-
-    def logHeader(self, mol_object):
-        """
-        Output a log file header.
-        """
-        self.logger.info('######################################################################')
-        self.logger.info('#################### AUTOMATIC REACTION DISCOVERY ####################')
-        self.logger.info('######################################################################')
-        self.logger.info('Reactant SMILES: ' + mol_object.write('can').strip())
-        self.logger.info('Maximum number of bonds to be broken: ' + str(self.nbreak))
-        self.logger.info('Maximum number of bonds to be formed: ' + str(self.nform))
-        self.logger.info('Heat of reaction cutoff: {:.1f} kcal/mol'.format(self.dh_cutoff))
-        self.logger.info('######################################################################\n')
-
-    def network_logHeader(self, mol_object):
-        """
-        Output a log file header.
-        """
-        self.network_log.info('######################################################################')
-        self.network_log.info('#################### NETWORK EXPLORATION ####################')
-        self.network_log.info('######################################################################')
-        self.network_log.info('Reactant SMILES: ' + mol_object.write('can').strip())
-        self.network_log.info('Maximum number of bonds to be broken: ' + str(self.nbreak))
-        self.network_log.info('Maximum number of bonds to be formed: ' + str(self.nform))
-        self.network_log.info('Heat of reaction cutoff: {:.1f} kcal/mol'.format(self.dh_cutoff))
-        self.network_log.info('######################################################################\n')
-        
-    def finalize(self, start_time):
-        """
-        Finalize the job.
-        """
-        self.logger.info('\nTotal Memory : {}'.format(info.total))
-        self.logger.info('Memory used : {}'.format(psutil.Process(os.getpid()).memory_info().rss))
-        self.logger.info('Memory used percent : {}'.format(info.percent))
-        self.logger.info('\nARD terminated on ' + time.asctime())
-        self.logger.info('Total ARD run time: {:.1f} s'.format(time.time() - start_time))
         
     @staticmethod
     def makeInputFile(reactant, product, **kwargs):

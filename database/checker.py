@@ -31,7 +31,7 @@ def select_energy_target():
     Returns a list of targe
     """
 
-    collect = db['molecules']
+    collect = db['reactions']
     reg_query = {"energy_status":
                     {"$in":
                         ["job_launched", "job_running"]
@@ -89,7 +89,7 @@ def check_energy_jobs():
     """
     # 1. select jobs to check
     targets = select_energy_target()
-    collect = db['molecules']
+    collect = db['reactions']
     
     # 2. check the job pbs_status
     for target in targets:
@@ -117,7 +117,7 @@ def select_ssm_target():
     1. status is job_launched or job_running
     Returns a list of targe
     """
-    collect = db['molecules']
+    collect = db['reactions']
     reg_query = {"ssm_status":
                     {"$in": 
                         ["job_launched", "job_running"] 
@@ -196,7 +196,7 @@ def check_ssm_jobs():
     # 1. select jobs to check
     targets = select_ssm_target()
 
-    collect = db['molecules']
+    collect = db['reactions']
     
     # 2. check the job slurm-status
     for target in targets:
@@ -223,12 +223,6 @@ def check_ssm_jobs():
                             }
 
             collect.update_one(target, {"$set": update_field}, True)
-            # update reactions collection information
-            collect1 = db['reactions']
-            dir_name = target['dir']
-            reg_query = {"for_ssm_check":dir_name}
-            tt = collect1.find_one(reg_query)
-            collect1.update_one(tt, {"$set": update_field}, True)
 	
 
 def generate_ssm_product_xyz(target_path):
@@ -258,7 +252,7 @@ def select_ts_target():
     1. status is job_launched or job_running
     Returns a list of targe
     """
-    collect = db['molecules']
+    collect = db['reactions']
     reg_query = {"ts_status":
                     {"$in": 
                         ["job_launched", "job_running"] 
@@ -342,7 +336,7 @@ def check_ts_jobs():
     # 1. select jobs to check
     targets = select_ts_target()
 
-    collect = db['molecules']
+    collect = db['reactions']
     
     # 2. check the job slurm-status
     for target in targets:
@@ -357,11 +351,12 @@ def check_ts_jobs():
         # should be job_launched or job_running
         # if any difference update status
         orig_status = target['ts_status']
+        next_gen_num = int(target['generations']) + 1
         if orig_status != new_status:
 
             if new_status == 'job_success':
                 update_field = {
-                                'ts_status': new_status, 'ts_energy':ts_energy, "irc_status":"job_unrun"
+                                'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'next_gen_num':next_gen_num
                             }
             else:
                 update_field = {

@@ -3,10 +3,4 @@ imaginarybond     0                 # Experimental function of imaginary bond
 nbreak            2                 # Maximum number of bonds to be broken
 nform             2                 # Maximum number of bonds to be formed
 dH_cutoff         10                # Heat of reaction cutoff
-nsteps            6                 # Number of gradient evaluations
-nnode             20                # Desired number of nodes
-lsf               0.7               # Line search factor
-tol               0.05              # Perpendicular gradient tolerance
-nLSTnodes         100               # Number of nodes for LST interpolation
-theory      b3lyp/6-31+G*           # Level of theory
-dH_cutoff_method  1mopac             # method
+dH_cutoff_method  1mopac            # method
