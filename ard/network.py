@@ -34,7 +34,6 @@ class Network(object):
         self.reactions = {}
         self.network_prod_mols = []
         self.add_bonds = []
-        self.reactant_list = []
         self.generations = kwargs['generations']
         self.method = kwargs["dh_cutoff_method"]
         
@@ -43,13 +42,30 @@ class Network(object):
         """
         Execute the automatic reaction discovery procedure.
         """
+        collection = db['reactions']
+        product_pool = db['pool']
+
         #Add all reactant to a list for pgen filter isomorphic
-        if mol_object not in self.reactant_list:
-            self.reactant_list.append(mol_object)
-        gen = Generate(mol_object, self.reactant_list)
+        mol_obj_inchi_key = mol_object.toRMGMolecule().to_inchi_key()
+        reg_query = {"reactant_inchi_key":
+                        {"$in":
+                            [mol_obj_inchi_key]
+                        }
+                    }
+        targets = list(product_pool.find(reg_query))
+        if not targets:
+            product_pool.insert_one({'reactant_inchi_key':mol_obj_inchi_key})
+
+        tars = list(collect.find({}, {'reactant_inchi_key':1}))
+        inchi_key_list = [i['reactant_inchi_key'] for i in tars]
+
+        gen = Generate(mol_object, inchi_key_list)
         gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
         prod_mols = gen.prod_mols
-        self.reactant_list += prod_mols
+        
+        for i in prod_mols:
+            product_pool.insert_one({'reactant_inchi_key':itoRMGMolecule().to_inchi_key()})
+
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
 
@@ -85,8 +101,9 @@ class Network(object):
             prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
 
         # initial round add all prod to self.network
-        collection = db['reactions']
-        
+
+        prod_mols_filtered = self.unique_key_filterIsomorphic(prod_mols_filtered)
+
         for idx, mol in enumerate(prod_mols_filtered):
             index = prod_mols.index(mol)
             self.network_prod_mols.append(mol)
@@ -96,7 +113,7 @@ class Network(object):
             product_name = mol.toRMGMolecule().to_inchi_key()
             rxn_idx = '{}_{}'.format(reactant_name, idx+1)
             self.reactions[rxn_idx] = [reactant_name, product_name]
-            collection.insert_one({rxn_idx: [reactant_name, product_name], 'Reactant SMILES':mol_object.write('can').strip(), 'Product SMILES':mol.write('can').strip(), 'path':dir_path, 'ssm_status':'job_unrun', 'generations':self.generations})
+            collection.insert_one({rxn_idx: [reactant_name, product_name], 'Reactant SMILES':mol_object.write('can').strip(), 'reactant_inchi_key' = reactant_name, 'product_inchi_key':product_name, 'Product SMILES':mol.write('can').strip(), 'path':dir_path, 'ssm_status':'job_unrun', 'generations':self.generations})
 
 
         
@@ -122,20 +139,24 @@ class Network(object):
         return 0
 
 
-    def unique_key_filterIsomorphic(self, base, compare):
+    def unique_key_filterIsomorphic(self, compare):
         """
         Convert rmg molecule into inchi key(unique key) and check isomorphic
         """
-        
-        base_unique = [mol.toRMGMolecule().to_inchi_key() for mol in base]
+        collection = db['reactions']
+        targets = list(collect.find({}, {'reactant_inchi_key':1}))
+        base_unique = [i['reactant_inchi_key'] for i in targets]
+        #base_unique = [mol.toRMGMolecule().to_inchi_key() for mol in base]
         compare_unique = [mol.toRMGMolecule().to_inchi_key() for mol in compare]
         isomorphic_idx = [compare_unique.index(i) for i in set(compare_unique) - set(base_unique)]
         result = [compare[i] for i in isomorphic_idx]
+        """
         same_idx = [compare_unique.index(i) for i in set(compare_unique) & set(base_unique)]
         same_key = [base_unique.index(i) for i in set(compare_unique) & set(base_unique)]
         same = [compare[i] for i in same_idx]
-        
         return result, same, same_key
+        """
+        return result
 
     def unique_key_filterIsomorphic_itself(self, base):
         """

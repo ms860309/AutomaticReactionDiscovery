@@ -18,3 +18,16 @@ class Connector(object):
 
 client = Connector()
 db = getattr(Connector(), 'db')
+
+
+product_pool = db['pool']
+mol_obj_inchi_key = 'QEDGWKGQ--wGQREQGN'
+reg_query = {"reactant_inchi_key":
+                {"$in":
+                    [mol_obj_inchi_key]
+                }
+            }
+targets = list(product_pool.find(reg_query))
+if not targets:
+    print('Nothing in')
+    product_pool.insert_one({'reactant_inchi_key':mol_obj_inchi_key})
