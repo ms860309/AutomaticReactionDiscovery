@@ -22,6 +22,9 @@ import subprocess
 import os
 from os import path
 import sys
+import rmgpy.molecule
+from rmgpy.molecule.converter import from_ob_mol
+import pybel
 
 def select_energy_target():
     """
@@ -43,7 +46,7 @@ def select_energy_target():
 
 def check_energy_status(job_id):
     """
-    This method checks slurm status of a job given job_id
+    This method checks pbs status of a job given job_id
     Returns off_queue or job_launched or job_running
     """
 
@@ -129,7 +132,7 @@ def select_ssm_target():
 
 def check_ssm_status(job_id):
     """
-    This method checks slurm status of a job given job_id
+    This method checks pbs status of a job given job_id
     Returns off_queue or job_launched or job_running
     """
     commands = ['qstat', '-f', job_id]
@@ -183,8 +186,35 @@ def check_ssm(ssm_path):
         return 'total dissociation'
     else:
         return 0
+
+def ard_prod_and_ssm_prod_checker(rxn_dir):
+    # Use ssm product xyz to check whether ssm prod equal to ard product
+    # If equal, insert the inchi key into products pool
+    # If not equal, use ssm product as the product and insert inchi key into products pool
+    # Next generation use the ssm product to generate
+    product_pool = db['pool']
     
-    
+    ard_prod_path = path.join(rxn_dir, 'product.xyz')
+    ssm_prod_path = path.join(rxn_dir, 'ssm_product.xyz')
+    OBMol_1 = readXYZ(ssm_prod_path)
+    rmg_mol_1 = toRMGmol(OBMol_1)
+    OBMol_2 = readXYZ(ard_prod_path)
+    rmg_mol_2 = toRMGmol(OBMol_2)
+    if rmg_mol_1.to_inchi_key() != rmg_mol_2.to_inchi_key():
+        product_pool.insert_one({'reactant_inchi_key':rmg_mol_1.to_inchi_key()})
+        return 'not_equal'
+    else:
+        product_pool.insert_one({'reactant_inchi_key':rmg_mol_1.to_inchi_key()})
+        return 'equal'
+
+def toRMGmol(OBMol):
+    rmg_mol = from_ob_mol(rmgpy.molecule.molecule.Molecule(), OBMol)
+    return rmg_mol
+
+def readXYZ(xyz):
+    mol = next(pybel.readfile('xyz', xyz))
+    return mol.OBMol
+
 def check_ssm_jobs():
     """
     This method checks job with following steps:
@@ -198,10 +228,10 @@ def check_ssm_jobs():
 
     collect = db['reactions']
     
-    # 2. check the job slurm-status
+    # 2. check the job pbs status
     for target in targets:
         job_id = target['ssm_jobid']
-        # 2. check the job slurm_status
+        # 2. check the job pbs status
         new_status = check_ssm_status(job_id)
         if new_status == "off_queue":
             # 3. check job content
@@ -214,8 +244,10 @@ def check_ssm_jobs():
         if orig_status != new_status:
 
             if new_status == 'job_success':
+                equal = ard_prod_and_ssm_prod_checker(target['path'])
+                
                 update_field = {
-                                'ssm_status': new_status, "ts_status":"job_unrun", "energy_status":"job_unrun"
+                                'ssm_status': new_status, "ts_status":"job_unrun", "energy_status":"job_unrun", 'ard_ssm_equal':equal
                             }
             else:
                 update_field = {
@@ -264,7 +296,7 @@ def select_ts_target():
 
 def check_ts_status(job_id):
     """
-    This method checks slurm status of a job given job_id
+    This method checks pbs status of a job given job_id
     Returns off_queue or job_launched or job_running
     """
     commands = ['qstat', '-f', job_id]
@@ -338,10 +370,10 @@ def check_ts_jobs():
 
     collect = db['reactions']
     
-    # 2. check the job slurm-status
+    # 2. check the job pbs status
     for target in targets:
         job_id = target['ts_jobid']
-        # 2. check the job slurm_status
+        # 2. check the job pbs status
         new_status = check_ts_status(job_id)
         if new_status == "off_queue":
             # 3. check job content

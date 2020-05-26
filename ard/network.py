@@ -46,26 +46,12 @@ class Network(object):
         product_pool = db['pool']
 
         #Add all reactant to a list for pgen filter isomorphic
-        mol_obj_inchi_key = mol_object.toRMGMolecule().to_inchi_key()
-        reg_query = {"reactant_inchi_key":
-                        {"$in":
-                            [mol_obj_inchi_key]
-                        }
-                    }
-        targets = list(product_pool.find(reg_query))
-        if not targets:
-            product_pool.insert_one({'reactant_inchi_key':mol_obj_inchi_key})
-
         tars = list(collect.find({}, {'reactant_inchi_key':1}))
         inchi_key_list = [i['reactant_inchi_key'] for i in tars]
 
         gen = Generate(mol_object, inchi_key_list)
         gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
         prod_mols = gen.prod_mols
-        
-        for i in prod_mols:
-            product_pool.insert_one({'reactant_inchi_key':itoRMGMolecule().to_inchi_key()})
-
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
 

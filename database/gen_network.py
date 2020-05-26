@@ -9,6 +9,7 @@ sys.path.append(path.join(path.dirname( path.dirname( path.abspath(__file__))),'
 # Manual run 0th generations
 
 def select_ard_target():
+    
     collect = db['reactions']
     reg_query = {"ts_status":
                     {"$in": 
@@ -35,8 +36,13 @@ def launch_ard_jobs():
         
         if os.path.exists(script_path):
             os.chdir(script_path)
-            
-        subfile = create_ard_sub_file(dir_path, script_path, gen_num)
+        
+        if target['ard_ssm_equal'] == 'not_equal':
+            next_reactant = 'ssm_product.xyz'
+            subfile = create_ard_sub_file(dir_path, script_path, gen_num, next_reactant)
+        else:
+            next_reactant = 'product.xyz'
+            subfile = create_ard_sub_file(dir_path, script_path, gen_num, next_reactant)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -47,9 +53,9 @@ def launch_ard_jobs():
         # update status job_launched
         update_ard_status(target, job_id)
 
-def create_ard_sub_file(dir_path, script_path, gen_num, ncpus = 1, mpiprocs = 1):
+def create_ard_sub_file(dir_path, script_path, gen_num, next_reactant, ncpus = 1, mpiprocs = 1):
     subfile = path.join(dir_path, 'ard.job')
-    product_xyz_path = path.join(dir_path, 'product.xyz')
+    product_xyz_path = path.join(dir_path, next_reactant)
     
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}'.format(ncpus, mpiprocs)
