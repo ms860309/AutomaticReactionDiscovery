@@ -46,7 +46,7 @@ class Network(object):
         product_pool = db['pool']
 
         #Add all reactant to a list for pgen filter isomorphic
-        tars = list(collect.find({}, {'reactant_inchi_key':1}))
+        tars = list(collection.find({}, {'reactant_inchi_key':1}))
         inchi_key_list = [i['reactant_inchi_key'] for i in tars]
 
         gen = Generate(mol_object, inchi_key_list)
@@ -99,7 +99,7 @@ class Network(object):
             product_name = mol.toRMGMolecule().to_inchi_key()
             rxn_idx = '{}_{}'.format(reactant_name, idx+1)
             self.reactions[rxn_idx] = [reactant_name, product_name]
-            collection.insert_one({rxn_idx: [reactant_name, product_name], 'Reactant SMILES':mol_object.write('can').strip(), 'reactant_inchi_key' = reactant_name, 'product_inchi_key':product_name, 'Product SMILES':mol.write('can').strip(), 'path':dir_path, 'ssm_status':'job_unrun', 'generations':self.generations})
+            collection.insert_one({rxn_idx: [reactant_name, product_name], 'Reactant SMILES':mol_object.write('can').strip(), 'reactant_inchi_key':reactant_name, 'product_inchi_key':product_name, 'Product SMILES':mol.write('can').strip(), 'path':dir_path, 'ssm_status':'job_unrun', 'generations':self.generations})
 
 
         
@@ -130,7 +130,7 @@ class Network(object):
         Convert rmg molecule into inchi key(unique key) and check isomorphic
         """
         collection = db['reactions']
-        targets = list(collect.find({}, {'reactant_inchi_key':1}))
+        targets = list(collection.find({}, {'reactant_inchi_key':1}))
         base_unique = [i['reactant_inchi_key'] for i in targets]
         #base_unique = [mol.toRMGMolecule().to_inchi_key() for mol in base]
         compare_unique = [mol.toRMGMolecule().to_inchi_key() for mol in compare]

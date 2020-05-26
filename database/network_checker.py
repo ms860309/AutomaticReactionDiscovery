@@ -83,3 +83,5 @@ def check_ard_jobs():
                             }
 
             collect.update_one(target, {"$set": update_field}, True)
+            
+check_ard_jobs()

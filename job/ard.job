@@ -14,5 +14,5 @@ echo "=========================================================="
 source ~/.bashrc
 conda activate rmg3
 
-python ./ard.py input.txt
+python ard.py input.txt reactant.xyz
 conda deactivate
