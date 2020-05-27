@@ -117,7 +117,7 @@ def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 1, mpiprocs = 1):
     subfile = path.join(SSM_dir_path, 'cal_ssm.job')
     xyz_file = path.join(dir_path, 'reactant.xyz')
     isomers = path.join(dir_path, 'add_bonds.txt')
-    lot_inp_file = path.join(path.join(os.path.abspath(os.path.join(os.getcwd(), '../../..')), 'submmit_required'), 'qstart')
+    lot_inp_file = path.join(path.join(path.abspath(path.join(os.getcwd(), '../../..')), 'submmit_required'), 'qstart')
 
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}'.format(ncpus, mpiprocs)

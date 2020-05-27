@@ -398,7 +398,7 @@ def check_ts_jobs():
 
             if new_status == 'job_success':
                 update_field = {
-                                'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'next_gen_num':next_gen_num
+                                'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'ard_status':'job_unrun', 'next_gen_num':next_gen_num
                             }
             else:
                 update_field = {

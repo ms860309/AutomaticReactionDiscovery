@@ -11,9 +11,9 @@ sys.path.append(path.join(path.dirname( path.dirname( path.abspath(__file__))),'
 def select_ard_target():
     
     collect = db['reactions']
-    reg_query = {"ts_status":
+    reg_query = {'ard_status':
                     {"$in": 
-                        ["job_success"] 
+                        ["job_unrun"] 
                     }
                 }
     targets = list(collect.find(reg_query))
@@ -32,6 +32,7 @@ def select_ard_target():
     return zipped
 
 def launch_ard_jobs():
+    
     collection = db['reactions']
     if collection.estimated_document_count() == 0:
         print('The ard not start')
@@ -50,10 +51,9 @@ def launch_ard_jobs():
         print('jobid is {}'.format(job_id))
     else:
         targets = select_ard_target()
-        script_path = os.path.join(os.path.abspath(os.pardir), 'script')
         for target in list(targets):
             dir_path, gen_num, ard_ssm_equal = target[0], target[1], target[2]
-            
+            script_path = os.path.join(path.join(dir_path, '../..'), 'script')
             if os.path.exists(dir_path):
                 os.chdir(dir_path)
             
