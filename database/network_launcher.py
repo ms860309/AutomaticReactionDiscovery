@@ -73,14 +73,14 @@ def launch_ard_jobs():
             # update status job_launched
             update_ard_status(target[0], job_id)
 
-def create_ard_sub_file(dir_path, script_path, gen_num, next_reactant, ncpus = 1, mpiprocs = 1):
+def create_ard_sub_file(dir_path, script_path, gen_num, next_reactant, ncpus = 1, mpiprocs = 1, ompthreads = 1):
     subfile = path.join(dir_path, 'ard.job')
     product_xyz_path = path.join(dir_path, next_reactant)
     ard_path = path.join(script_path, 'ard.py')
     input_path = path.join(script_path, 'input.txt')
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}'.format(ncpus, mpiprocs)
-    target_path = 'cd {}'.format(dir_path)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    target_path = 'cd {}'.format(script_path)
     nes1 = 'source ~/.bashrc'
     nes2 = 'conda activate rmg3'
     command = 'python {} {} {} -generations {}'.format(ard_path, input_path, product_xyz_path, gen_num)    

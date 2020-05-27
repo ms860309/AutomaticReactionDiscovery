@@ -50,14 +50,14 @@ def launch_energy_jobs():
         # update status job_launched
         update_energy_status(target, job_id)
         
-def create_energy_sub_file(path, Energy_dir_path, ncpus = 1, mpiprocs = 1):
+def create_energy_sub_file(path, Energy_dir_path, ncpus = 1, mpiprocs = 1, ompthreads = 1):
     subfile = os.path.join(Energy_dir_path, 'cal_E.job')
     
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}'.format(ncpus, mpiprocs)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(Energy_dir_path)
-    nes1 = 'source ~/.bashrc_qchem\nconda activate rmg3'
-    nes2 = 'export QCSCRATCH=/tmp/ypli/$PBS_JOBID'
+    nes1 = 'module load qchem\nconda activate rmg3'
+    nes2 = 'export QCSCRATCH=/tmp/$PBS_JOBID'
     nes3 = 'mkdir -p $QCSCRATCH'
     nes4 = 'qchem -nt 1 energy.in energy.out'
     nes5 = 'rm -r $QCSCRATCH'
@@ -113,18 +113,18 @@ def launch_ssm_jobs():
         # update status job_launched
         update_ssm_status(target, job_id)
         
-def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 1, mpiprocs = 1):
+def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 1, mpiprocs = 1, ompthreads = 1):
     subfile = path.join(SSM_dir_path, 'cal_ssm.job')
     xyz_file = path.join(dir_path, 'reactant.xyz')
     isomers = path.join(dir_path, 'add_bonds.txt')
     lot_inp_file = path.join(path.join(path.abspath(path.join(os.getcwd(), '../../..')), 'submmit_required'), 'qstart')
 
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}'.format(ncpus, mpiprocs)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(SSM_dir_path)
-    nes1 = 'source ~/.bashrc_qchem'
+    nes1 = 'module load qchem'
     nes2 = 'conda activate rmg3'
-    scratch = 'export QCSCRATCH=/tmp/ypli/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
+    scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
     coord_type = 'DLC'
     command = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -lot_inp_file {} -coordinate_type {} -max_gsm_iters 100 -max_opt_steps 30 -CONV_TOL 0.0005 -ADD_NODE_TOL 0.01 -DQMAG_MAX 0.8 -num_nodes 30 -conv_Ediff 300 >status.log'.format(xyz_file, isomers, lot_inp_file, coord_type)    
     clean_scratch = 'rm -r $QCSCRATCH'
@@ -182,18 +182,18 @@ def launch_ts_jobs():
         # update status job_launched
         update_ts_status(target, job_id)
         
-def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 1, mpiprocs = 1):
+def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 1, mpiprocs = 1, ompthreads = 1):
     tsnode_path = path.join(SSM_dir_path, 'TSnode.xyz')
     ts_input_file = path.join(TS_dir_path, 'ts.in')
     ts_output_file = path.join(TS_dir_path, 'ts.out')
     subfile = path.join(TS_dir_path, 'cal_ts.job')
 
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}'.format(ncpus, mpiprocs)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(TS_dir_path)
-    nes1 = 'source ~/.bashrc_qchem'
+    nes1 = 'module load qchem'
     nes2 = 'conda activate rmg3'
-    scratch = 'export QCSCRATCH=/tmp/ypli/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
+    scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
     command = 'qchem -nt {} {} {}'.format(ncpus, ts_input_file, ts_output_file)
     clean_scratch = 'rm -r $QCSCRATCH'
     
