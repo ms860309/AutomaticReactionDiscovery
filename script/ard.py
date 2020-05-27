@@ -25,7 +25,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Automatic Reaction Discovery')
     parser.add_argument('file', type=str, metavar='infile', help='An input file describing the job options')
     parser.add_argument('reactant', type=str, metavar='infile', help='An reactant xyz input file')
-    parser.add_argument('-generations',default=0, type=int, help='The network generation index',required=False)
+    parser.add_argument('-generations',default=1, type=int, help='The network generation index',required=False)
     args = parser.parse_args()
     # Read input file
     input_file = os.path.abspath(args.file)

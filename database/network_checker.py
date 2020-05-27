@@ -83,5 +83,102 @@ def check_ard_jobs():
                             }
 
             collect.update_one(target, {"$set": update_field}, True)
+
+def print_information(generations):
+    """
+    For a given generations (int) print the information in database
+    """
+    collect = db['reactions']
+    gen_query = {"generations":
+                    {"$in": 
+                        [generations] 
+                    }
+                }
+    ssm_query_1 = {'$and': 
+                    [
+                    { "ssm_status":
+                        {"$in":
+                        ["job_running"]}
+                        },
+                    {'generations':generations}
+                    ]
+                }
             
+    ssm_query_2 = {'$and': 
+                    [
+                    { "ssm_status":
+                        {"$in":
+                        ["job_success"]}
+                        },
+                    {'generations':generations}
+                    ]
+                }
+    ssm_query_3 = {'$and': 
+                    [
+                    { "ssm_status":
+                        {"$in":
+                        ['job_fail', 'total dissociation', 'Exiting early']}
+                        },
+                    {'generations':generations}
+                    ]
+                }
+    ts_query_1 = {'$and': 
+                    [
+                    { "ts_status":
+                        {"$in":
+                        ['job_running']}
+                        },
+                    {'generations':generations}
+                    ]
+                }
+    ts_query_2 = {'$and': 
+                    [
+                    { "ts_status":
+                        {"$in":
+                        ['job_success']}
+                        },
+                    {'generations':generations}
+                    ]
+                }
+    ts_query_3 = {'$and': 
+                    [
+                    { "ts_status":
+                        {"$in":
+                        ['job_fail']}
+                        },
+                    {'generations':generations}
+                    ]
+                }
+    gen_targets = list(collect.find(gen_query))
+    ssm_targets_1 = list(collect.find(ssm_query_1))
+    ssm_targets_2 = list(collect.find(ssm_query_2))
+    ssm_targets_3 = list(collect.find(ssm_query_3))
+    ts_targets_1 = list(collect.find(ts_query_1))
+    ts_targets_2 = list(collect.find(ts_query_2))
+    ts_targets_3 = list(collect.find(ts_query_3))
+    reactant_target = list(collect.find({'generations':generations}))
+    smi = []
+    for target in reactant_target:
+        reactant_smi = target['Reactant SMILES']
+        smi.append(reactant_smi)
+    smi = set(smi)
+    print('-----------------------------------------')
+    print('Generations : {}'.format(generations))
+    print('Reactant SMILES : {}'.format(smi))
+    print('Nodes : {}'.format(len(gen_targets)))
+    print('{} nodes running SSM'.format(len(ssm_targets_1)))
+    print('{} nodes success in SSM'.format(len(ssm_targets_2)))
+    print('{} nodes fail in SSM'.format(len(ssm_targets_3)))
+    print('{} nodes running TS'.format(len(ts_targets_1)))
+    print('{} nodes success in TS'.format(len(ts_targets_2)))
+    print('{} nodes fail in TS'.format(len(ts_targets_3)))
+    print('-----------------------------------------')
+
+
 check_ard_jobs()
+
+print('Extracting information from database....')
+collect = db['reactions']
+max_gen = collect.find_one(sort=[("generations", -1)])
+for i in range(max_gen):
+    print_information(i+1)

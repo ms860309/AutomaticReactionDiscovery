@@ -28,6 +28,8 @@ reg_query = {"ts_status":
                 }
             }
 targets = list(co.find(reg_query))
+print(targets)
+
 selected_targets = []
 gens = []
 for target in targets:
