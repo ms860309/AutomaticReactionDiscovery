@@ -180,5 +180,6 @@ check_ard_jobs()
 print('Extracting information from database....')
 collect = db['reactions']
 max_gen = collect.find_one(sort=[("generations", -1)])
+max_gen = max_gen[generations]
 for i in range(max_gen):
     print_information(i+1)

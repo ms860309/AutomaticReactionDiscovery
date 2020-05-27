@@ -33,7 +33,7 @@ def select_ard_target():
 
 def launch_ard_jobs():
     collection = db['reactions']
-    if collection.count() == 0:
+    if collection.estimated_document_count() == 0:
         print('The ard not start')
         print('Starting ARD network exploring')
         script_path = os.path.join(os.path.abspath(os.pardir), 'script')

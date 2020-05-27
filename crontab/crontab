@@ -9,4 +9,13 @@
 # * * * * * command_to_execute
 
 
-*/10 * * * * sh checker.sh
+*/5 * * * * /home/hpc/ypli/jianyi/test_ard/AutomaticReactionDiscovery/crontab/launcher.sh >/home/hpc/ypli/jianyi/test_ard/AutomaticReactionDiscovery/crontab/launcher_log.txt 2>&1
+*/5 * * * * /home/hpc/ypli/jianyi/test_ard/AutomaticReactionDiscovery/crontab/checker.sh >/home/hpc/ypli/jianyi/test_ard/AutomaticReactionDiscovery/crontab/checker_log.txt 2>&1
+
+don't forget to change permission
+chmod +x /home/hpc/ypli/jianyi/test_ard/AutomaticReactionDiscovery/crontab/launcher.sh
+chmod +x /home/hpc/ypli/jianyi/test_ard/AutomaticReactionDiscovery/crontab/checker.sh
+chmod +x /home/hpc/ypli/jianyi/test_ard/AutomaticReactionDiscovery/database/checker.py
+chmod +x /home/hpc/ypli/jianyi/test_ard/AutomaticReactionDiscovery/database/network_checker.py
+chmod +x /home/hpc/ypli/jianyi/test_ard/AutomaticReactionDiscovery/database/launch.py
+chmod +x /home/hpc/ypli/jianyi/test_ard/AutomaticReactionDiscovery/database/network_launcher.py
