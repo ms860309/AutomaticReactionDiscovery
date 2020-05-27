@@ -32,20 +32,12 @@ def select_ard_target():
     return zipped
 
 def launch_ard_jobs():
-    targets = select_ard_target()
-    script_path = os.path.join(os.path.abspath(os.pardir), 'script')
-    for target in list(targets):
-        dir_path, gen_num, ard_ssm_equal = target[0], target[1], target[2]
-        
-        if os.path.exists(dir_path):
-            os.chdir(dir_path)
-        
-        if ard_ssm_equal == 'not_equal':
-            next_reactant = 'ssm_product.xyz'
-            subfile = create_ard_sub_file(dir_path, script_path, gen_num, next_reactant)
-        else:
-            next_reactant = 'product.xyz'
-            subfile = create_ard_sub_file(dir_path, script_path, gen_num, next_reactant)
+    collection = db['reactions']
+    if collection.count() == 0:
+        print('The ard not start')
+        print('Starting ARD network exploring')
+        script_path = os.path.join(os.path.abspath(os.pardir), 'script')
+        subfile = create_ard_sub_file(script_path, script_path, 1, 'reactant.xyz')
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -54,7 +46,32 @@ def launch_ard_jobs():
         # get job id from stdout, e.g., "106849.h81"
         job_id = stdout.decode().replace("\n", "")
         # update status job_launched
-        update_ard_status(target[0], job_id)
+        print('ARD had launched')
+        print('jobid is {}'.format(job_id))
+    else:
+        targets = select_ard_target()
+        script_path = os.path.join(os.path.abspath(os.pardir), 'script')
+        for target in list(targets):
+            dir_path, gen_num, ard_ssm_equal = target[0], target[1], target[2]
+            
+            if os.path.exists(dir_path):
+                os.chdir(dir_path)
+            
+            if ard_ssm_equal == 'not_equal':
+                next_reactant = 'ssm_product.xyz'
+                subfile = create_ard_sub_file(dir_path, script_path, gen_num, next_reactant)
+            else:
+                next_reactant = 'product.xyz'
+                subfile = create_ard_sub_file(dir_path, script_path, gen_num, next_reactant)
+            cmd = 'qsub {}'.format(subfile)
+            process = subprocess.Popen([cmd],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, shell = True)
+            stdout, stderr = process.communicate()
+            # get job id from stdout, e.g., "106849.h81"
+            job_id = stdout.decode().replace("\n", "")
+            # update status job_launched
+            update_ard_status(target[0], job_id)
 
 def create_ard_sub_file(dir_path, script_path, gen_num, next_reactant, ncpus = 1, mpiprocs = 1):
     subfile = path.join(dir_path, 'ard.job')
