@@ -5,6 +5,9 @@ from os import path
 import shutil
 import sys
 sys.path.append(path.join(path.dirname( path.dirname( path.abspath(__file__))),'script'))
+import rmgpy.molecule
+from rmgpy.molecule.converter import from_ob_mol
+import pybel
 
 # Manual run 0th generations
 
@@ -37,8 +40,15 @@ def launch_ard_jobs():
     if collection.estimated_document_count() == 0:
         print('The ard not start')
         print('Starting ARD network exploring')
-        script_path = os.path.join(os.path.abspath(os.pardir), 'script')
+        script_path = path.join(path.join(path.dirname(path.abspath(__file__)), '../'), 'script')
+        if os.path.exists(script_path):
+            os.chdir(script_path)
         subfile = create_ard_sub_file(script_path, script_path, 1, 'reactant.xyz')
+        # first reactant need to add to pool
+        product_pool = db['pool']
+        initial_reactant_OBMol = next(pybel.readfile('xyz', path.join(script_path, 'reactant.xyz')))
+        initial_reactant_inchi_key = from_ob_mol(rmgpy.molecule.molecule.Molecule(), initial_reactant_OBMol)to_inchi_key()
+        product_pool.insert_one({'reactant_inchi_key':initial_reactant_inchi_key})
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -53,7 +63,7 @@ def launch_ard_jobs():
         targets = select_ard_target()
         for target in list(targets):
             dir_path, gen_num, ard_ssm_equal = target[0], target[1], target[2]
-            script_path = os.path.join(path.join(dir_path, '../..'), 'script')
+            script_path = path.join(path.join(dir_path, '../..'), 'script')
             if os.path.exists(dir_path):
                 os.chdir(dir_path)
             

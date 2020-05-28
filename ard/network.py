@@ -34,6 +34,7 @@ class Network(object):
         self.reactions = {}
         self.network_prod_mols = []
         self.add_bonds = []
+        self.ard_path = kwargs['ard_path']
         self.generations = kwargs['generations']
         self.method = kwargs["dh_cutoff_method"]
         
@@ -189,7 +190,7 @@ class Network(object):
 
         reactant = reactant_mol.toNode()
         product = network_prod_mol.toNode()
-        subdir = os.path.join(os.path.abspath(os.pardir), 'reactions')
+        subdir = os.path.join(self.ard_path, 'reactions')
         if not os.path.exists(subdir):
             os.mkdir(subdir)
         dirname = network_prod_mol.toRMGMolecule().to_inchi_key()

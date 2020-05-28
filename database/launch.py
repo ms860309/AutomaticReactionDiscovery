@@ -56,7 +56,7 @@ def create_energy_sub_file(path, Energy_dir_path, ncpus = 1, mpiprocs = 1, ompth
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(Energy_dir_path)
-    nes1 = 'module load qchem\nconda activate rmg3'
+    nes1 = 'module load qchem'
     nes2 = 'export QCSCRATCH=/tmp/$PBS_JOBID'
     nes3 = 'mkdir -p $QCSCRATCH'
     nes4 = 'qchem -nt 1 energy.in energy.out'
@@ -117,13 +117,14 @@ def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 1, mpiprocs = 1, ompthre
     subfile = path.join(SSM_dir_path, 'cal_ssm.job')
     xyz_file = path.join(dir_path, 'reactant.xyz')
     isomers = path.join(dir_path, 'add_bonds.txt')
-    lot_inp_file = path.join(path.join(path.abspath(path.join(os.getcwd(), '../../..')), 'submmit_required'), 'qstart')
+    lot_inp_file = path.join(path.join(path.dirname(path.abspath(__file__)),'../'), 'submmit_required'), 'qstart')
 
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(SSM_dir_path)
     nes1 = 'module load qchem'
-    nes2 = 'conda activate rmg3'
+    # activate conda env is necessary because gsm install on the environment
+    nes2 = 'source ~/.bashrc\nconda activate rmg3'
     scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
     coord_type = 'DLC'
     command = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -lot_inp_file {} -coordinate_type {} -max_gsm_iters 100 -max_opt_steps 30 -CONV_TOL 0.0005 -ADD_NODE_TOL 0.01 -DQMAG_MAX 0.8 -num_nodes 30 -conv_Ediff 300 >status.log'.format(xyz_file, isomers, lot_inp_file, coord_type)    
@@ -192,7 +193,6 @@ def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 1, mpiprocs = 1, ompth
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(TS_dir_path)
     nes1 = 'module load qchem'
-    nes2 = 'conda activate rmg3'
     scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
     command = 'qchem -nt {} {} {}'.format(ncpus, ts_input_file, ts_output_file)
     clean_scratch = 'rm -r $QCSCRATCH'
@@ -243,7 +243,7 @@ def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 1, mpiprocs = 1, ompth
             f2.write('$end\n')
             
     with open(subfile, 'w') as f:
-        f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, nes2, scratch, command, clean_scratch))
+        f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, scratch, command, clean_scratch))
         
     return subfile
     

@@ -20,7 +20,6 @@ if __name__ == '__main__':
     rootlogger=logging.getLogger()
     rootlogger.setLevel(logging.CRITICAL)
     
-    
     # Set up parser for reading the input filename from the command line
     parser = argparse.ArgumentParser(description='Automatic Reaction Discovery')
     parser.add_argument('file', type=str, metavar='infile', help='An input file describing the job options')
@@ -29,6 +28,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # Read input file
     input_file = os.path.abspath(args.file)
+    ard_path = os.path.dirname(os.path.abspath(args.file))
     reactant_file = os.path.abspath(args.reactant)
     kwargs = readInput(input_file)
     OBMol = readXYZ(reactant_file)
@@ -37,6 +37,7 @@ if __name__ == '__main__':
     output_dir = path.abspath(path.dirname(input_file))
     kwargs['output_dir'] = output_dir
     kwargs['generations'] = args.generations
+    kwargs['ard_path'] = ard_path
 
     # Execute job
     ard = ARD(**kwargs)
