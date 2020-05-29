@@ -203,18 +203,18 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
     rmg_mol_2 = toRMGmol(OBMol_2)
     if rmg_mol_1.to_inchi_key() != rmg_mol_2.to_inchi_key():
         product_pool.insert_one({'reactant_inchi_key':rmg_mol_1.to_inchi_key()})
-        reg_query = {"reactant_inchi_key":
-                        {"$in":
-                            [rmg_mol_2.to_inchi_key()]
-                        }
-                    }
-        targets = list(product_pool.find(reg_query))
+        
+        num = len(list(rxn_collect.find({}, {'product_inchi_key':rmg_mol_1.to_inchi_key()})))
+        targets = list(rxn_collect.find({}, {'path':rxn_dir}))
         for i in targets:
-            update_field = {'reactant_inchi_key':rmg_mol_1.to_inchi_key()}
+            name = '{}_{}'.format(rmg_mol_1.to_inchi_key(), num)
+            new_path = path.join(path.dirname(i), name)
+            os.rename(rxn_dir, new_path)
+            update_field = {'product_inchi_key':rmg_mol_1.to_inchi_key(), 'path':new_path}
             rxn_collect.update_one(i, {"$set": update_field}, True)
         return 'not_equal'
     else:
-        product_pool.insert_one({'reactant_inchi_key':rmg_mol_1.to_inchi_key()})
+        product_pool.insert_one({'product_inchi_key':rmg_mol_1.to_inchi_key()})
         return 'equal'
 
 def toRMGmol(OBMol):
@@ -282,7 +282,7 @@ def generate_ssm_product_xyz(target_path):
             if len(a) == 1:
                 idx = lines.index(i)
                 break
-    parent_ssm_product_path  = path.join(path.abspath(os.path.join(target_path, '../')), 'ssm_product.xyz')
+    parent_ssm_product_path  = path.join(path.dirname(target_path), 'ssm_product.xyz')
     with open(parent_ssm_product_path,'w') as q:
         q.write('{}\n{}'.format(lines[idx-1], ''.join(lines[idx+1:])))
 

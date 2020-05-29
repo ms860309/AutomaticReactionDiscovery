@@ -159,7 +159,7 @@ class Network(object):
     def gen_geometry(self, reactant_mol, network_prod_mol, add_bonds, break_bonds, **kwargs):
         #database
         collect = db['molecules']
-        
+        rxn = db['reactions']
         # These two lines are required so that new coordinates are
         # generated for each new product. Otherwise, Open Babel tries to
         # use the coordinates of the previous molecule if it is isomorphic
@@ -190,10 +190,12 @@ class Network(object):
 
         reactant = reactant_mol.toNode()
         product = network_prod_mol.toNode()
-        subdir = os.path.join(self.ard_path, 'reactions')
+        subdir = os.path.join(os.path.dirname(self.ard_path), 'reactions')
         if not os.path.exists(subdir):
             os.mkdir(subdir)
         dirname = network_prod_mol.toRMGMolecule().to_inchi_key()
+        targets = list(rxn.find({}, {'product_inchi_key':dirname}))
+        dirname = '{}_{}'.format(dirname, len(targets))
         output_dir = util.makeOutputSubdirectory(subdir, dirname)
         kwargs['output_dir'] = output_dir
         self.makeInputFile(reactant, product, **kwargs)
