@@ -44,11 +44,13 @@ class Network(object):
         Execute the automatic reaction discovery procedure.
         """
         collection = db['reactions']
-
+        initial_pool = db['pool']
+        statistics = db['statistics']
+        targets = list(initial_pool.find({}, {'reactant_inchi_key':1}))
         #Add all reactant to a list for pgen filter isomorphic
         tars = list(collection.find({}, {'reactant_inchi_key':1}))
         inchi_key_list = [i['reactant_inchi_key'] for i in tars]
-
+        inchi_key_list += [i['reactant_inchi_key'] for i in targets]
         gen = Generate(mol_object, inchi_key_list)
         gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
         prod_mols = gen.prod_mols
@@ -88,7 +90,7 @@ class Network(object):
 
         # initial round add all prod to self.network
         reactant_name = mol_object.toRMGMolecule().to_inchi_key()
-        prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_name, prod_mols_filtered)
+        prod_mols_filtered = self.unique_key_filterIsomorphic(prod_mols_filtered)
 
         for idx, mol in enumerate(prod_mols_filtered):
             index = prod_mols.index(mol)
@@ -98,7 +100,18 @@ class Network(object):
             product_name = mol.toRMGMolecule().to_inchi_key()
             rxn_idx = '{}_{}'.format(reactant_name, idx+1)
             self.reactions[rxn_idx] = [reactant_name, product_name]
-            collection.insert_one({rxn_idx: [reactant_name, product_name], 'Reactant SMILES':mol_object.write('can').strip(), 'reactant_inchi_key':reactant_name, 'product_inchi_key':product_name, 'Product SMILES':mol.write('can').strip(), 'path':dir_path, 'ssm_status':'job_unrun', 'generations':self.generations})
+            collection.insert_one({
+                                    rxn_idx: [reactant_name, product_name], 
+                                   'Reactant SMILES':mol_object.write('can').strip(), 
+                                   'reactant_inchi_key':reactant_name, 
+                                   'product_inchi_key':product_name, 
+                                   'Product SMILES':mol.write('can').strip(), 
+                                   'path':dir_path, 
+                                   'ssm_status':'job_unrun', 
+                                   'generations':self.generations
+                                   }
+                                  )
+        statistics.insert_one({'Reactant SMILES':mol_object.write('can').strip(), 'reactant_inchi_key':reactant_name, 'add how many products':len(prod_mols_filtered)})
 
 
         
@@ -124,12 +137,12 @@ class Network(object):
         return 0
 
 
-    def unique_key_filterIsomorphic(self, reactant_name, compare):
+    def unique_key_filterIsomorphic(self, compare):
         """
         Convert rmg molecule into inchi key(unique key) and check isomorphic
         """
         collection = db['reactions']
-        targets = list(collection.find({}, {'product_inchi_key':1}))
+        targets = list(collection.find({'ts_status':'job_success'}))
         base_unique = [i['product_inchi_key'] for i in targets]
         compare_unique = [mol.toRMGMolecule().to_inchi_key() for mol in compare]
         isomorphic_idx = [compare_unique.index(i) for i in set(compare_unique) - set(base_unique)]
@@ -137,10 +150,14 @@ class Network(object):
         
         product_pool = db['same_product']
         same_unique_key = list(set(compare_unique) & set(base_unique))
+
         for i in same_unique_key:
-            number = len(list(collection.find({'reactant_inchi_key':reactant_name})))
-            reactions_name = '{}_{}'.format(i, reactant_name)
-            product_pool.insert_one({'reactions_name':[reactant_name, i]})
+            product_inchi_key = list(collection.find({'product_inchi_key':i}))
+            for j in product_inchi_key:
+                reactant_inchi_key = j['reactant_inchi_key']
+                reactant_target_len = len(list(collection.find({'reactant_inchi_key':reactant_inchi_key})))
+                reactions_name = '{}_{}'.format(reactant_inchi_key, reactant_target_len)
+                product_pool.insert_one({reactions_name:[reactant_inchi_key, i]})
 
         return result
 
@@ -157,7 +174,6 @@ class Network(object):
 
     def gen_geometry(self, reactant_mol, network_prod_mol, add_bonds, break_bonds, **kwargs):
         #database
-        collect = db['molecules']
         rxn = db['reactions']
         # These two lines are required so that new coordinates are
         # generated for each new product. Otherwise, Open Babel tries to
@@ -202,8 +218,6 @@ class Network(object):
         self.makeDrawFile(reactant, 'reactant.xyz', **kwargs)
         self.makeDrawFile(product, 'product.xyz', **kwargs)
         self.makeisomerFile(add_bonds, break_bonds, **kwargs)
-
-        collect.insert_one({'dir':dirname, 'path' : output_dir})
         return output_dir
 
         

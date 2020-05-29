@@ -53,6 +53,7 @@ def select_ard_target():
 def launch_ard_jobs():
     
     collection = db['reactions']
+    initial_pool = db['pool']
     if collection.estimated_document_count() == 0:
         print('The ard not start')
         print('Starting ARD network exploring')
@@ -63,6 +64,7 @@ def launch_ard_jobs():
         # first reactant need to add to pool
         initial_reactant_OBMol = next(pybel.readfile('xyz', path.join(script_path, 'reactant.xyz'))).OBMol
         initial_reactant_inchi_key = from_ob_mol(rmgpy.molecule.molecule.Molecule(), initial_reactant_OBMol).to_inchi_key()
+        initial_pool.insert_one({'reactant_inchi_key':initial_reactant_inchi_key})
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,

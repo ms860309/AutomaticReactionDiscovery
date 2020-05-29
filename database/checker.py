@@ -25,6 +25,7 @@ import sys
 import rmgpy.molecule
 from rmgpy.molecule.converter import from_ob_mol
 import pybel
+from collections import Counter
 
 def select_energy_target():
     """
@@ -201,14 +202,13 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
     OBMol_2 = readXYZ(ard_prod_path)
     rmg_mol_2 = toRMGmol(OBMol_2)
     if rmg_mol_1.to_inchi_key() != rmg_mol_2.to_inchi_key():
-        
         num = len(list(rxn_collect.find({'product_inchi_key':rmg_mol_1.to_inchi_key()})))
         targets = list(rxn_collect.find({'path':rxn_dir}))
         for i in targets:
             name = '{}_{}'.format(rmg_mol_1.to_inchi_key(), num+1)
             new_path = path.join(path.dirname(i), name)
             os.rename(rxn_dir, new_path)
-            update_field = {'product_inchi_key':rmg_mol_1.to_inchi_key(), 'path':new_path}
+            update_field = {'product_inchi_key':rmg_mol_1.to_inchi_key(), 'initial_dir_name':rxn_dir}
             rxn_collect.update_one(i, {"$set": update_field}, True)
         return 'not_equal'
     else:
@@ -252,10 +252,17 @@ def check_ssm_jobs():
 
             if new_status == 'job_success':
                 equal = ard_prod_and_ssm_prod_checker(target['path'])
-                
-                update_field = {
-                                'ssm_status': new_status, "ts_status":"job_unrun", "energy_status":"job_unrun", 'ard_ssm_equal':equal
-                            }
+                if equal == 'equal':
+                    update_field = {
+                                    'ssm_status': new_status, "ts_status":"job_unrun", "energy_status":"job_unrun", 'ard_ssm_equal':equal
+                                }
+                else:
+                    name = target['product_inchi_key']
+                    new_path = path.join(path.dirname(target['path']), name)
+                    update_field = {
+                                    'ssm_status': new_status, "ts_status":"job_unrun", "energy_status":"job_unrun", 'ard_ssm_equal':equal, 'path':new_path, 'Product SMILES': 'Should update from ssm_product'
+                                }
+                    
             else:
                 update_field = {
                                 'ssm_status': new_status
@@ -394,17 +401,29 @@ def check_ts_jobs():
         if orig_status != new_status:
 
             if new_status == 'job_success':
-                update_field = {
-                                'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'ard_status':'job_unrun', 'next_gen_num':next_gen_num
-                            }
+                product_inchi_key = list(collect.find({'product_inchi_key':target['product_inchi_key']}))
+                if len(product_inchi_key) > 1:
+                    update_field = {
+                                    'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'ard_status':'job_unrun', 'next_gen_num':next_gen_num
+                                }
+                    collect.update_one(product_inchi_key[0], {"$set": update_field}, True)
+                    for i in range(len(product_inchi_key)-1):
+                        update_field = {
+                                        'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'ard_status':'already have same prod', 'next_gen_num':next_gen_num
+                                    }
+                        collect.update_one(product_inchi_key[i+1], {"$set": update_field}, True)
+                else:
+                    update_field = {
+                                    'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'ard_status':'job_unrun', 'next_gen_num':next_gen_num
+                                }
+                    collect.update_one(target, {"$set": update_field}, True)
             else:
                 update_field = {
                                 'ts_status': new_status
                             }
-
-            collect.update_one(target, {"$set": update_field}, True)
+                collect.update_one(target, {"$set": update_field}, True)
 
 
 #check_energy_jobs()
-#check_ssm_jobs()
-#check_ts_jobs()
+check_ssm_jobs()
+check_ts_jobs()

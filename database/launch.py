@@ -17,12 +17,7 @@ def select_calE_target():
     collect = db['reactions']
     reg_query = {"energy_status":"job_unrun"}
     targets = list(collect.find(reg_query))
-
-    selected_targets = []
-    for target in targets:
-        dir_path = target['path']
-        selected_targets.append(dir_path)
-
+    selected_targets = [target['path'] for target in targets]
     return selected_targets
 
 def launch_energy_jobs():
@@ -82,11 +77,7 @@ def select_ssm_target():
     collect = db['reactions']
     reg_query = {"ssm_status":"job_unrun"}
     targets = list(collect.find(reg_query))
-    selected_targets = []
-    for target in targets:
-        dir_path = target['path']
-        selected_targets.append(dir_path)
-
+    selected_targets = [target['path'] for target in targets]
     return selected_targets
 
 def launch_ssm_jobs():
@@ -151,11 +142,7 @@ def select_ts_target():
     collect = db['reactions']
     reg_query = {"ts_status":"job_unrun"}
     targets = list(collect.find(reg_query))
-    selected_targets = []
-    for target in targets:
-        dir_path = target['path']
-        selected_targets.append(dir_path)
-
+    selected_targets = [target['path'] for target in targets]
     return selected_targets
 
 def launch_ts_jobs():
@@ -256,5 +243,5 @@ def update_ts_status(target, job_id):
     
     
 #launch_energy_jobs()
-#launch_ssm_jobs()
-#launch_ts_jobs()
+launch_ssm_jobs()
+launch_ts_jobs()
