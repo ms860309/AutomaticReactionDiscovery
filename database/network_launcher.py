@@ -12,27 +12,43 @@ import pybel
 # Manual run 0th generations
 
 def select_ard_target():
-    
+    # when lower generation finished return target else return []
     collect = db['reactions']
     reg_query = {'ard_status':
                     {"$in": 
-                        ["job_unrun"] 
+                        ["job_unrun"]
                     }
                 }
     targets = list(collect.find(reg_query))
-
-    selected_targets = []
-    gens = []
-    equal = []
-    for target in targets:
-        dir_path = target['path']
-        selected_targets.append(dir_path)
-        gen = target['next_gen_num']
-        gens.append(gen)
-        ard_ssm_equal = target['ard_ssm_equal']
-        equal.append(ard_ssm_equal)
-    zipped = zip(selected_targets, gens, equal)
-    return zipped
+    query_1 =   {'$or': 
+                    [
+                    { "ts_status":
+                        {"$in":
+                        ['job_launched','job_running']}
+                        },
+                    {'ssm_status':
+                        {'$in':
+                            ['job_launched','job_running']
+                        }
+                        }
+                    ]
+                }
+    if not list(collect.find(query_1)):
+        selected_targets = []
+        gens = []
+        equal = []
+        for target in targets:
+            dir_path = target['path']
+            selected_targets.append(dir_path)
+            gen = target['next_gen_num']
+            gens.append(gen)
+            ard_ssm_equal = target['ard_ssm_equal']
+            equal.append(ard_ssm_equal)
+        zipped = zip(selected_targets, gens, equal)
+        return zipped
+    else:
+        zipped = zip([],[],[])
+        return zipped
 
 def launch_ard_jobs():
     
@@ -45,10 +61,8 @@ def launch_ard_jobs():
             os.chdir(script_path)
         subfile = create_ard_sub_file(script_path, script_path, 1, 'reactant.xyz')
         # first reactant need to add to pool
-        product_pool = db['pool']
         initial_reactant_OBMol = next(pybel.readfile('xyz', path.join(script_path, 'reactant.xyz'))).OBMol
         initial_reactant_inchi_key = from_ob_mol(rmgpy.molecule.molecule.Molecule(), initial_reactant_OBMol).to_inchi_key()
-        product_pool.insert_one({'reactant_inchi_key':initial_reactant_inchi_key})
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,

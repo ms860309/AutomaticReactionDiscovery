@@ -192,7 +192,6 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
     # If equal, insert the inchi key into products pool
     # If not equal, use ssm product as the product and insert inchi key into products pool
     # Next generation use the ssm product to generate
-    product_pool = db['pool']
     rxn_collect = db['reactions']
     
     ard_prod_path = path.join(rxn_dir, 'product.xyz')
@@ -202,19 +201,17 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
     OBMol_2 = readXYZ(ard_prod_path)
     rmg_mol_2 = toRMGmol(OBMol_2)
     if rmg_mol_1.to_inchi_key() != rmg_mol_2.to_inchi_key():
-        product_pool.insert_one({'reactant_inchi_key':rmg_mol_1.to_inchi_key()})
         
-        num = len(list(rxn_collect.find({}, {'product_inchi_key':rmg_mol_1.to_inchi_key()})))
-        targets = list(rxn_collect.find({}, {'path':rxn_dir}))
+        num = len(list(rxn_collect.find({'product_inchi_key':rmg_mol_1.to_inchi_key()})))
+        targets = list(rxn_collect.find({'path':rxn_dir}))
         for i in targets:
-            name = '{}_{}'.format(rmg_mol_1.to_inchi_key(), num)
+            name = '{}_{}'.format(rmg_mol_1.to_inchi_key(), num+1)
             new_path = path.join(path.dirname(i), name)
             os.rename(rxn_dir, new_path)
             update_field = {'product_inchi_key':rmg_mol_1.to_inchi_key(), 'path':new_path}
             rxn_collect.update_one(i, {"$set": update_field}, True)
         return 'not_equal'
     else:
-        product_pool.insert_one({'product_inchi_key':rmg_mol_1.to_inchi_key()})
         return 'equal'
 
 def toRMGmol(OBMol):
