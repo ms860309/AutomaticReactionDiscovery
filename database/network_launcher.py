@@ -13,7 +13,7 @@ import pybel
 
 def select_ard_target():
     # when lower generation finished return target else return []
-    collect = db['reactions']
+    collect = db['qm_calculate_center']
     reg_query = {'ard_status':
                     {"$in": 
                         ["job_unrun"]
@@ -52,7 +52,7 @@ def select_ard_target():
 
 def launch_ard_jobs():
     
-    collection = db['reactions']
+    collection = db['qm_calculate_center']
     initial_pool = db['pool']
     if collection.estimated_document_count() == 0:
         print('The ard not start')
@@ -118,7 +118,7 @@ def create_ard_sub_file(dir_path, script_path, gen_num, next_reactant, ncpus = 1
     return subfile
 
 def update_ard_status(target, job_id):
-    collect = db['reactions']
+    collect = db['qm_calculate_center']
     reg_query = {"path":target}
     update_field = {"ard_status":"job_launched", "ard_jobid":job_id}
     collect.update_one(reg_query, {"$set": update_field}, True)

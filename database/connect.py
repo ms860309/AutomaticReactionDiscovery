@@ -21,7 +21,18 @@ db = getattr(Connector(), 'db')
 
 """
 collect = db['reactions']
-targets = list(collect.find({}, {'reactant_inchi_key':1}))
+ts_query_3 = {'$and': 
+                [
+                { "ts_status":
+                    {"$in":
+                    ['job_success']}
+                    },
+                {'reactant_inchi_key':'CABDEMAGSHRORS-UHFFFAOYSA-N'}
+                ]
+            }
+targets = list(collect.find(ts_query_3))
+
+
 for i in targets:
     print(i)
 """

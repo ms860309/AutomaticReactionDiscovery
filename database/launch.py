@@ -14,7 +14,7 @@ Submmit energy calculation job
 3. update status "job_launched"
 """
 def select_calE_target():
-    collect = db['reactions']
+    collect = db['qm_calculate_center']
     reg_query = {"energy_status":"job_unrun"}
     targets = list(collect.find(reg_query))
     selected_targets = [target['path'] for target in targets]
@@ -61,7 +61,7 @@ def create_energy_sub_file(path, Energy_dir_path, ncpus = 1, mpiprocs = 1, ompth
     return subfile
     
 def update_energy_status(target, job_id):
-    collect = db['reactions']
+    collect = db['qm_calculate_center']
     reg_query = {"path":target}
     update_field = {"energy_status":"job_launched", "energy_jobid":job_id}
     collect.update_one(reg_query, {"$set": update_field}, True)
@@ -74,7 +74,7 @@ Submmit SSM calculation job
 """
     
 def select_ssm_target():
-    collect = db['reactions']
+    collect = db['qm_calculate_center']
     reg_query = {"ssm_status":"job_unrun"}
     targets = list(collect.find(reg_query))
     selected_targets = [target['path'] for target in targets]
@@ -125,7 +125,7 @@ def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 1, mpiprocs = 1, ompthre
     return subfile
     
 def update_ssm_status(target, job_id):
-    collect = db['reactions']
+    collect = db['qm_calculate_center']
     reg_query = {"path":target}
     update_field = {"ssm_status":"job_launched", "ssm_jobid":job_id}
     collect.update_one(reg_query, {"$set": update_field}, True)
@@ -139,7 +139,7 @@ Submmit TS calculation job
 """
     
 def select_ts_target():
-    collect = db['reactions']
+    collect = db['qm_calculate_center']
     reg_query = {"ts_status":"job_unrun"}
     targets = list(collect.find(reg_query))
     selected_targets = [target['path'] for target in targets]
@@ -236,7 +236,7 @@ def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 1, mpiprocs = 1, ompth
     
 
 def update_ts_status(target, job_id):
-    collect = db['reactions']
+    collect = db['qm_calculate_center']
     reg_query = {"path":target}
     update_field = {"ts_status":"job_launched", "ts_jobid":job_id}
     collect.update_one(reg_query, {"$set": update_field}, True)

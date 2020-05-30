@@ -35,7 +35,7 @@ def select_energy_target():
     Returns a list of targe
     """
 
-    collect = db['reactions']
+    collect = db['qm_calculate_center']
     reg_query = {"energy_status":
                     {"$in":
                         ["job_launched", "job_running"]
@@ -93,7 +93,7 @@ def check_energy_jobs():
     """
     # 1. select jobs to check
     targets = select_energy_target()
-    collect = db['reactions']
+    collect = db['qm_calculate_center']
     
     # 2. check the job pbs_status
     for target in targets:
@@ -121,7 +121,7 @@ def select_ssm_target():
     1. status is job_launched or job_running
     Returns a list of targe
     """
-    collect = db['reactions']
+    collect = db['qm_calculate_center']
     reg_query = {"ssm_status":
                     {"$in": 
                         ["job_launched", "job_running"] 
@@ -193,7 +193,7 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
     # If equal, insert the inchi key into products pool
     # If not equal, use ssm product as the product and insert inchi key into products pool
     # Next generation use the ssm product to generate
-    rxn_collect = db['reactions']
+    rxn_collect = db['qm_calculate_center']
     
     ard_prod_path = path.join(rxn_dir, 'product.xyz')
     ssm_prod_path = path.join(rxn_dir, 'ssm_product.xyz')
@@ -206,9 +206,17 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
         targets = list(rxn_collect.find({'path':rxn_dir}))
         for i in targets:
             name = '{}_{}'.format(rmg_mol_1.to_inchi_key(), num+1)
-            new_path = path.join(path.dirname(i), name)
+            new_path = path.join(path.dirname(i['path']), name)
             os.rename(rxn_dir, new_path)
-            update_field = {'product_inchi_key':rmg_mol_1.to_inchi_key(), 'initial_dir_name':rxn_dir}
+            prod_smi = OBMol_1.write('can').strip()
+            update_field = {'product_inchi_key':rmg_mol_1.to_inchi_key(), 
+                            'initial_dir_name':rxn_dir, 
+                            'path':new_path, 
+                            'ssm_status': 'job_success', 
+                            "ts_status":"job_unrun", 
+                            "energy_status":"job_unrun", 
+                            'ard_ssm_equal':'not_equal',
+                            'Product SMILES': prod_smi}
             rxn_collect.update_one(i, {"$set": update_field}, True)
         return 'not_equal'
     else:
@@ -233,7 +241,7 @@ def check_ssm_jobs():
     # 1. select jobs to check
     targets = select_ssm_target()
 
-    collect = db['reactions']
+    collect = db['qm_calculate_center']
     
     # 2. check the job pbs status
     for target in targets:
@@ -256,19 +264,12 @@ def check_ssm_jobs():
                     update_field = {
                                     'ssm_status': new_status, "ts_status":"job_unrun", "energy_status":"job_unrun", 'ard_ssm_equal':equal
                                 }
-                else:
-                    name = target['product_inchi_key']
-                    new_path = path.join(path.dirname(target['path']), name)
-                    update_field = {
-                                    'ssm_status': new_status, "ts_status":"job_unrun", "energy_status":"job_unrun", 'ard_ssm_equal':equal, 'path':new_path, 'Product SMILES': 'Should update from ssm_product'
-                                }
-                    
+                    collect.update_one(target, {"$set": update_field}, True)
             else:
                 update_field = {
                                 'ssm_status': new_status
                             }
-
-            collect.update_one(target, {"$set": update_field}, True)
+                collect.update_one(target, {"$set": update_field}, True)
 	
 
 def generate_ssm_product_xyz(target_path):
@@ -298,7 +299,7 @@ def select_ts_target():
     1. status is job_launched or job_running
     Returns a list of targe
     """
-    collect = db['reactions']
+    collect = db['qm_calculate_center']
     reg_query = {"ts_status":
                     {"$in": 
                         ["job_launched", "job_running"] 
@@ -368,7 +369,27 @@ def check_ts_content_status(target_path):
         ts_energy = lines[idx-4].split()[-1]
 
         return "job_success", ts_energy
-
+    
+def insert_exact_rxn(reactant_inchi_key, product_inchi_key, reactant_smi, product_smi, path, generations):
+    collect = db['reactions']
+    query = {'$and': 
+                    [
+                    { "ts_status":
+                        {"$in":
+                        ['job_success']}
+                        },
+                    {'reactant_inchi_key':reactant_inchi_key}
+                    ]
+                }
+    targets = len(list(collect.find(query)))
+    reaction_name = '{}_{}'.format(reactant_inchi_key, targets)
+    collect.insert_one({
+                        reaction_name:[reactant_inchi_key, product_inchi_key],
+                        'reactant_smi':reactant_smi,
+                        'product_smi':product_smi,
+                        'path':path,
+                        'generations':generations,
+                        })
     
     
 def check_ts_jobs():
@@ -382,8 +403,8 @@ def check_ts_jobs():
     # 1. select jobs to check
     targets = select_ts_target()
 
-    collect = db['reactions']
-    
+    collect = db['qm_calculate_center']
+    pool = db['pool']
     # 2. check the job pbs status
     for target in targets:
         job_id = target['ts_jobid']
@@ -399,7 +420,6 @@ def check_ts_jobs():
         orig_status = target['ts_status']
         next_gen_num = int(target['generations']) + 1
         if orig_status != new_status:
-
             if new_status == 'job_success':
                 product_inchi_key = list(collect.find({'product_inchi_key':target['product_inchi_key']}))
                 if len(product_inchi_key) > 1:
@@ -407,16 +427,21 @@ def check_ts_jobs():
                                     'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'ard_status':'job_unrun', 'next_gen_num':next_gen_num
                                 }
                     collect.update_one(product_inchi_key[0], {"$set": update_field}, True)
+                    pool.insert_one({'reactant_inchi_key':product_inchi_key[0]['reactant_inchi_key']})
+                    insert_exact_rxn(target['reactant_inchi_key'], target['product_inchi_key'], target['Reactant SMILES'], target['Product SMILES'], target['path'], target['generations'])
                     for i in range(len(product_inchi_key)-1):
                         update_field = {
                                         'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'ard_status':'already have same prod', 'next_gen_num':next_gen_num
                                     }
                         collect.update_one(product_inchi_key[i+1], {"$set": update_field}, True)
+                        pool.insert_one({'reactant_inchi_key':product_inchi_key[i+1]['reactant_inchi_key']})
                 else:
                     update_field = {
                                     'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'ard_status':'job_unrun', 'next_gen_num':next_gen_num
                                 }
                     collect.update_one(target, {"$set": update_field}, True)
+                    pool.insert_one({'reactant_inchi_key':target['reactant_inchi_key']})
+                    insert_exact_rxn(target['reactant_inchi_key'], target['product_inchi_key'], target['Reactant SMILES'], target['Product SMILES'], target['path'], target['generations'])
             else:
                 update_field = {
                                 'ts_status': new_status

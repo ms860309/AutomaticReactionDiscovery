@@ -12,7 +12,7 @@ def select_ard_target():
     1. status is job_launched or job_running
     Returns a list of targe
     """
-    collect = db['reactions']
+    collect = db['qm_calculate_center']
     reg_query = {"ard_status":
                     {"$in": 
                         ["job_launched", "job_running"] 
@@ -56,7 +56,7 @@ def check_ard_jobs():
     # 1. select jobs to check
     targets = select_ard_target()
 
-    collect = db['reactions']
+    collect = db['qm_calculate_center']
     
     # 2. check the job pbs status
     for target in targets:
@@ -88,7 +88,7 @@ def print_information(generations):
     """
     For a given generations (int) print the information in database
     """
-    collect = db['reactions']
+    collect = db['qm_calculate_center']
     gen_query = {"generations":
                     {"$in": 
                         [generations] 
@@ -178,7 +178,7 @@ def print_information(generations):
 check_ard_jobs()
 
 print('Extracting information from database....')
-collect = db['reactions']
+collect = db['qm_calculate_center']
 max_gen = collect.find_one(sort=[("generations", -1)])
 max_gen = max_gen['generations']
 for i in range(max_gen):
