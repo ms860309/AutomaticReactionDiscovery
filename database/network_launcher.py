@@ -54,6 +54,7 @@ def launch_ard_jobs():
     
     collection = db['qm_calculate_center']
     initial_pool = db['pool']
+    status = db['status']
     if collection.estimated_document_count() == 0:
         print('The ard not start')
         print('Starting ARD network exploring')
@@ -75,6 +76,7 @@ def launch_ard_jobs():
         # update status job_launched
         print('ARD had launched')
         print('jobid is {}'.format(job_id))
+        status.insert_one({'status':'ARD had launched'})
     else:
         targets = select_ard_target()
         for target in list(targets):

@@ -151,12 +151,12 @@ class Network(object):
         same_unique_key = list(set(compare_unique) & set(base_unique))
 
         for i in same_unique_key:
-            reactant_target = list(collection.find({'reactant_inchi_key':reactant_name}))
+            reactant_target = list(collect.find({'product_inchi_key':reactant_name}))
             number = len(reactant_target)
-            path_target = list(collection.find({'product_inchi_key':i}))
-            reactions_name = '{}_{}'.format(reactant_name, number+1)
+            path_target = list(collect.find({'product_inchi_key':i}))
+            reactions_name = '{}_{}'.format(reactant_target[0]['reactant_inchi_key'], number+1)
             collection.insert_one({
-                                   reactions_name:[reactions_name, i],
+                                   reactions_name:[reactant_target[0]['reactant_inchi_key'], i],
                                    'reactant_smi':reactant_target[0]['Reactant SMILES'],
                                    'product_smi':path_target[0]['Product SMILES'],
                                    'path':path_target[0]['path'],

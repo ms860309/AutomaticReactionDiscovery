@@ -89,6 +89,7 @@ def print_information(generations):
     For a given generations (int) print the information in database
     """
     collect = db['qm_calculate_center']
+    
     gen_query = {"generations":
                     {"$in": 
                         [generations] 
@@ -162,6 +163,7 @@ def print_information(generations):
         reactant_smi = target['Reactant SMILES']
         smi.append(reactant_smi)
     smi = set(smi)
+    print('Extracting information from database....')
     print('-----------------------------------------')
     print('Generations : {}'.format(generations))
     print('Reactant SMILES : {}'.format(smi))
@@ -175,11 +177,50 @@ def print_information(generations):
     print('-----------------------------------------')
 
 
+def update_network_status():
+    
+    status = db['status']
+    qm_cal_center = db['qm_calculate_center']
+    statistics = db['statistics']
+    total_nodes = list(statistics.find({}, {'add how many products':1}))
+    qm_nodes = list(qm_cal_center.find({}))
+    count = 0
+    
+    for i in total_nodes:
+        count += i['add how many products']
+        
+    query = {'$or': 
+                    [
+                    {'ts_status':
+                        {'$in':
+                        ['job_fail', 'job_success']}
+                        },
+                    {'ssm_status':
+                        {'$in':
+                            ['Exiting early', 'total dissociation', 'job_fail']
+                        }}
+                    ]
+                }
+    targets = list(qm_cal_center.find(query))
+    
+    if len(targets) == count:
+        print('Network converged')
+        
+        target = list(status.find({}))
+        update_field = {
+                        'status':'Network converged'
+                    }
+        status.update_one(target[0], {"$set": update_field}, True)
+    
+    
+    
+    
 check_ard_jobs()
 
-print('Extracting information from database....')
-collect = db['qm_calculate_center']
-max_gen = collect.find_one(sort=[("generations", -1)])
+qm_cal_center = db['qm_calculate_center']
+max_gen = qm_cal_center.find_one(sort=[("generations", -1)])
 max_gen = max_gen['generations']
 for i in range(max_gen):
     print_information(i+1)
+    
+update_network_status()

@@ -421,24 +421,27 @@ def check_ts_jobs():
         next_gen_num = int(target['generations']) + 1
         if orig_status != new_status:
             if new_status == 'job_success':
-                product_inchi_key = list(collect.find({'product_inchi_key':target['product_inchi_key']}))
-                if len(product_inchi_key) > 1:
+                product_inchi_key = target['product_inchi_key']
+                query = {'$and': 
+                                [
+                                { "ts_status":
+                                    {"$in":
+                                    ['job_success']}
+                                    },
+                                {'generations':generations},
+                                {'product_inchi_key':target['product_inchi_key']}
+                                ]
+                            }
+                same_prod = list(collect.find({query}))
+                if len(same_prod) > 1:
                     update_field = {
-                                    'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'ard_status':'job_unrun', 'next_gen_num':next_gen_num
-                                }
-                    collect.update_one(product_inchi_key[0], {"$set": update_field}, True)
-                    pool.insert_one({'reactant_inchi_key':product_inchi_key[0]['reactant_inchi_key']})
-                    insert_exact_rxn(target['reactant_inchi_key'], target['product_inchi_key'], target['Reactant SMILES'], target['Product SMILES'], target['path'], target['generations'])
-                    for i in range(len(product_inchi_key)-1):
-                        update_field = {
-                                        'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'ard_status':'already have same prod', 'next_gen_num':next_gen_num
+                                    'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'ard_status':'already have same prod', 'next_gen_num':next_gen_num
                                     }
-                        collect.update_one(product_inchi_key[i+1], {"$set": update_field}, True)
-                        pool.insert_one({'reactant_inchi_key':product_inchi_key[i+1]['reactant_inchi_key']})
+                    collect.update_one(target, {"$set": update_field}, True)
                 else:
                     update_field = {
                                     'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'ard_status':'job_unrun', 'next_gen_num':next_gen_num
-                                }
+                                    }
                     collect.update_one(target, {"$set": update_field}, True)
                     pool.insert_one({'reactant_inchi_key':target['reactant_inchi_key']})
                     insert_exact_rxn(target['reactant_inchi_key'], target['product_inchi_key'], target['Reactant SMILES'], target['Product SMILES'], target['path'], target['generations'])

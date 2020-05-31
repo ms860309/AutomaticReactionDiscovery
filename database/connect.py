@@ -19,20 +19,22 @@ class Connector(object):
 client = Connector()
 db = getattr(Connector(), 'db')
 
+
 """
-collect = db['reactions']
-ts_query_3 = {'$and': 
+qm_cal_center = db['qm_calculate_center']
+query = {'$or': 
                 [
-                { "ts_status":
-                    {"$in":
-                    ['job_success']}
+                {'ts_status':
+                    {'$in':
+                    ['job_fail', 'job_success']}
                     },
-                {'reactant_inchi_key':'CABDEMAGSHRORS-UHFFFAOYSA-N'}
+                {'ssm_status':
+                    {'$in':
+                        ['Exiting early', 'total dissociation', 'job_fail']
+                    }}
                 ]
             }
-targets = list(collect.find(ts_query_3))
-
-
-for i in targets:
-    print(i)
+targets = list(qm_cal_center.find(query))
+print(targets)
+print(len(targets))
 """
