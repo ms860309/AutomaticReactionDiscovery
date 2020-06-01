@@ -97,12 +97,12 @@ class Network(object):
             # gen geo return path
             dir_path = self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
             product_name = mol.toRMGMolecule().to_inchi_key()
-            rxn_idx = '{}_{}'.format(reactant_name, idx+1)
-            self.reactions[rxn_idx] = [reactant_name, product_name]
+            #rxn_idx = '{}_{}'.format(reactant_key, idx+1)
+            self.reactions[rxn_idx] = [reactant_key, product_name]
             collection.insert_one({
-                                    rxn_idx: [reactant_name, product_name], 
+                                   'reaction': [reactant_key, product_name], 
                                    'Reactant SMILES':mol_object.write('can').strip(), 
-                                   'reactant_inchi_key':reactant_name, 
+                                   'reactant_inchi_key':reactant_key, 
                                    'product_inchi_key':product_name, 
                                    'Product SMILES':mol.write('can').strip(), 
                                    'path':dir_path, 
@@ -110,7 +110,7 @@ class Network(object):
                                    'generations':self.generations
                                    }
                                   )
-        statistics.insert_one({'Reactant SMILES':mol_object.write('can').strip(), 'reactant_inchi_key':reactant_name, 'add how many products':len(prod_mols_filtered)})
+        statistics.insert_one({'Reactant SMILES':mol_object.write('can').strip(), 'reactant_inchi_key':reactant_key, 'add how many products':len(prod_mols_filtered)})
 
 
         
@@ -155,14 +155,28 @@ class Network(object):
             reactant_target = list(collect.find({'product_inchi_key':reactant_key}))
             number = len(reactant_target)
             path_target = list(collect.find({'product_inchi_key':i}))
-            reactions_name = '{}_{}'.format(reactant_target[0]['reactant_inchi_key'], number + idx + 1)
-            collection.insert_one({
-                                   reactions_name:reactant_key, i],
-                                   'reactant_smi':reactant_smi,
-                                   'product_smi':path_target[0]['Product SMILES'],
-                                   'path':path_target[0]['path'],
-                                   'generations':self.generations,
-                                   'for_debug':'from same'})
+            #reactions_name = '{}_{}'.format(reactant_target[0]['reactant_inchi_key'], number + idx + 1)
+            check = [reactant_key, i]
+            check_duplicate = list(collection.find({'reaction':check}))
+            if len(check_duplicate) > 0:
+                # aleady have
+                collection.insert_one({
+                                    'reaction':[reactant_key, i],
+                                    'reactant_smi':reactant_smi,
+                                    'product_smi':path_target[0]['Product SMILES'],
+                                    'path':path_target[0]['path'],
+                                    'generations':self.generations,
+                                    'for_debug':'from same',
+                                    'unique': 'already duplicated'})
+            else:
+                collection.insert_one({
+                                    'reaction':[reactant_key, i],
+                                    'reactant_smi':reactant_smi,
+                                    'product_smi':path_target[0]['Product SMILES'],
+                                    'path':path_target[0]['path'],
+                                    'generations':self.generations,
+                                    'for_debug':'from same',
+                                    'unique': 'new one'})
 
         return result
 
@@ -231,7 +245,7 @@ class Network(object):
         """
         Create input file for TS search and return path to file.
         """
-        path = os.path.join(kwargs['output_dir'], 'input.xyz')
+        path = os.path.join(kwargs['output_dir'], 'de_ssm_input.xyz')
         nreac_atoms = len(reactant.getListOfAtoms())
         nproduct_atoms = len(product.getListOfAtoms())
 
@@ -241,14 +255,42 @@ class Network(object):
         return path
 
     @staticmethod
-    def makeCalEnergyFile(_input, exchange = 'b3lyp', basis = '6-31g*', spin = 0, multiplicity = 1, **kwargs):
+    def makeCalEnergyFile(_input, spin = 0, multiplicity = 1, **kwargs):
         """
         Create input file for energy calculation.
         """
-        path = os.path.join(kwargs['output_dir'], 'energy.in')
+        path = os.path.join(kwargs['output_dir'], 'reactant_energy.in')
         with open(path, 'w') as f:
-            f.write('$rem\njobtype = freq\nexchange = {}\nbasis = {}\n$end\n'.format(exchange, basis))
-            f.write('\n$molecule\n{} {}\n{}\n$end'.format(spin, multiplicity, _input))
+            f.write('$molecule\n{} {}\n{}\n$end\n'.format(spin, multiplicity, _input))
+            f.write('$rem\n')
+            f.write('JOBTYPE OPT\n')
+            f.write('METHOD B97-D3\n')
+            f.write('DFT_D D3_BJ\n')
+            f.write('BASIS def2-mSVP\n')
+            f.write('SCF_ALGORITHM DIIS\n')
+            f.write('MAX_SCF_CYCLES 150\n')
+            f.write('SCF_CONVERGENCE 8\n')
+            f.write('SYM_IGNORE TRUE\n')
+            f.write('SYMMETRY FALSE\n')
+            f.write('GEOM_OPT_MAX_CYCLES 150\n')
+            f.write('GEOM_OPT_TOL_GRADIENT 100\n')
+            f.write('GEOM_OPT_TOL_DISPLACEMENT 400\n')
+            f.write('GEOM_OPT_TOL_ENERGY 33\n')
+            f.write('WAVEFUNCTION_ANALYSIS FALSE\n')
+            f.write('$end\n@@@\n')
+            f.write('$molecule\nread\n$end\n')
+            f.write('JOBTYPE FREQ\n')
+            f.write('METHOD B97-D3\n')
+            f.write('DFT_D D3_BJ\n')
+            f.write('BASIS def2-mSVP\n')
+            f.write('SCF_GUESS READ\n')
+            f.write('SCF_ALGORITHM DIIS\n')
+            f.write('MAX_SCF_CYCLES 150\n')
+            f.write('SCF_CONVERGENCE 8\n')
+            f.write('SYM_IGNORE TRUE\n')
+            f.write('SYMMETRY FALSE\n')
+            f.write('WAVEFUNCTION_ANALYSIS FALSE\n')
+            f.write('$end')
 
     @staticmethod
     def makeDrawFile(_input, filename = 'draw.xyz', **kwargs):

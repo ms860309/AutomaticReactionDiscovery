@@ -73,7 +73,7 @@ def check_energy_status(job_id):
 def check_energy_content_status(rxn_path):
     
     energy_dir = path.join(rxn_path, "Energy")
-    energy_path = path.join(energy_dir, "energy.out")
+    energy_path = path.join(energy_dir, "reactant_energy.out")
     if not path.exists(energy_path):
         return "job_aborted"
     else:
@@ -82,7 +82,7 @@ def check_energy_content_status(rxn_path):
             for line in lines:
                 if line.strip().startswith('SCF   energy in the final basis set'):
                     SCF_Energy = line.split()[-1]
-                    energy = float(SCF_Energy)*627.5095
+                    energy = float(SCF_Energy)
         return "job_success", energy
 
 def check_energy_jobs():
@@ -112,7 +112,7 @@ def check_energy_jobs():
                 if orig_status != new_status:
                     update_field = {
                                        'energy_status': new_status,
-                                       'SCF_energy':energy
+                                       'reactant_scf_energy':energy
                                    }
                     collect.update_one(target, {"$set": update_field}, True)
 
@@ -388,16 +388,27 @@ def insert_exact_rxn(reactant_inchi_key, product_inchi_key, reactant_smi, produc
                     ]
                 }
     targets = len(list(collect.find(query)))
-    reaction_name = '{}_{}'.format(reactant_inchi_key, targets + 1)
-    collect.insert_one({
-                        reaction_name:[reactant_inchi_key, product_inchi_key],
-                        'reactant_smi':reactant_smi,
-                        'product_smi':product_smi,
-                        'path':path,
-                        'generations':generations,
-                        })
-    
-    
+    #reaction_name = '{}_{}'.format(reactant_inchi_key, targets + 1)
+    check = [reactant_inchi_key, product_inchi_key]
+    check_duplicate = list(collect.find({'reaction':check}))
+    if len(check_duplicate) > 0:
+        # aleady have
+        collect.insert_one({
+                            'reaction':[reactant_inchi_key, product_inchi_key],
+                            'reactant_smi':reactant_smi,
+                            'product_smi':product_smi,
+                            'path':path,
+                            'generations':generations,
+                            'unique': 'already duplicated'})
+    else:
+        collect.insert_one({
+                            'reaction':[reactant_inchi_key, product_inchi_key],
+                            'reactant_smi':reactant_smi,
+                            'product_smi':product_smi,
+                            'path':path,
+                            'generations':generations,
+                            'unique': 'new one'})
+
 def check_ts_jobs():
     """
     This method checks job with following steps:
@@ -457,7 +468,72 @@ def check_ts_jobs():
                             }
                 collect.update_one(target, {"$set": update_field}, True)
 
+def select_ts_barrier_target():
+    """
+    This method is to inform job checker which targets 
+    to check, which need meet one requirement:
+    1. status is job_launched or job_running
+    Returns a list of targe
+    """
 
-#check_energy_jobs()
+    collect = db['qm_calculate_center']
+    query = {'$and': 
+                    [
+                    { "ts_status":
+                        {"$in":
+                        ['job_success']}},
+                    {'energy_status':
+                        {'$in':
+                            ['job_success']}}
+                    ]
+                }
+    targets = list(collect.find(query))
+    num =[]
+    for idx, i in enumerate(targets):
+        try:
+            barrier_energy = i['barrier_energy']
+        except:
+            num.append(idx)
+            
+    targets = [targets[i] for i in num]
+    
+    return targets
+    
+
+def check_ts_barrier_jobs():
+    """
+    This method checks job with following steps:
+    1. select jobs to check
+    2. check the job pbs-status, e.g., qstat -f "job_id"
+    3. check job content
+    4. update with new status
+    """
+    # 1. select jobs to check
+    targets = select_ts_barrier_target()
+    collect = db['qm_calculate_center']
+    rxn = db['reactions']
+    
+    for target in targets:
+        reactant_energy = target['reactant_scf_energy']
+        ts_energy = target['ts_energy']
+        barrier_energy = (float(ts_energy) - float(reactant_energy)) * 627.5095
+        update_field = {'barrier_energy':barrier_energy}
+        collect.update_one(target, {"$set": update_field}, True)
+        
+        query = {'$and': 
+                    [
+                    { "reaction":[target['reactant_inchi_key'], target['product_inchi_key']]},
+                    {'unique':'new one'}
+                    ]
+                }
+        
+        check = list(rxn.find(query))
+        rxn.update_one(check[0], {'$set':{'barrier_energy':barrier_energy}}, True)
+    
+                    
+                    
+                    
+check_energy_jobs()
 check_ssm_jobs()
 check_ts_jobs()
+check_ts_barrier_jobs()

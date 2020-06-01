@@ -54,7 +54,7 @@ def create_energy_sub_file(path, Energy_dir_path, ncpus = 1, mpiprocs = 1, ompth
     nes1 = 'module load qchem'
     nes2 = 'export QCSCRATCH=/tmp/$PBS_JOBID'
     nes3 = 'mkdir -p $QCSCRATCH'
-    nes4 = 'qchem -nt 1 energy.in energy.out'
+    nes4 = 'qchem -nt 1 ../reactant_energy.in reactant_energy.out'
     nes5 = 'rm -r $QCSCRATCH'
     with open(subfile, 'w') as f:
         f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, nes2, nes3, nes4, nes5))
@@ -242,6 +242,6 @@ def update_ts_status(target, job_id):
     collect.update_one(reg_query, {"$set": update_field}, True)
     
     
-#launch_energy_jobs()
+launch_energy_jobs()
 launch_ssm_jobs()
 launch_ts_jobs()

@@ -22,11 +22,26 @@ db = getattr(Connector(), 'db')
 
 
 # debug
-"""
+
 collect = db['qm_calculate_center']
-targets = list(collect.find({'ts_status':'job_success'}))
-for i in targets:
-    print(i['reactant_inchi_key'])
-    print(i['product_inchi_key'])
-    print(i['generations'])
-"""
+query = {'$and': 
+                [
+                { "ts_status":
+                    {"$in":
+                    ['job_success']}},
+                {'energy_status':
+                    {'$in':
+                        ['job_success']}}
+                ]
+            }
+targets = list(collect.find(query))
+num =[]
+print(len(targets))
+for idx, i in enumerate(targets):
+    print(i)
+    try:
+        barrier_energy = i['barrier_energy']
+    except:
+        num.append(idx)
+print(num)
+print(len(targets))
