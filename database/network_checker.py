@@ -15,7 +15,7 @@ def select_ard_target():
     collect = db['qm_calculate_center']
     reg_query = {"ard_status":
                     {"$in": 
-                        ["job_launched", "job_running"] 
+                        ["job_launched", "job_running", "job_queueing"] 
                     }
                 }
     targets = list(collect.find(reg_query))
@@ -41,6 +41,8 @@ def check_ard_status(job_id):
     idx = stdout.index('job_state')
     if stdout[idx+2] == 'R':
         return "job_running"
+    elif stdout[idx+2] == 'Q':
+        return "job_queueing"
     else:
         return "job_launched"
 
@@ -99,7 +101,7 @@ def print_information(generations):
                     [
                     { "ssm_status":
                         {"$in":
-                        ["job_running"]}
+                        ["job_running", "job_queueing"]}
                         },
                     {'generations':generations}
                     ]
@@ -127,7 +129,7 @@ def print_information(generations):
                     [
                     { "ts_status":
                         {"$in":
-                        ['job_running']}
+                        ['job_running', "job_queueing"]}
                         },
                     {'generations':generations}
                     ]
@@ -168,10 +170,10 @@ def print_information(generations):
     print('Generations : {}'.format(generations))
     print('Reactant SMILES : {}'.format(smi))
     print('Nodes : {}'.format(len(gen_targets)))
-    print('{} nodes running SSM'.format(len(ssm_targets_1)))
+    print('{} nodes running and queueing SSM'.format(len(ssm_targets_1)))
     print('{} nodes success in SSM'.format(len(ssm_targets_2)))
     print('{} nodes fail in SSM'.format(len(ssm_targets_3)))
-    print('{} nodes running TS'.format(len(ts_targets_1)))
+    print('{} nodes running and queueing TS'.format(len(ts_targets_1)))
     print('{} nodes success in TS'.format(len(ts_targets_2)))
     print('{} nodes fail in TS'.format(len(ts_targets_3)))
     print('-----------------------------------------')
@@ -183,12 +185,20 @@ def update_network_status():
     qm_cal_center = db['qm_calculate_center']
     statistics = db['statistics']
     total_nodes = list(statistics.find({}, {'add how many products':1}))
-    qm_nodes = list(qm_cal_center.find({}))
+    
     count = 0
     
     for i in total_nodes:
         count += i['add how many products']
         
+    running_query = {"ard_status":
+                    {"$in": 
+                        ["job_launched", "job_running", "job_queueing"] 
+                    }
+                }
+    
+    qm_nodes = list(qm_cal_center.find(running_query))
+    
     query = {'$or': 
                     [
                     {'ts_status':
@@ -203,7 +213,7 @@ def update_network_status():
                 }
     targets = list(qm_cal_center.find(query))
     
-    if len(targets) == count:
+    if len(targets) == count and len(qm_nodes) == 0:
         print('Network converged')
         
         target = list(status.find({}))

@@ -20,21 +20,13 @@ client = Connector()
 db = getattr(Connector(), 'db')
 
 
+
+# debug
 """
-qm_cal_center = db['qm_calculate_center']
-query = {'$or': 
-                [
-                {'ts_status':
-                    {'$in':
-                    ['job_fail', 'job_success']}
-                    },
-                {'ssm_status':
-                    {'$in':
-                        ['Exiting early', 'total dissociation', 'job_fail']
-                    }}
-                ]
-            }
-targets = list(qm_cal_center.find(query))
-print(targets)
-print(len(targets))
+collect = db['qm_calculate_center']
+targets = list(collect.find({'ts_status':'job_success'}))
+for i in targets:
+    print(i['reactant_inchi_key'])
+    print(i['product_inchi_key'])
+    print(i['generations'])
 """

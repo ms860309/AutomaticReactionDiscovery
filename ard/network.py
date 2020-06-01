@@ -87,8 +87,9 @@ class Network(object):
             prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
 
         # initial round add all prod to self.network
-        reactant_name = mol_object.toRMGMolecule().to_inchi_key()
-        prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_name, prod_mols_filtered)
+        reactant_key = mol_object.toRMGMolecule().to_inchi_key()
+        reactant_smi = mol_object.write('can').strip()
+        prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_key, reactant_smi, prod_mols_filtered)
 
         for idx, mol in enumerate(prod_mols_filtered):
             index = prod_mols.index(mol)
@@ -135,7 +136,7 @@ class Network(object):
         return 0
 
 
-    def unique_key_filterIsomorphic(self, reactant_name, compare):
+    def unique_key_filterIsomorphic(self, reactant_key, reactant_smi, compare):
         """
         Convert rmg molecule into inchi key(unique key) and check isomorphic
         """
@@ -150,17 +151,18 @@ class Network(object):
         product_pool = db['same_product']
         same_unique_key = list(set(compare_unique) & set(base_unique))
 
-        for i in same_unique_key:
-            reactant_target = list(collect.find({'product_inchi_key':reactant_name}))
+        for idx, i in enumerate(same_unique_key):
+            reactant_target = list(collect.find({'product_inchi_key':reactant_key}))
             number = len(reactant_target)
             path_target = list(collect.find({'product_inchi_key':i}))
-            reactions_name = '{}_{}'.format(reactant_target[0]['reactant_inchi_key'], number+1)
+            reactions_name = '{}_{}'.format(reactant_target[0]['reactant_inchi_key'], number + idx + 1)
             collection.insert_one({
-                                   reactions_name:[reactant_target[0]['reactant_inchi_key'], i],
-                                   'reactant_smi':reactant_target[0]['Reactant SMILES'],
+                                   reactions_name:reactant_key, i],
+                                   'reactant_smi':reactant_smi,
                                    'product_smi':path_target[0]['Product SMILES'],
                                    'path':path_target[0]['path'],
-                                   'generations':self.generations})
+                                   'generations':self.generations,
+                                   'for_debug':'from same'})
 
         return result
 

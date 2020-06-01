@@ -38,7 +38,7 @@ def select_energy_target():
     collect = db['qm_calculate_center']
     reg_query = {"energy_status":
                     {"$in":
-                        ["job_launched", "job_running"]
+                        ["job_launched", "job_running", "job_queueing"]
                     }
                 }
     targets = list(collect.find(reg_query))
@@ -65,6 +65,8 @@ def check_energy_status(job_id):
     idx = stdout.index('job_state')
     if stdout[idx+2] == 'R':
         return "job_running"
+    elif stdout[idx+2] == 'Q':
+        return 'job_queueing'
     else:
         return "job_launched"
     
@@ -124,7 +126,7 @@ def select_ssm_target():
     collect = db['qm_calculate_center']
     reg_query = {"ssm_status":
                     {"$in": 
-                        ["job_launched", "job_running"] 
+                        ["job_launched", "job_running", "job_queueing"] 
                     }
                 }
     targets = list(collect.find(reg_query))
@@ -150,6 +152,8 @@ def check_ssm_status(job_id):
     idx = stdout.index('job_state')
     if stdout[idx+2] == 'R':
         return "job_running"
+    elif stdout[idx+2] == 'Q':
+        return "job_queueing"
     else:
         return "job_launched"
     
@@ -302,7 +306,7 @@ def select_ts_target():
     collect = db['qm_calculate_center']
     reg_query = {"ts_status":
                     {"$in": 
-                        ["job_launched", "job_running"] 
+                        ["job_launched", "job_running", "job_queueing"] 
                     }
                 }
     targets = list(collect.find(reg_query))
@@ -328,6 +332,8 @@ def check_ts_status(job_id):
     idx = stdout.index('job_state')
     if stdout[idx+2] == 'R':
         return "job_running"
+    elif stdout[idx+2] == 'Q':
+        return "job_queueing"
     else:
         return "job_launched"
     
@@ -382,7 +388,7 @@ def insert_exact_rxn(reactant_inchi_key, product_inchi_key, reactant_smi, produc
                     ]
                 }
     targets = len(list(collect.find(query)))
-    reaction_name = '{}_{}'.format(reactant_inchi_key, targets)
+    reaction_name = '{}_{}'.format(reactant_inchi_key, targets + 1)
     collect.insert_one({
                         reaction_name:[reactant_inchi_key, product_inchi_key],
                         'reactant_smi':reactant_smi,
@@ -428,12 +434,12 @@ def check_ts_jobs():
                                     {"$in":
                                     ['job_success']}
                                     },
-                                {'generations':generations},
+                                {'generations':target['generations']},
                                 {'product_inchi_key':target['product_inchi_key']}
                                 ]
                             }
-                same_prod = list(collect.find({query}))
-                if len(same_prod) > 1:
+                same_prod = list(collect.find(query))
+                if len(same_prod) > 0:
                     update_field = {
                                     'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'ard_status':'already have same prod', 'next_gen_num':next_gen_num
                                     }

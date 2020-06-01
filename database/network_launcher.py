@@ -24,11 +24,11 @@ def select_ard_target():
                     [
                     { "ts_status":
                         {"$in":
-                        ['job_launched','job_running']}
+                        ['job_launched','job_running', "job_queueing"]}
                         },
                     {'ssm_status':
                         {'$in':
-                            ['job_launched','job_running']
+                            ['job_launched','job_running', "job_queueing"]
                         }
                         }
                     ]
