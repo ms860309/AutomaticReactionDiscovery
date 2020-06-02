@@ -22,7 +22,7 @@ db = getattr(Connector(), 'db')
 
 
 # debug
-
+"""
 collect = db['qm_calculate_center']
 query = {'$and': 
                 [
@@ -45,3 +45,4 @@ for idx, i in enumerate(targets):
         num.append(idx)
 print(num)
 print(len(targets))
+"""

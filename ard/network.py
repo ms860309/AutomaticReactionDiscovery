@@ -98,7 +98,6 @@ class Network(object):
             dir_path = self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
             product_name = mol.toRMGMolecule().to_inchi_key()
             #rxn_idx = '{}_{}'.format(reactant_key, idx+1)
-            self.reactions[rxn_idx] = [reactant_key, product_name]
             collection.insert_one({
                                    'reaction': [reactant_key, product_name], 
                                    'Reactant SMILES':mol_object.write('can').strip(), 
@@ -156,9 +155,18 @@ class Network(object):
             number = len(reactant_target)
             path_target = list(collect.find({'product_inchi_key':i}))
             #reactions_name = '{}_{}'.format(reactant_target[0]['reactant_inchi_key'], number + idx + 1)
-            check = [reactant_key, i]
-            check_duplicate = list(collection.find({'reaction':check}))
-            if len(check_duplicate) > 0:
+            check_1 = [reactant_key, i]
+            check_duplicate_1 = list(collection.find({'reaction':check_1}))
+            if len(check_duplicate_1) == 0 and reactant_key != i:
+                collection.insert_one({
+                                    'reaction':[reactant_key, i],
+                                    'reactant_smi':reactant_smi,
+                                    'product_smi':path_target[0]['Product SMILES'],
+                                    'path':path_target[0]['path'],
+                                    'generations':self.generations,
+                                    'for_debug':'from same',
+                                    'unique': 'new one'})
+            elif len(check_duplicate_1) > 0 and reactant_key != i:
                 # aleady have
                 collection.insert_one({
                                     'reaction':[reactant_key, i],
@@ -169,6 +177,7 @@ class Network(object):
                                     'for_debug':'from same',
                                     'unique': 'already duplicated'})
             else:
+                # aleady have
                 collection.insert_one({
                                     'reaction':[reactant_key, i],
                                     'reactant_smi':reactant_smi,
@@ -176,7 +185,7 @@ class Network(object):
                                     'path':path_target[0]['path'],
                                     'generations':self.generations,
                                     'for_debug':'from same',
-                                    'unique': 'new one'})
+                                    'unique': 'reactant equal to product'})
 
         return result
 
