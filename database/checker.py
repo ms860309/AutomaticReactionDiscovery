@@ -460,7 +460,7 @@ def check_ts_jobs():
                                     'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'ard_status':'job_unrun', 'next_gen_num':next_gen_num
                                     }
                     collect.update_one(target, {"$set": update_field}, True)
-                    pool.insert_one({'reactant_inchi_key':target['reactant_inchi_key']})
+                    pool.insert_one({'reactant_inchi_key':target['product_inchi_key']})
                     insert_exact_rxn(target['reactant_inchi_key'], target['product_inchi_key'], target['Reactant SMILES'], target['Product SMILES'], target['path'], target['generations'])
             else:
                 update_field = {
