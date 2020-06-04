@@ -1,0 +1,4 @@
+conda activate retro
+export PYTHONPATH="$PYTHONPATH:/home/hpc/ypli/wei/ASKCOS/"
+export KERAS_BACKEND=theano
+export PYTHONPATH="$PYTHONPATH:/home/hpc/ypli/wei/ASKCOS/askcos"

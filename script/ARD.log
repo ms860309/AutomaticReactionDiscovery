@@ -1,0 +1,23 @@
+######################################################################
+#################### AUTOMATIC REACTION DISCOVERY ####################
+######################################################################
+Reactant SMILES: OCC(C(C(C=O)O)O)O	/mnt/d/Lab/QMProject/AutomaticReactionDiscovery/script/reactant.xyz
+Maximum number of bonds to be broken: 2
+Maximum number of bonds to be formed: 2
+Heat of reaction cutoff: 10.0 kcal/mol
+######################################################################
+
+Generating all possible products...
+984 possible products generated
+
+Filtering reactions..., dH cutoff
+81 products remaining
+
+Filtering reactions..., isomorphic
+55 products remaining
+
+Feasible products:
+
+Reactant SMILES 1 : O=C[C@H]1OC[C@@H]([C@@H]1O)O.O
+Reactant SMILES 2 : OC[C@@H]([C@@](C=O)(CO)O)O
+Reactant SMILES 3 : O[C@@H]1[C@@H](O)C[C@@H]1O.OC=O

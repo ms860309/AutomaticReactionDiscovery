@@ -17,6 +17,7 @@ import pybel
 import props
 import gen3D
 
+ELEMENT_TABLE = props.ElementData()
 ###############################################################################
 
 class Atom(object):
@@ -34,22 +35,17 @@ class Atom(object):
     """
 
     def __init__(self, atomicnum, coords, idx):
-        if isinstance(atomicnum, str):
-            if atomicnum.upper() in props.atomnum.values():
-                self.atomicnum = props.atomnum_inv[atomicnum]
-        elif int(atomicnum) not in props.atomnum.keys():
-            raise ValueError('Invalid atomic number or symbol: {0}'.format(atomicnum))
-        else:
-            self.atomicnum = int(atomicnum)
-
+        self.atomicnum = int(atomicnum)
         self.coords = np.array(coords)
         if len(self.coords) > 3:
             raise Exception('Atom has more than three coordinates')
-
+        
         self.idx = int(idx)
 
     @property
-    def covrad(self): return props.covrad[self.atomicnum]
+    def covrad(self): 
+        element = ELEMENT_TABLE.from_atomic_number(self.atomicnum)
+        return element.covalent_radius
 
 ###############################################################################
 
@@ -81,21 +77,11 @@ class Node(object):
             raise
 
         # self.atoms can be generated from atomic numbers or from atom labels
-        self.atoms = []
-        for num in atoms:
-            if isinstance(num, str):
-                if num.upper() in props.atomnum.values():
-                    self.atoms.append(props.atomnum_inv[num])
-                    continue
-            if int(num) not in props.atomnum.keys():
-                raise ValueError('Invalid atomic number or symbol: {0}'.format(num))
-            self.atoms.append(int(num))
-
-            
+        self.atoms = [int(atom) for atom in atoms]
 
         self.multiplicity = int(multiplicity)
-
-        self.masses = [props.atomweights[atom] for atom in self.atoms]
+        elements = [ELEMENT_TABLE.from_atomic_number(atom) for atom in self.atoms]
+        self.masses = [element.mass_amu for element in elements]
         self.energy = None
         self.gradient = None
 
@@ -105,8 +91,9 @@ class Node(object):
         """
         return_string = ''
         for anum, atom in enumerate(self.coords):
+            element = ELEMENT_TABLE.from_atomic_number(self.atoms[anum])
             return_string += '{0}  {1[0]: 14.8f}{1[1]: 14.8f}{1[2]: 14.8f}\n'.format(
-                props.atomnum[self.atoms[anum]], atom)
+                element.symbol, atom)
         return return_string[:-1]
 
     def __repr__(self):

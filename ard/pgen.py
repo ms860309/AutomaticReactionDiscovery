@@ -10,6 +10,8 @@ import pybel
 import props
 import gen3D
 import numpy as np
+
+ELEMENT_TABLE = props.ElementData()
 ###############################################################################
 
 class StructureError(Exception):
@@ -38,14 +40,10 @@ class Generate(object):
           (beginAtomIdx, endAtomIdx, bondOrder)
     """
 
-    def __init__(self, reac_mol, total_reactant, add_bond=None):
+    def __init__(self, reac_mol, total_reactant):
         self.reac_mol = reac_mol
-        self.reactant_list = total_reactant
-        self.reactant_inchikey = [i.toRMGMolecule().to_inchi_key() for i in self.reactant_list]
-        #self.reac_smi = None
+        self.reactant_inchikey = [i.toRMGMolecule().to_inchi_key() for i in total_reactant]
         self.atoms = None
-        if add_bond != None:
-            self.add_bond = self.string_to_list(add_bond)
         self.prod_mols = []
         self.add_bonds = []
         self.break_bonds = []
@@ -59,24 +57,6 @@ class Generate(object):
         #self.reac_smi = self.reac_mol.write('can').strip()
         self.atoms = tuple(atom.atomicnum for atom in self.reac_mol)
 
-    def string_to_list(self, add_bond):
-
-        save = ()
-        container = []
-        for index, i in enumerate(add_bond):
-            try:
-                b = int(i)
-                save += (b,) 
-            except:
-                if index == len(add_bond)-1:
-                    container.append(save)
-                    
-                if i == ' ':
-                    container.append(save)
-                    save = ()
-                else:
-                    continue
-        return container
 
     def DoU(self, products_bonds):
         """
@@ -165,22 +145,6 @@ class Generate(object):
             [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
              for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
         ))
-        """
-        for i in reactant_bond:
-            np_1 = sorted(np.array([i[0], i[1]]))
-            np_2 = np.array([i[2]])
-            bond = np.concatenate((np_1, np_2), axis=0).tolist()
-            reactant_bonds.append(tuple(bond))
-        
-        reactant_bonds = tuple(sorted(reactant_bonds))
-        #add user given bonds to reactant_bonds 
-        try:
-            for i in self.add_bond:
-                if i not in reactant_bonds:
-                    reactant_bonds += i,
-        except:
-            pass
-        """
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]
         
@@ -206,12 +170,6 @@ class Generate(object):
                     bonds_form_all
                 )
 
-        # Convert all products to Molecule objects and append to list of product molecules
-        for i in products_bonds:
-            if len(i)+2 < len(reactant_bonds):
-                products_bonds = list(products_bonds)
-                products_bonds.remove(i)
-                products_bonds = tuple(products_bonds)
             
         if products_bonds:
             #Filter the products_bonds which doesn't follow DoU rule
@@ -220,9 +178,8 @@ class Generate(object):
             for bonds in products_bonds:
                 mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
                 mol.setCoordsFromMol(self.reac_mol)
-
-                prod_rmg_mol = mol.toRMGMolecule()
-                if prod_rmg_mol.to_inchi_key() not in  self.reactant_inchikey:
+                
+                if mol.toRMGMolecule().to_inchi_key() not in  self.reactant_inchikey:
                     self.prod_mols.append(mol)
                     """
                     for SSM calculation
@@ -253,10 +210,7 @@ class Generate(object):
                                     
                     self.add_bonds.append(form_bonds)
                     self.break_bonds.append(break_bonds)
-                """
-                if not prod_rmg_mol.isIsomorphic(reac_rmg_mol):
-                    self.prod_mols.append(mol)
-                """
+
 
     def _generateProductsHelper(self, nbreak, nform, products, bonds, valences, bonds_form_all, bonds_broken=None):
         """
@@ -387,33 +341,13 @@ class Generate(object):
         valences_temp[bond[1]] += inc
 
         # Check if maximum valences are exceeded
-        if valences_temp[bond[0]] > props.maxvalences[self.atoms[bond[0]]]:
+        element0 = ELEMENT_TABLE.from_atomic_number(self.atoms[bond[0]])
+        element1 = ELEMENT_TABLE.from_atomic_number(self.atoms[bond[1]])
+        if valences_temp[bond[0]] > element0.max_bonds:
             raise StructureError('Maximum valence on atom {} exceeded'.format(bond[0]))
-        if valences_temp[bond[1]] > props.maxvalences[self.atoms[bond[1]]]:
+        if valences_temp[bond[1]] > element1.max_bonds:
             raise StructureError('Maximum valence on atom {} exceeded'.format(bond[1]))
 
         # Return valid valences
         return valences_temp
 
-    def writeMolblock(self, bonds, valences):
-        """
-        Convert a sequence of bonds and valences corresponding to the atoms in
-        `self.atoms` to an MDL molfile representation and return it as a
-        string.
-        Note: Atom indices in the MDL representation start at 1.
-        """
-        # Create counts line of MDL format
-        counts_line = '{:>3}{:>3}  0  0  0  0  0  0  0  0999 V2000\n'.format(len(self.atoms), len(bonds))
-
-        # Create atom block of MDL format
-        atom_block = ''
-        for idx, atom in enumerate(self.atoms):
-            atom_block += ('    0.0000    0.0000    0.0000 {:<3} 0  0  0  0  0{:>3}  0  0  0  0  0  0\n'.
-                           format(props.atomnum[atom], valences[idx]))
-
-        # Create bond block of MDL format
-        bond_block = ''
-        for bond in bonds:
-            bond_block += '{:>3}{:>3}{:>3}  0  0  0\n'.format(bond[0] + 1, bond[1] + 1, bond[2])
-
-        return '\n\n\n' + counts_line + atom_block + bond_block + 'M  END\n'

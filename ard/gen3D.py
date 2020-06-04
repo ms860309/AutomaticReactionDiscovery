@@ -26,6 +26,8 @@ import util
 import node
 from quantum import QuantumError
 
+ELEMENT_TABLE = props.ElementData()
+
 ###############################################################################
 
 def readstring(format, string):
@@ -138,37 +140,6 @@ class Molecule(pybel.Molecule):
         n.energy = self.energy
         return n
 
-    def toAdjlist(self):
-        """
-        Convert to adjacency list as used in the RMG software.
-        """
-        # Dictionary of RMG bond types
-        bondtypes = {1: 'S', 2: 'D', 3: 'T'}
-        for atom in self:
-            number = atom.idx
-            label = ''
-            element = props.atomnum[atom.atomicnum]
-            spin = atom.spin
-            if spin == 0:
-                spin = 1
-            unpaired = spin - 1
-            charge = atom.formalcharge
-            pairs = (props.valenceelec[atom.atomicnum] - atom.OBAtom.BOSum() - unpaired - charge) // 2
-
-            if charge > 0:
-                charge = '+' + str(charge)
-
-            bondlist = ''
-            for bond in pybel.ob.OBAtomBondIter(atom.OBAtom):
-                other_atom = bond.GetBeginAtomIdx()
-                if other_atom == number:
-                    other_atom = bond.GetEndAtomIdx()
-                bondtype = bondtypes[bond.GetBondOrder()]
-                bondlist += ' {{{},{}}}'.format(other_atom, bondtype)
-
-            adjlist += '{:<2} {} {} u{} p{} c{}{}\n'.format(number, label, element, unpaired, pairs, charge, bondlist)
-        return adjlist
-
     def toRMGSpecies(self):
         """
         Convert to :class:`rmgpy.species.Species` object and return the object.
@@ -177,11 +148,6 @@ class Molecule(pybel.Molecule):
         adjlist = rmg_mol.to_adjacency_list()
         spc = Species().from_adjacency_list(adjlist)
         spc.label = ''
-        """
-        adjlist = self.toAdjlist()
-        spc = Species().from_adjacency_list(adjlist)
-        spc.label = ''
-        """
         return spc
 
     def toRMGMolecule(self):
@@ -190,10 +156,6 @@ class Molecule(pybel.Molecule):
         object.
         """
         rmg_mol = from_ob_mol(rmgpy.molecule.molecule.Molecule(), self.OBMol)
-        """
-        adjlist = self.toAdjlist()
-        mol = rmgpy.molecule.Molecule().from_adjacency_list(adjlist)
-        """
         return rmg_mol
 
     def assignSpinMultiplicity(self):
@@ -208,6 +170,8 @@ class Molecule(pybel.Molecule):
         for atom in self:
             OBAtom = atom.OBAtom
             # Only based on difference between expected and actual valence
+            
+            #element = ELEMENT_TABLE.from_atomic_number(atom.atomicnum)
             nonbond_elec = props.valenceelec[atom.atomicnum] - OBAtom.BOSum()
 
             # Tries to pair all electrons that are not involved in bonds, which means that singlet states are favored
