@@ -13,13 +13,13 @@ import pybel
 
 def select_ard_target():
     # when lower generation finished return target else return []
-    collect = db['qm_calculate_center']
+    qm_collection = db['qm_calculate_center']
     reg_query = {'ard_status':
                     {"$in": 
                         ["job_unrun"]
                     }
                 }
-    targets = list(collect.find(reg_query))
+    targets = list(qm_collection.find(reg_query))
     query_1 =   {'$or': 
                     [
                     { "ts_status":
@@ -33,7 +33,7 @@ def select_ard_target():
                         }
                     ]
                 }
-    if not list(collect.find(query_1)):
+    if not list(qm_collection.find(query_1)):
         selected_targets = []
         gens = []
         equal = []
@@ -52,10 +52,10 @@ def select_ard_target():
 
 def launch_ard_jobs():
     
-    collection = db['qm_calculate_center']
-    initial_pool = db['pool']
-    status = db['status']
-    if collection.estimated_document_count() == 0:
+    qm_collection = db['qm_calculate_center']
+    pool_collection = db['pool']
+    status_collection = db['status']
+    if qm_collection.estimated_document_count() == 0:
         print('The ard not start')
         print('Starting ARD network exploring')
         script_path = path.join(path.dirname(path.dirname(path.abspath(__file__))), 'script')
@@ -65,7 +65,7 @@ def launch_ard_jobs():
         # first reactant need to add to pool
         initial_reactant_OBMol = next(pybel.readfile('xyz', path.join(script_path, 'reactant.xyz'))).OBMol
         initial_reactant_inchi_key = from_ob_mol(rmgpy.molecule.molecule.Molecule(), initial_reactant_OBMol).to_inchi_key()
-        initial_pool.insert_one({'reactant_inchi_key':initial_reactant_inchi_key})
+        pool_collection.insert_one({'reactant_inchi_key':initial_reactant_inchi_key})
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -76,7 +76,7 @@ def launch_ard_jobs():
         # update status job_launched
         print('ARD had launched')
         print('jobid is {}'.format(job_id))
-        status.insert_one({'status':'ARD had launched'})
+        status_collection.insert_one({'status':'ARD had launched'})
     else:
         targets = select_ard_target()
         for target in list(targets):
@@ -120,9 +120,9 @@ def create_ard_sub_file(dir_path, script_path, gen_num, next_reactant, ncpus = 1
     return subfile
 
 def update_ard_status(target, job_id):
-    collect = db['qm_calculate_center']
+    qm_collection = db['qm_calculate_center']
     reg_query = {"path":target}
     update_field = {"ard_status":"job_launched", "ard_jobid":job_id}
-    collect.update_one(reg_query, {"$set": update_field}, True)
+    qm_collection.update_one(reg_query, {"$set": update_field}, True)
     
 launch_ard_jobs()

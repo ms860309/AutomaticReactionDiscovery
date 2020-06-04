@@ -24,25 +24,30 @@ db = getattr(Connector(), 'db')
 # debug
 """
 collect = db['qm_calculate_center']
-query = {'$and': 
-                [
-                { "ts_status":
-                    {"$in":
-                    ['job_success']}},
-                {'energy_status':
-                    {'$in':
-                        ['job_success']}}
-                ]
+r = collect.aggregate(
+        [
+            {"$match": {"$and": [
+                {
+                    "ts_status": {"$in": ['job_success']},
+                    "energy_status": {"$in": ['job_success']}
+                }
+            ]}},
+            {"$group" : { "_id" : "$reaction", 'barrier_energy': { '$min': "$barrier_energy" } } }
+        ]
+    )
+for i in list(r):
+    reaction = i['_id']
+    barrier = i['barrier_energy']
+    query = {
+        '$and':[
+            {
+                'reaction':reaction    
+            },
+            {
+                'barrier_energy':barrier
             }
-targets = list(collect.find(query))
-num =[]
-print(len(targets))
-for idx, i in enumerate(targets):
-    print(i)
-    try:
-        barrier_energy = i['barrier_energy']
-    except:
-        num.append(idx)
-print(num)
-print(len(targets))
+        ]
+    }
+    a = list(collect.find(query))
+    print(a)
 """

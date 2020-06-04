@@ -43,10 +43,10 @@ class Network(object):
         """
         Execute the automatic reaction discovery procedure.
         """
-        collection = db['qm_calculate_center']
-        initial_pool = db['pool']
-        statistics = db['statistics']
-        targets = list(initial_pool.find({}, {'reactant_inchi_key':1}))
+        qm_collection = db['qm_calculate_center']
+        pool_collection = db['pool']
+        statistics_collection = db['statistics']
+        targets = list(pool_collection.find({}, {'reactant_inchi_key':1}))
         #Add all reactant to a list for pgen filter isomorphic
         inchi_key_list = [i['reactant_inchi_key'] for i in targets]
         gen = Generate(mol_object, inchi_key_list)
@@ -83,8 +83,8 @@ class Network(object):
             prod_mols_filtered = self.unique_key_filterIsomorphic(prod_mols_filtered, prod_mols_filtered_2)
             prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
             prod_mols_filtered += prod_mols_filtered_2 
-        else:
-            prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
+        #else:
+            #prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
 
         # initial round add all prod to self.network
         reactant_key = mol_object.toRMGMolecule().to_inchi_key()
@@ -97,8 +97,7 @@ class Network(object):
             # gen geo return path
             dir_path = self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
             product_name = mol.toRMGMolecule().to_inchi_key()
-            #rxn_idx = '{}_{}'.format(reactant_key, idx+1)
-            collection.insert_one({
+            qm_collection.insert_one({
                                    'reaction': [reactant_key, product_name], 
                                    'Reactant SMILES':mol_object.write('can').strip(), 
                                    'reactant_inchi_key':reactant_key, 
@@ -109,7 +108,7 @@ class Network(object):
                                    'generations':self.generations
                                    }
                                   )
-        statistics.insert_one({'Reactant SMILES':mol_object.write('can').strip(), 'reactant_inchi_key':reactant_key, 'add how many products':len(prod_mols_filtered)})
+        statistics_collection.insert_one({'Reactant SMILES':mol_object.write('can').strip(), 'reactant_inchi_key':reactant_key, 'add how many products':len(prod_mols_filtered)})
 
 
         
@@ -139,26 +138,25 @@ class Network(object):
         """
         Convert rmg molecule into inchi key(unique key) and check isomorphic
         """
-        collect = db['qm_calculate_center']
-        collection = db['reactions']
-        targets = list(collect.find({'ts_status':'job_success'}))
+        qm_collection = db['qm_calculate_center']
+        reactions_collection = db['reactions']
+        targets = list(qm_collection.find({'ts_status':'job_success'}))
         base_unique = [i['product_inchi_key'] for i in targets]
         compare_unique = [mol.toRMGMolecule().to_inchi_key() for mol in compare]
         isomorphic_idx = [compare_unique.index(i) for i in set(compare_unique) - set(base_unique)]
         result = [compare[i] for i in isomorphic_idx]
         
-        product_pool = db['same_product']
         same_unique_key = list(set(compare_unique) & set(base_unique))
 
         for idx, i in enumerate(same_unique_key):
-            reactant_target = list(collect.find({'product_inchi_key':reactant_key}))
+            reactant_target = list(qm_collection.find({'product_inchi_key':reactant_key}))
             number = len(reactant_target)
-            path_target = list(collect.find({'product_inchi_key':i}))
+            path_target = list(qm_collection.find({'product_inchi_key':i}))
             #reactions_name = '{}_{}'.format(reactant_target[0]['reactant_inchi_key'], number + idx + 1)
             check_1 = [reactant_key, i]
-            check_duplicate_1 = list(collection.find({'reaction':check_1}))
+            check_duplicate_1 = list(reactions_collection.find({'reaction':check_1}))
             if len(check_duplicate_1) == 0 and reactant_key != i:
-                collection.insert_one({
+                reactions_collection.insert_one({
                                     'reaction':[reactant_key, i],
                                     'reactant_smi':reactant_smi,
                                     'product_smi':path_target[0]['Product SMILES'],
@@ -168,7 +166,7 @@ class Network(object):
                                     'unique': 'new one'})
             elif len(check_duplicate_1) > 0 and reactant_key != i:
                 # aleady have
-                collection.insert_one({
+                reactions_collection.insert_one({
                                     'reaction':[reactant_key, i],
                                     'reactant_smi':reactant_smi,
                                     'product_smi':path_target[0]['Product SMILES'],
@@ -178,7 +176,7 @@ class Network(object):
                                     'unique': 'already duplicated'})
             else:
                 # aleady have
-                collection.insert_one({
+                reactions_collection.insert_one({
                                     'reaction':[reactant_key, i],
                                     'reactant_smi':reactant_smi,
                                     'product_smi':path_target[0]['Product SMILES'],
@@ -202,7 +200,7 @@ class Network(object):
 
     def gen_geometry(self, reactant_mol, network_prod_mol, add_bonds, break_bonds, **kwargs):
         #database
-        rxn = db['qm_calculate_center']
+        qm_collection = db['qm_calculate_center']
         # These two lines are required so that new coordinates are
         # generated for each new product. Otherwise, Open Babel tries to
         # use the coordinates of the previous molecule if it is isomorphic
@@ -237,7 +235,7 @@ class Network(object):
         if not os.path.exists(subdir):
             os.mkdir(subdir)
         dirname = network_prod_mol.toRMGMolecule().to_inchi_key()
-        targets = list(rxn.find({'product_inchi_key':dirname}))
+        targets = list(qm_collection.find({'product_inchi_key':dirname}))
         dirname = '{}_{}'.format(dirname, len(targets)+1)
         output_dir = util.makeOutputSubdirectory(subdir, dirname)
         kwargs['output_dir'] = output_dir

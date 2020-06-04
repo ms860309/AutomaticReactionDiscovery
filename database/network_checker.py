@@ -12,13 +12,13 @@ def select_ard_target():
     1. status is job_launched or job_running
     Returns a list of targe
     """
-    collect = db['qm_calculate_center']
+    qm_collection = db['qm_calculate_center']
     reg_query = {"ard_status":
                     {"$in": 
                         ["job_launched", "job_running", "job_queueing"] 
                     }
                 }
-    targets = list(collect.find(reg_query))
+    targets = list(qm_collection.find(reg_query))
 
     return targets
 
@@ -58,7 +58,7 @@ def check_ard_jobs():
     # 1. select jobs to check
     targets = select_ard_target()
 
-    collect = db['qm_calculate_center']
+    qm_collection = db['qm_calculate_center']
     
     # 2. check the job pbs status
     for target in targets:
@@ -84,13 +84,13 @@ def check_ard_jobs():
                                 'ard_status': new_status
                             }
 
-            collect.update_one(target, {"$set": update_field}, True)
+            qm_collection.update_one(target, {"$set": update_field}, True)
 
 def print_information(generations):
     """
     For a given generations (int) print the information in database
     """
-    collect = db['qm_calculate_center']
+    qm_collection = db['qm_calculate_center']
     
     gen_query = {"generations":
                     {"$in": 
@@ -152,14 +152,14 @@ def print_information(generations):
                     {'generations':generations}
                     ]
                 }
-    gen_targets = list(collect.find(gen_query))
-    ssm_targets_1 = list(collect.find(ssm_query_1))
-    ssm_targets_2 = list(collect.find(ssm_query_2))
-    ssm_targets_3 = list(collect.find(ssm_query_3))
-    ts_targets_1 = list(collect.find(ts_query_1))
-    ts_targets_2 = list(collect.find(ts_query_2))
-    ts_targets_3 = list(collect.find(ts_query_3))
-    reactant_target = list(collect.find({'generations':generations}))
+    gen_targets = list(qm_collection.find(gen_query))
+    ssm_targets_1 = list(qm_collection.find(ssm_query_1))
+    ssm_targets_2 = list(qm_collection.find(ssm_query_2))
+    ssm_targets_3 = list(qm_collection.find(ssm_query_3))
+    ts_targets_1 = list(qm_collection.find(ts_query_1))
+    ts_targets_2 = list(qm_collection.find(ts_query_2))
+    ts_targets_3 = list(qm_collection.find(ts_query_3))
+    reactant_target = list(qm_collection.find({'generations':generations}))
     smi = []
     for target in reactant_target:
         reactant_smi = target['Reactant SMILES']
@@ -181,10 +181,10 @@ def print_information(generations):
 
 def update_network_status():
     
-    status = db['status']
-    qm_cal_center = db['qm_calculate_center']
-    statistics = db['statistics']
-    total_nodes = list(statistics.find({}, {'add how many products':1}))
+    status_collection = db['status']
+    qm_collection = db['qm_calculate_center']
+    statistics_collection = db['statistics']
+    total_nodes = list(statistics_collection.find({}, {'add how many products':1}))
     
     count = 0
     
@@ -197,7 +197,7 @@ def update_network_status():
                     }
                 }
     
-    qm_nodes = list(qm_cal_center.find(running_query))
+    qm_nodes = list(qm_collection.find(running_query))
     
     query = {'$or': 
                     [
@@ -211,24 +211,24 @@ def update_network_status():
                         }}
                     ]
                 }
-    targets = list(qm_cal_center.find(query))
+    targets = list(qm_collection.find(query))
     
     if len(targets) == count and len(qm_nodes) == 0:
         print('Network converged')
         
-        target = list(status.find({}))
+        target = list(status_collection.find({}))
         update_field = {
                         'status':'Network converged'
                     }
-        status.update_one(target[0], {"$set": update_field}, True)
+        status_collection.update_one(target[0], {"$set": update_field}, True)
     
     
     
     
 check_ard_jobs()
 
-qm_cal_center = db['qm_calculate_center']
-max_gen = qm_cal_center.find_one(sort=[("generations", -1)])
+qm_collection = db['qm_calculate_center']
+max_gen = qm_collection.find_one(sort=[("generations", -1)])
 max_gen = max_gen['generations']
 for i in range(max_gen):
     print_information(i+1)

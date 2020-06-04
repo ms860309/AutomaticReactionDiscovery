@@ -35,13 +35,13 @@ def select_energy_target():
     Returns a list of targe
     """
 
-    collect = db['qm_calculate_center']
+    qm_collection = db['qm_calculate_center']
     reg_query = {"energy_status":
                     {"$in":
                         ["job_launched", "job_running", "job_queueing"]
                     }
                 }
-    targets = list(collect.find(reg_query))
+    targets = list(qm_collection.find(reg_query))
 
     return targets
 
@@ -77,13 +77,16 @@ def check_energy_content_status(rxn_path):
     if not path.exists(energy_path):
         return "job_aborted"
     else:
-        with open(energy_path, 'r') as f:
-            lines = f.readlines()
-            for line in lines:
-                if line.strip().startswith('SCF   energy in the final basis set'):
-                    SCF_Energy = line.split()[-1]
-                    energy = float(SCF_Energy)
-        return "job_success", energy
+        try:
+            with open(energy_path, 'r') as f:
+                lines = f.readlines()
+                for line in lines:
+                    if line.strip().startswith('SCF   energy in the final basis set'):
+                        SCF_Energy = line.split()[-1]
+                        energy = float(SCF_Energy)
+            return "job_success", energy
+        except:
+            return "job_fail", 0
 
 def check_energy_jobs():
     """
@@ -95,7 +98,7 @@ def check_energy_jobs():
     """
     # 1. select jobs to check
     targets = select_energy_target()
-    collect = db['qm_calculate_center']
+    qm_collection = db['qm_calculate_center']
     
     # 2. check the job pbs_status
     for target in targets:
@@ -114,7 +117,7 @@ def check_energy_jobs():
                                        'energy_status': new_status,
                                        'reactant_scf_energy':energy
                                    }
-                    collect.update_one(target, {"$set": update_field}, True)
+                    qm_collection.update_one(target, {"$set": update_field}, True)
 
 def select_ssm_target():
     """
@@ -123,13 +126,13 @@ def select_ssm_target():
     1. status is job_launched or job_running
     Returns a list of targe
     """
-    collect = db['qm_calculate_center']
+    qm_collection = db['qm_calculate_center']
     reg_query = {"ssm_status":
                     {"$in": 
                         ["job_launched", "job_running", "job_queueing"] 
                     }
                 }
-    targets = list(collect.find(reg_query))
+    targets = list(qm_collection.find(reg_query))
 
     return targets
 
@@ -197,7 +200,7 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
     # If equal, insert the inchi key into products pool
     # If not equal, use ssm product as the product and insert inchi key into products pool
     # Next generation use the ssm product to generate
-    rxn_collect = db['qm_calculate_center']
+    qm_collection = db['qm_calculate_center']
     
     ard_prod_path = path.join(rxn_dir, 'product.xyz')
     ssm_prod_path = path.join(rxn_dir, 'ssm_product.xyz')
@@ -206,8 +209,8 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
     OBMol_2 = readXYZ(ard_prod_path)
     rmg_mol_2 = toRMGmol(OBMol_2)
     if rmg_mol_1.to_inchi_key() != rmg_mol_2.to_inchi_key():
-        num = len(list(rxn_collect.find({'product_inchi_key':rmg_mol_1.to_inchi_key()})))
-        targets = list(rxn_collect.find({'path':rxn_dir}))
+        num = len(list(qm_collection.find({'product_inchi_key':rmg_mol_1.to_inchi_key()})))
+        targets = list(qm_collection.find({'path':rxn_dir}))
         for i in targets:
             name = '{}_{}'.format(rmg_mol_1.to_inchi_key(), num+1)
             new_path = path.join(path.dirname(i['path']), name)
@@ -221,7 +224,7 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
                             "energy_status":"job_unrun", 
                             'ard_ssm_equal':'not_equal',
                             'Product SMILES': prod_smi}
-            rxn_collect.update_one(i, {"$set": update_field}, True)
+            qm_collection.update_one(i, {"$set": update_field}, True)
         return 'not_equal'
     else:
         return 'equal'
@@ -245,7 +248,7 @@ def check_ssm_jobs():
     # 1. select jobs to check
     targets = select_ssm_target()
 
-    collect = db['qm_calculate_center']
+    qm_collection = db['qm_calculate_center']
     
     # 2. check the job pbs status
     for target in targets:
@@ -266,14 +269,14 @@ def check_ssm_jobs():
                 equal = ard_prod_and_ssm_prod_checker(target['path'])
                 if equal == 'equal':
                     update_field = {
-                                    'ssm_status': new_status, "ts_status":"job_unrun", "energy_status":"job_unrun", 'ard_ssm_equal':equal
+                                    'ssm_status': new_status, "ts_status":"job_unrun", 'ard_ssm_equal':equal
                                 }
-                    collect.update_one(target, {"$set": update_field}, True)
+                    qm_collection.update_one(target, {"$set": update_field}, True)
             else:
                 update_field = {
                                 'ssm_status': new_status
                             }
-                collect.update_one(target, {"$set": update_field}, True)
+                qm_collection.update_one(target, {"$set": update_field}, True)
 	
 
 def generate_ssm_product_xyz(target_path):
@@ -303,13 +306,13 @@ def select_ts_target():
     1. status is job_launched or job_running
     Returns a list of targe
     """
-    collect = db['qm_calculate_center']
+    qm_collection = db['qm_calculate_center']
     reg_query = {"ts_status":
                     {"$in": 
                         ["job_launched", "job_running", "job_queueing"] 
                     }
                 }
-    targets = list(collect.find(reg_query))
+    targets = list(qm_collection.find(reg_query))
 
     return targets
 
@@ -376,38 +379,17 @@ def check_ts_content_status(target_path):
 
         return "job_success", ts_energy
     
-def insert_exact_rxn(reactant_inchi_key, product_inchi_key, reactant_smi, product_smi, path, generations):
-    collect = db['reactions']
-    query = {'$and': 
-                    [
-                    { "ts_status":
-                        {"$in":
-                        ['job_success']}
-                        },
-                    {'reactant_inchi_key':reactant_inchi_key}
-                    ]
-                }
-    targets = len(list(collect.find(query)))
-    #reaction_name = '{}_{}'.format(reactant_inchi_key, targets + 1)
-    check = [reactant_inchi_key, product_inchi_key]
-    check_duplicate = list(collect.find({'reaction':check}))
-    if len(check_duplicate) > 0:
-        # aleady have
-        collect.insert_one({
-                            'reaction':[reactant_inchi_key, product_inchi_key],
-                            'reactant_smi':reactant_smi,
-                            'product_smi':product_smi,
-                            'path':path,
-                            'generations':generations,
-                            'unique': 'already duplicated'})
-    else:
-        collect.insert_one({
-                            'reaction':[reactant_inchi_key, product_inchi_key],
-                            'reactant_smi':reactant_smi,
-                            'product_smi':product_smi,
-                            'path':path,
-                            'generations':generations,
-                            'unique': 'new one'})
+def insert_exact_rxn(reactant_inchi_key, product_inchi_key, reactant_smi, product_smi, path, generations, barrier):
+    reactions_collection = db['reactions']
+
+    reactions_collection.insert_one({
+                        'reaction':[reactant_inchi_key, product_inchi_key],
+                        'reactant_smi':reactant_smi,
+                        'product_smi':product_smi,
+                        'path':path,
+                        'generations':generations,
+                        'unique': 'new one',
+                        'barrier_energy':barrier})
 
 def check_ts_jobs():
     """
@@ -420,8 +402,8 @@ def check_ts_jobs():
     # 1. select jobs to check
     targets = select_ts_target()
 
-    collect = db['qm_calculate_center']
-    pool = db['pool']
+    qm_collection = db['qm_calculate_center']
+    pool_collection = db['pool']
     # 2. check the job pbs status
     for target in targets:
         job_id = target['ts_jobid']
@@ -438,35 +420,16 @@ def check_ts_jobs():
         next_gen_num = int(target['generations']) + 1
         if orig_status != new_status:
             if new_status == 'job_success':
-                product_inchi_key = target['product_inchi_key']
-                query = {'$and': 
-                                [
-                                { "ts_status":
-                                    {"$in":
-                                    ['job_success']}
-                                    },
-                                {'generations':target['generations']},
-                                {'product_inchi_key':target['product_inchi_key']}
-                                ]
-                            }
-                same_prod = list(collect.find(query))
-                if len(same_prod) > 0:
-                    update_field = {
-                                    'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'ard_status':'already have same prod', 'next_gen_num':next_gen_num
-                                    }
-                    collect.update_one(target, {"$set": update_field}, True)
-                else:
-                    update_field = {
-                                    'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'ard_status':'job_unrun', 'next_gen_num':next_gen_num
-                                    }
-                    collect.update_one(target, {"$set": update_field}, True)
-                    pool.insert_one({'reactant_inchi_key':target['product_inchi_key']})
-                    insert_exact_rxn(target['reactant_inchi_key'], target['product_inchi_key'], target['Reactant SMILES'], target['Product SMILES'], target['path'], target['generations'])
+                update_field = {
+                                'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'next_gen_num':next_gen_num, "energy_status":"job_unrun"
+                                }
+                qm_collection.update_one(target, {"$set": update_field}, True)
+                pool_collection.insert_one({'reactant_inchi_key':target['product_inchi_key']})
             else:
                 update_field = {
                                 'ts_status': new_status
                             }
-                collect.update_one(target, {"$set": update_field}, True)
+                qm_collection.update_one(target, {"$set": update_field}, True)
 
 def select_ts_barrier_target():
     """
@@ -476,7 +439,7 @@ def select_ts_barrier_target():
     Returns a list of targe
     """
 
-    collect = db['qm_calculate_center']
+    qm_collection = db['qm_calculate_center']
     query = {'$and': 
                     [
                     { "ts_status":
@@ -487,7 +450,7 @@ def select_ts_barrier_target():
                             ['job_success']}}
                     ]
                 }
-    targets = list(collect.find(query))
+    targets = list(qm_collection.find(query))
     num =[]
     for idx, i in enumerate(targets):
         try:
@@ -510,30 +473,74 @@ def check_ts_barrier_jobs():
     """
     # 1. select jobs to check
     targets = select_ts_barrier_target()
-    collect = db['qm_calculate_center']
-    rxn = db['reactions']
+    qm_collection = db['qm_calculate_center']
     
     for target in targets:
         reactant_energy = target['reactant_scf_energy']
         ts_energy = target['ts_energy']
         barrier_energy = (float(ts_energy) - float(reactant_energy)) * 627.5095
         update_field = {'barrier_energy':barrier_energy}
-        collect.update_one(target, {"$set": update_field}, True)
-        
-        query = {'$and': 
+        qm_collection.update_one(target, {"$set": update_field}, True)
+
+def check_ard_barrier_jobs():
+    # Select the lowest ts barrier reaction inserts to reaction collection and changes the ard status to job unrun.
+    # check ard will start when ssm success = ts fail + ts success to make sure all reaction done.
+    qm_collection = db['qm_calculate_center']
+    ssm_query = {"ssm_status":
+                    {"$in":
+                        ["job_success"]
+                    }
+                }
+    ssm_success_number = len(list(qm_collection.find(ssm_query)))
+    ts_query = {'$and': 
                     [
-                    { "reaction":[target['reactant_inchi_key'], target['product_inchi_key']]},
-                    {'unique':'new one'}
+                    { "ts_status":
+                        {"$in":
+                        ['job_success', 'job_fail']}},
+                    {'energy_status':
+                        {'$in':
+                            ['job_success', 'job_fail']}}
                     ]
                 }
+    ts_fail_and_success_number = len(list(qm_collection.find(ts_query)))
+    if ssm_success_number == ts_fail_and_success_number:
+        check_ts_barrier_jobs()
         
-        check = list(rxn.find(query))
-        rxn.update_one(check[0], {'$set':{'barrier_energy':barrier_energy}}, True)
-    
-                    
-                    
+        targets = list(qm_collection.aggregate(
+            [
+                {"$match": {"$and": [
+                    {
+                        "ts_status": {"$in": ['job_success']},
+                        "energy_status": {"$in": ['job_success']}
+                    }
+                ]}},
+                {"$group" : { "_id" : "$reaction", 'barrier_energy': { '$min': "$barrier_energy" } } }
+            ]
+        ))
+        for i in targets:
+            reaction = i['_id']
+            barrier = i['barrier_energy']
+            query = {
+                '$and':[
+                    {
+                        'reaction':reaction    
+                    },
+                    {
+                        'barrier_energy':barrier
+                    }
+                ]
+            }
+            target = list(collect.find(query)) # This is only have one result though it is a list (to visualize <pymongo.cursor.Cursor object>)
+            qm_collection.update_one(target[0], {"$set": {'ard_status':'job_unrun'}}, True)
+            insert_exact_rxn(target[0]['reactant_inchi_key'],
+                            target[0]['product_inchi_key'],
+                            target[0]['Reactant SMILES'],
+                            target[0]['Product SMILES'],
+                            target[0]['path'],
+                            target[0]['generations'],
+                            barrier)
                     
 check_energy_jobs()
 check_ssm_jobs()
 check_ts_jobs()
-check_ts_barrier_jobs()
+check_ard_barrier_jobs()
