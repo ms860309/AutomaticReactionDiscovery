@@ -68,7 +68,7 @@ class Network(object):
         else:
             H298_reac = self.reac_mol.getH298(thermo_db)
             prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, mol, thermo_db)]
-
+        print(len(prod_mols_filtered))
         #check product isomorphic and filter them
         if self.nbreak == 3 and self.nform == 3:
             gen_2.generateProducts(nbreak=2, nform=2)
@@ -89,8 +89,10 @@ class Network(object):
         # initial round add all prod to self.network
         reactant_key = mol_object.toRMGMolecule().to_inchi_key()
         reactant_smi = mol_object.write('can').strip()
+        print(len(prod_mols_filtered))
         prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_key, reactant_smi, prod_mols_filtered)
-
+        print(len(prod_mols_filtered))
+        raise
         for idx, mol in enumerate(prod_mols_filtered):
             index = prod_mols.index(mol)
             self.network_prod_mols.append(mol)
@@ -143,7 +145,10 @@ class Network(object):
         targets = list(qm_collection.find({'ts_status':'job_success'}))
         base_unique = [i['product_inchi_key'] for i in targets]
         compare_unique = [mol.toRMGMolecule().to_inchi_key() for mol in compare]
-        isomorphic_idx = [compare_unique.index(i) for i in set(compare_unique) - set(base_unique)]
+        isomorphic_idx =[]
+        for idx, i in enumerate(compare_unique):
+            if i not in base_unique:
+                isomorphic_idx.append(idx)
         result = [compare[i] for i in isomorphic_idx]
         
         same_unique_key = list(set(compare_unique) & set(base_unique))

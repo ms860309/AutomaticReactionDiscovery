@@ -23,7 +23,11 @@ db = getattr(Connector(), 'db')
 
 # debug
 """
-collect = db['qm_calculate_center']
+qm_collection = db['qm_calculate_center']
+targets = list(qm_collection.find({'ts_status':'job_success'}))
+base_unique = [i['product_inchi_key'] for i in targets]
+print(base_unique)
+
 r = collect.aggregate(
         [
             {"$match": {"$and": [
