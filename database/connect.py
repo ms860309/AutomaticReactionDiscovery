@@ -24,34 +24,38 @@ db = getattr(Connector(), 'db')
 # debug
 """
 qm_collection = db['qm_calculate_center']
-targets = list(qm_collection.find({'ts_status':'job_success'}))
-base_unique = [i['product_inchi_key'] for i in targets]
-print(base_unique)
-
-r = collect.aggregate(
-        [
-            {"$match": {"$and": [
-                {
-                    "ts_status": {"$in": ['job_success']},
-                    "energy_status": {"$in": ['job_success']}
+max_gen = qm_collection.find_one(sort=[("generations", -1)])
+max_gen = max_gen['generations']
+query = {'ard_status':'job_unrun', 'generations':max_gen}
+targets = list(qm_collection.find(query))
+print(len(targets))
+print(targets)
+raise
+ssm_query = {'$and':
+                [{"ssm_status":
+                {"$in":
+                    ['job_success', 'job_running']
                 }
-            ]}},
-            {"$group" : { "_id" : "$reaction", 'barrier_energy': { '$min': "$barrier_energy" } } }
-        ]
-    )
-for i in list(r):
-    reaction = i['_id']
-    barrier = i['barrier_energy']
-    query = {
-        '$and':[
-            {
-                'reaction':reaction    
             },
             {
-                'barrier_energy':barrier
-            }
-        ]
-    }
-    a = list(collect.find(query))
-    print(a)
+                'generations':1
+            }]}
+ssm_success_number = len(list(qm_collection.find(ssm_query)))
+ts_query = {'$and':
+            [{'$or': 
+                [
+                {'ts_status':
+                    {"$in":
+                        ['job_success', 'job_fail']}},
+                {'energy_status':
+                    {'$in':
+                        ['job_success', 'job_fail']}}
+                ]
+            },
+            {
+                'generations':1
+            }]}
+ts_fail_and_success_number = len(list(qm_collection.find(ts_query)))
+print(ssm_success_number)
+print(ts_fail_and_success_number)
 """

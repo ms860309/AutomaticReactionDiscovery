@@ -482,36 +482,47 @@ def check_ts_barrier_jobs():
         update_field = {'barrier_energy':barrier_energy}
         qm_collection.update_one(target, {"$set": update_field}, True)
 
-def check_ard_barrier_jobs():
+def check_ard_barrier_jobs(generations):
     # Select the lowest ts barrier reaction inserts to reaction collection and changes the ard status to job unrun.
     # check ard will start when ssm success = ts fail + ts success to make sure all reaction done.
     qm_collection = db['qm_calculate_center']
-    ssm_query = {"ssm_status":
+    ssm_query = {'$and':
+                    [{"ssm_status":
                     {"$in":
-                        ["job_success"]
+                        ['job_success', 'job_running']
                     }
-                }
+                },
+                {
+                    'generations':generations
+                }]}
     ssm_success_number = len(list(qm_collection.find(ssm_query)))
-    ts_query = {'$and': 
+    ts_query = {'$and':
+                [{'$or': 
                     [
-                    { "ts_status":
+                    {'ts_status':
                         {"$in":
-                        ['job_success', 'job_fail']}}
+                            ['job_success', 'job_fail']}},
+                    {'energy_status':
+                        {'$in':
+                            ['job_success', 'job_fail']}}
                     ]
-                }
+                },
+                {
+                    'generations':generations
+                }]}
     ts_fail_and_success_number = len(list(qm_collection.find(ts_query)))
     if ssm_success_number == ts_fail_and_success_number:
         check_ts_barrier_jobs()
         
         targets = list(qm_collection.aggregate(
             [
-                {"$match": {"$and": [
+                {"$match": {"$and":[
                     {
-                        "ts_status": {"$in": ['job_success']},
-                        "energy_status": {"$in": ['job_success']}
+                        "ts_status": {"$in":['job_success']},
+                        "energy_status": {"$in":['job_success']}
                     }
                 ]}},
-                {"$group" : { "_id" : "$reaction", 'barrier_energy': { '$min': "$barrier_energy" } } }
+                {"$group":{"_id":"$reaction", 'barrier_energy':{'$min':"$barrier_energy"}}}
             ]
         ))
         for i in targets:
@@ -540,4 +551,13 @@ def check_ard_barrier_jobs():
 check_energy_jobs()
 check_ssm_jobs()
 check_ts_jobs()
-check_ard_barrier_jobs()
+
+qm_collection = db['qm_calculate_center']
+max_gen = qm_collection.find_one(sort=[("generations", -1)])
+max_gen = max_gen['generations']
+query = {'ard_status':'job_unrun', 'generations':max_gen}
+targets = list(qm_collection.find(query))
+if len(targets) != 0:
+    break
+else:
+    check_ard_barrier_jobs(max_gen)
