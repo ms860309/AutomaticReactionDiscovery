@@ -193,7 +193,7 @@ def update_network_status():
         
     running_query = {"ard_status":
                     {"$in": 
-                        ["job_launched", "job_running", "job_queueing"] 
+                        ["job_unrun", "job_launched", "job_running", "job_queueing"] 
                     }
                 }
     
@@ -211,6 +211,7 @@ def update_network_status():
                         }}
                     ]
                 }
+    
     targets = list(qm_collection.find(query))
     
     if len(targets) == count and len(qm_nodes) == 0:

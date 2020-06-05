@@ -496,10 +496,7 @@ def check_ard_barrier_jobs():
                     [
                     { "ts_status":
                         {"$in":
-                        ['job_success', 'job_fail']}},
-                    {'energy_status':
-                        {'$in':
-                            ['job_success', 'job_fail']}}
+                        ['job_success', 'job_fail']}}
                     ]
                 }
     ts_fail_and_success_number = len(list(qm_collection.find(ts_query)))
@@ -530,7 +527,7 @@ def check_ard_barrier_jobs():
                     }
                 ]
             }
-            target = list(collect.find(query)) # This is only have one result though it is a list (to visualize <pymongo.cursor.Cursor object>)
+            target = list(qm_collection.find(query)) # This is only have one result though it is a list (to visualize <pymongo.cursor.Cursor object>)
             qm_collection.update_one(target[0], {"$set": {'ard_status':'job_unrun'}}, True)
             insert_exact_rxn(target[0]['reactant_inchi_key'],
                             target[0]['product_inchi_key'],
