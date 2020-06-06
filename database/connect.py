@@ -24,38 +24,21 @@ db = getattr(Connector(), 'db')
 # debug
 """
 qm_collection = db['qm_calculate_center']
-max_gen = qm_collection.find_one(sort=[("generations", -1)])
-max_gen = max_gen['generations']
-query = {'ard_status':'job_unrun', 'generations':max_gen}
+query = {'$and': 
+                [
+                {'product_inchi_key':
+                    {'$in':
+                    ['VHWYCFISAQVCCP-UHFFFAOYSA-N']}
+                    },
+                {'generations':
+                    {'$in':
+                        [1]
+                    }}
+                ]
+            }
+
 targets = list(qm_collection.find(query))
 print(len(targets))
-print(targets)
-raise
-ssm_query = {'$and':
-                [{"ssm_status":
-                {"$in":
-                    ['job_success', 'job_running']
-                }
-            },
-            {
-                'generations':1
-            }]}
-ssm_success_number = len(list(qm_collection.find(ssm_query)))
-ts_query = {'$and':
-            [{'$or': 
-                [
-                {'ts_status':
-                    {"$in":
-                        ['job_success', 'job_fail']}},
-                {'energy_status':
-                    {'$in':
-                        ['job_success', 'job_fail']}}
-                ]
-            },
-            {
-                'generations':1
-            }]}
-ts_fail_and_success_number = len(list(qm_collection.find(ts_query)))
-print(ssm_success_number)
-print(ts_fail_and_success_number)
+for i in targets:
+    print(i['ssm_status'])
 """

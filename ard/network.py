@@ -235,9 +235,10 @@ class Network(object):
         subdir = os.path.join(os.path.dirname(self.ard_path), 'reactions')
         if not os.path.exists(subdir):
             os.mkdir(subdir)
-        dirname = network_prod_mol.toRMGMolecule().to_inchi_key()
+        b_dirname = network_prod_mol.toRMGMolecule().to_inchi_key()   
         targets = list(qm_collection.find({'product_inchi_key':dirname}))
-        dirname = '{}_{}'.format(dirname, len(targets)+1)
+        dirname = self.dir_check(subdir, b_dirname, len(targets) + 1)
+            
         output_dir = util.makeOutputSubdirectory(subdir, dirname)
         kwargs['output_dir'] = output_dir
         self.makeInputFile(reactant, product, **kwargs)
@@ -247,6 +248,21 @@ class Network(object):
         self.makeisomerFile(add_bonds, break_bonds, **kwargs)
         return output_dir
 
+    def dir_check(self, subdir, b_dirname, num):
+        """
+        When parallely run job, the dir is constructed but data is not on database yet
+        """
+        check = False
+        number = num
+        while check = False:
+            new_name = '{}_{}'.format(b_dirname, number)
+            if os.path.exists(os.path.join(subdir, new_name)):
+                number += 1
+            else:
+                check = True
+        
+        return new_name
+            
         
     @staticmethod
     def makeInputFile(reactant, product, **kwargs):

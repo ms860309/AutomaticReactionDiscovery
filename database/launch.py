@@ -84,14 +84,9 @@ def launch_ssm_jobs():
     targets = select_ssm_target()
     
     for target in targets:
-        SSM_dir_path = path.join(target, 'SSM')
-        if os.path.exists(SSM_dir_path):
-            shutil.rmtree(SSM_dir_path)
-            os.mkdir(SSM_dir_path)
-            os.chdir(SSM_dir_path)
-        else:
-            os.mkdir(SSM_dir_path)
-            os.chdir(SSM_dir_path)
+        SSM_dir_path = path.join(target, 'SSM/')
+        os.mkdir(SSM_dir_path)
+        os.chdir(SSM_dir_path)
             
         subfile = create_ssm_sub_file(target, SSM_dir_path)
         cmd = 'qsub {}'.format(subfile)

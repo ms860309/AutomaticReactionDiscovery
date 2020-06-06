@@ -164,7 +164,8 @@ def check_ssm_content_status(target_path):
 
     ssm_path = path.join(target_path, 'SSM')
     ssm_pic_path = path.join(ssm_path, '0000_string.png')
-    if not path.exists(ssm_pic_path):
+    ssm_tsnode_path = path.join(ssm_path, 'TSnode.xyz')
+    if not path.exists(ssm_pic_path) or not path.exists(ssm_tsnode_path):
         return "job_fail"
     else:
         if check_ssm(ssm_path) == 'Exiting early':
@@ -377,7 +378,7 @@ def check_ts_content_status(target_path):
         # get ts energy
         ts_energy = lines[idx-4].split()[-1]
 
-        return "job_success", ts_energy
+        return "job_success", float(ts_energy)
     
 def insert_exact_rxn(reactant_inchi_key, product_inchi_key, reactant_smi, product_smi, path, generations, barrier):
     reactions_collection = db['reactions']
@@ -555,9 +556,17 @@ check_ts_jobs()
 qm_collection = db['qm_calculate_center']
 max_gen = qm_collection.find_one(sort=[("generations", -1)])
 max_gen = max_gen['generations']
-query = {'ard_status':'job_unrun', 'generations':max_gen}
+query = {
+    '$and':[
+        {
+            'ard_status':'job_unrun'   
+        },
+        {
+            'generations':max_gen
+        }
+    ]
+    }
 targets = list(qm_collection.find(query))
-if len(targets) != 0:
-    break
-else:
+while len(targets) == 0:
     check_ard_barrier_jobs(max_gen)
+    break
