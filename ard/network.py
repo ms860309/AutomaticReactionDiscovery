@@ -89,7 +89,7 @@ class Network(object):
         reactant_key = mol_object.toRMGMolecule().to_inchi_key()
         reactant_smi = mol_object.write('can').strip()
         prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_key, reactant_smi, prod_mols_filtered)
-        for idx, mol in enumerate(prod_mols_filtered):
+        for mol in prod_mols_filtered:
             index = prod_mols.index(mol)
             self.network_prod_mols.append(mol)
             # gen geo return path
@@ -150,10 +150,7 @@ class Network(object):
         same_unique_key = list(set(compare_unique) & set(base_unique))
 
         for idx, i in enumerate(same_unique_key):
-            reactant_target = list(qm_collection.find({'product_inchi_key':reactant_key}))
-            number = len(reactant_target)
             path_target = list(qm_collection.find({'product_inchi_key':i}))
-            #reactions_name = '{}_{}'.format(reactant_target[0]['reactant_inchi_key'], number + idx + 1)
             check_1 = [reactant_key, i]
             check_duplicate_1 = list(reactions_collection.find({'reaction':check_1}))
             if len(check_duplicate_1) == 0 and reactant_key != i:
@@ -236,7 +233,7 @@ class Network(object):
         if not os.path.exists(subdir):
             os.mkdir(subdir)
         b_dirname = network_prod_mol.toRMGMolecule().to_inchi_key()   
-        targets = list(qm_collection.find({'product_inchi_key':dirname}))
+        targets = list(qm_collection.find({'product_inchi_key':b_dirname}))
         dirname = self.dir_check(subdir, b_dirname, len(targets) + 1)
             
         output_dir = util.makeOutputSubdirectory(subdir, dirname)
@@ -254,7 +251,7 @@ class Network(object):
         """
         check = False
         number = num
-        while check = False:
+        while check == False:
             new_name = '{}_{}'.format(b_dirname, number)
             if os.path.exists(os.path.join(subdir, new_name)):
                 number += 1

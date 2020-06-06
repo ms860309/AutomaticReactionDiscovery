@@ -213,7 +213,8 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
         num = len(list(qm_collection.find({'product_inchi_key':rmg_mol_1.to_inchi_key()})))
         targets = list(qm_collection.find({'path':rxn_dir}))
         for i in targets:
-            name = '{}_{}'.format(rmg_mol_1.to_inchi_key(), num+1)
+            num += 1
+            name = '{}_{}'.format(rmg_mol_1.to_inchi_key(), num)
             new_path = path.join(path.dirname(i['path']), name)
             os.rename(rxn_dir, new_path)
             prod_smi = OBMol_1.write('can').strip()
@@ -230,13 +231,13 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
     else:
         return 'equal'
 
-def toRMGmol(OBMol):
-    rmg_mol = from_ob_mol(rmgpy.molecule.molecule.Molecule(), OBMol)
+def toRMGmol(pyMol):
+    rmg_mol = from_ob_mol(rmgpy.molecule.molecule.Molecule(), pyMol.OBMol)
     return rmg_mol
 
 def readXYZ(xyz):
     mol = next(pybel.readfile('xyz', xyz))
-    return mol.OBMol
+    return mol
 
 def check_ssm_jobs():
     """
@@ -512,7 +513,9 @@ def check_ard_barrier_jobs(generations):
                     'generations':generations
                 }]}
     ts_fail_and_success_number = len(list(qm_collection.find(ts_query)))
-    if ssm_success_number == ts_fail_and_success_number:
+    ard_query = {'ard_status':'job_unrun'}
+    ard_number = len(list(qm_collection.find(ard_query)))
+    if ssm_success_number == ts_fail_and_success_number and ard_number == 0:
         check_ts_barrier_jobs()
         
         targets = list(qm_collection.aggregate(
@@ -548,7 +551,7 @@ def check_ard_barrier_jobs(generations):
                             target[0]['path'],
                             target[0]['generations'],
                             barrier)
-                    
+         
 check_energy_jobs()
 check_ssm_jobs()
 check_ts_jobs()
@@ -556,17 +559,5 @@ check_ts_jobs()
 qm_collection = db['qm_calculate_center']
 max_gen = qm_collection.find_one(sort=[("generations", -1)])
 max_gen = max_gen['generations']
-query = {
-    '$and':[
-        {
-            'ard_status':'job_unrun'   
-        },
-        {
-            'generations':max_gen
-        }
-    ]
-    }
-targets = list(qm_collection.find(query))
-while len(targets) == 0:
-    check_ard_barrier_jobs(max_gen)
-    break
+
+check_ard_barrier_jobs(max_gen)
