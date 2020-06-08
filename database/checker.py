@@ -213,9 +213,8 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
         num = len(list(qm_collection.find({'product_inchi_key':rmg_mol_1.to_inchi_key()})))
         targets = list(qm_collection.find({'path':rxn_dir}))
         for i in targets:
-            num += 1
-            name = '{}_{}'.format(rmg_mol_1.to_inchi_key(), num)
-            new_path = path.join(path.dirname(i['path']), name)
+            dirname = dir_check(path.dirname(i['path']), rmg_mol_1.to_inchi_key(), num + 1)
+            new_path = path.join(path.dirname(i['path']), dirname)
             os.rename(rxn_dir, new_path)
             prod_smi = OBMol_1.write('can').strip()
             update_field = {'product_inchi_key':rmg_mol_1.to_inchi_key(), 
@@ -230,6 +229,21 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
         return 'not_equal'
     else:
         return 'equal'
+    
+def dir_check(subdir, b_dirname, num):
+    """
+    When parallely run job, the dir is constructed but data is not on database yet
+    """
+    check = False
+    number = num
+    while check == False:
+        new_name = '{}_{}'.format(b_dirname, number)
+        if os.path.exists(os.path.join(subdir, new_name)):
+            number += 1
+        else:
+            check = True
+    
+    return new_name
 
 def toRMGmol(pyMol):
     rmg_mol = from_ob_mol(rmgpy.molecule.molecule.Molecule(), pyMol.OBMol)
@@ -515,6 +529,7 @@ def check_ard_barrier_jobs(generations):
     ts_fail_and_success_number = len(list(qm_collection.find(ts_query)))
     ard_query = {'ard_status':'job_unrun'}
     ard_number = len(list(qm_collection.find(ard_query)))
+    
     if ssm_success_number == ts_fail_and_success_number and ard_number == 0:
         check_ts_barrier_jobs()
         

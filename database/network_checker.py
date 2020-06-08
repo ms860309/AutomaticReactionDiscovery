@@ -184,7 +184,6 @@ def update_network_status():
     status_collection = db['status']
     qm_collection = db['qm_calculate_center']
     statistics_collection = db['statistics']
-    pool_collection = db['pool']
     total_nodes = list(statistics_collection.find({}, {'add how many products':1}))
     
     count = 0
@@ -214,8 +213,8 @@ def update_network_status():
                 }
     
     targets = list(qm_collection.find(query))
-    pool = list(pool_collection.find({}))
-    if len(targets) == count and len(qm_nodes) == 0 and len(pool) > 1:
+    statistics = list(statistics_collection.find({}))
+    if len(targets) == count and len(qm_nodes) == 0 and len(statistics) > 1:
         print('Network converged')
         
         target = list(status_collection.find({}))

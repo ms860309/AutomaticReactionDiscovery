@@ -148,7 +148,6 @@ class Network(object):
         result = [compare[i] for i in isomorphic_idx]
         
         same_unique_key = list(set(compare_unique) & set(base_unique))
-
         for idx, i in enumerate(same_unique_key):
             path_target = list(qm_collection.find({'product_inchi_key':i}))
             check_1 = [reactant_key, i]

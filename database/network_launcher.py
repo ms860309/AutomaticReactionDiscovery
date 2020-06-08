@@ -122,7 +122,7 @@ def create_ard_sub_file(dir_path, script_path, gen_num, next_reactant, ncpus = 1
 def update_ard_status(target, job_id):
     qm_collection = db['qm_calculate_center']
     reg_query = {"path":target}
-    update_field = {"ard_jobid":job_id, "ard_status":"job_launched"}
+    update_field = {"ard_status":"job_launched", "ard_jobid":job_id}
     qm_collection.update_one(reg_query, {"$set": update_field}, True)
     
 launch_ard_jobs()
