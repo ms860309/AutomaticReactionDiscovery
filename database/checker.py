@@ -205,27 +205,40 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
     
     ard_prod_path = path.join(rxn_dir, 'product.xyz')
     ssm_prod_path = path.join(rxn_dir, 'ssm_product.xyz')
-    OBMol_1 = readXYZ(ssm_prod_path)
-    rmg_mol_1 = toRMGmol(OBMol_1)
-    OBMol_2 = readXYZ(ard_prod_path)
-    rmg_mol_2 = toRMGmol(OBMol_2)
+    pyMol_1 = xyz_to_pyMol(ssm_prod_path)
+    rmg_mol_1 = toRMGmol(pyMol_1)
+    pyMol_2 = xyz_to_pyMol(ard_prod_path)
+    rmg_mol_2 = toRMGmol(pyMol_2)
     if rmg_mol_1.to_inchi_key() != rmg_mol_2.to_inchi_key():
         num = len(list(qm_collection.find({'product_inchi_key':rmg_mol_1.to_inchi_key()})))
         targets = list(qm_collection.find({'path':rxn_dir}))
         for i in targets:
-            dirname = dir_check(path.dirname(i['path']), rmg_mol_1.to_inchi_key(), num + 1)
-            new_path = path.join(path.dirname(i['path']), dirname)
-            os.rename(rxn_dir, new_path)
-            prod_smi = OBMol_1.write('can').strip()
-            update_field = {'product_inchi_key':rmg_mol_1.to_inchi_key(), 
-                            'initial_dir_name':rxn_dir, 
-                            'path':new_path, 
-                            'ssm_status': 'job_success', 
-                            "ts_status":"job_unrun", 
-                            "energy_status":"job_unrun", 
-                            'ard_ssm_equal':'not_equal',
-                            'Product SMILES': prod_smi}
-            qm_collection.update_one(i, {"$set": update_field}, True)
+            if i['reactant_inchi_key'] == rmg_mol_1.to_inchi_key():
+                dirname = dir_check(path.dirname(i['path']), rmg_mol_1.to_inchi_key(), num + 1)
+                new_path = path.join(path.dirname(i['path']), dirname)
+                os.rename(rxn_dir, new_path)
+                prod_smi = pyMol_1.write('can').strip()
+                update_field = {'product_inchi_key':rmg_mol_1.to_inchi_key(), 
+                                'initial_dir_name':rxn_dir, 
+                                'path':new_path, 
+                                'ssm_status': 'job_success', 
+                                'ard_ssm_equal':'not_equal but reactant equal to product',
+                                'Product SMILES': prod_smi}
+                qm_collection.update_one(i, {"$set": update_field}, True)
+            else:
+                dirname = dir_check(path.dirname(i['path']), rmg_mol_1.to_inchi_key(), num + 1)
+                new_path = path.join(path.dirname(i['path']), dirname)
+                os.rename(rxn_dir, new_path)
+                prod_smi = pyMol_1.write('can').strip()
+                update_field = {'product_inchi_key':rmg_mol_1.to_inchi_key(), 
+                                'initial_dir_name':rxn_dir, 
+                                'path':new_path, 
+                                'ssm_status': 'job_success', 
+                                "ts_status":"job_unrun", 
+                                "energy_status":"job_unrun", 
+                                'ard_ssm_equal':'not_equal',
+                                'Product SMILES': prod_smi}
+                qm_collection.update_one(i, {"$set": update_field}, True)
         return 'not_equal'
     else:
         return 'equal'
@@ -249,7 +262,7 @@ def toRMGmol(pyMol):
     rmg_mol = from_ob_mol(rmgpy.molecule.molecule.Molecule(), pyMol.OBMol)
     return rmg_mol
 
-def readXYZ(xyz):
+def xyz_to_pyMol(xyz):
     mol = next(pybel.readfile('xyz', xyz))
     return mol
 
@@ -397,15 +410,17 @@ def check_ts_content_status(target_path):
     
 def insert_exact_rxn(reactant_inchi_key, product_inchi_key, reactant_smi, product_smi, path, generations, barrier):
     reactions_collection = db['reactions']
-
-    reactions_collection.insert_one({
-                        'reaction':[reactant_inchi_key, product_inchi_key],
-                        'reactant_smi':reactant_smi,
-                        'product_smi':product_smi,
-                        'path':path,
-                        'generations':generations,
-                        'unique': 'new one',
-                        'barrier_energy':barrier})
+    query = {'reaction':[reactant_inchi_key, product_inchi_key]}
+    targets = list(reactions_collection.find(query))
+    if len(targets) == 0:
+        reactions_collection.insert_one({
+                            'reaction':[reactant_inchi_key, product_inchi_key],
+                            'reactant_smi':reactant_smi,
+                            'product_smi':product_smi,
+                            'path':path,
+                            'generations':generations,
+                            'unique': 'new one',
+                            'barrier_energy':barrier})
 
 def check_ts_jobs():
     """
@@ -440,7 +455,7 @@ def check_ts_jobs():
                                 'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'next_gen_num':next_gen_num, "energy_status":"job_unrun"
                                 }
                 qm_collection.update_one(target, {"$set": update_field}, True)
-                pool_collection.insert_one({'reactant_inchi_key':target['product_inchi_key']})
+                #pool_collection.insert_one({'reactant_inchi_key':target['product_inchi_key']})
             else:
                 update_field = {
                                 'ts_status': new_status
