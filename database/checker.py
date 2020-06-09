@@ -559,6 +559,7 @@ def check_ard_barrier_jobs(generations):
                 {"$group":{"_id":"$reaction", 'barrier_energy':{'$min':"$barrier_energy"}}}
             ]
         ))
+
         for i in targets:
             reaction = i['_id']
             barrier = i['barrier_energy']
@@ -573,7 +574,17 @@ def check_ard_barrier_jobs(generations):
                 ]
             }
             target = list(qm_collection.find(query)) # This is only have one result though it is a list (to visualize <pymongo.cursor.Cursor object>)
-            qm_collection.update_one(target[0], {"$set": {'ard_status':'job_unrun'}}, True)
+            query_2 = {'$and':
+                            [{"ard_status":
+                            {"$in":
+                                ['job_unrun']
+                            }
+                        },
+                        {
+                            'product_inchi_key':target[0]['product_inchi_key']
+                        }]}
+            if len(list(qm_collection.find(query_2))) == 0:
+                qm_collection.update_one(target[0], {"$set": {'ard_status':'job_unrun'}}, True)
             insert_exact_rxn(target[0]['reactant_inchi_key'],
                             target[0]['product_inchi_key'],
                             target[0]['Reactant SMILES'],
