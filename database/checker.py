@@ -167,14 +167,13 @@ def check_ssm_content_status(target_path):
     ssm_tsnode_path = path.join(ssm_path, 'TSnode.xyz')
     if not path.exists(ssm_pic_path) or not path.exists(ssm_tsnode_path):
         return "job_fail"
+    elif check_ssm(ssm_path) == 'Exiting early':
+        return "Exiting early"
+    elif check_ssm(ssm_path) == 'total dissociation':
+        return 'total dissociation'
     else:
-        if check_ssm(ssm_path) == 'Exiting early':
-            return "Exiting early"
-        elif check_ssm(ssm_path) == 'total dissociation':
-            return 'total dissociation'
-        else:
-            generate_ssm_product_xyz(ssm_path)
-            return "job_success"
+        generate_ssm_product_xyz(ssm_path)
+        return "job_success"
 
 def check_ssm(ssm_path):
     status_path = path.join(ssm_path, 'status.log')
@@ -217,7 +216,7 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
                 dirname = dir_check(path.dirname(i['path']), rmg_mol_1.to_inchi_key(), num + 1)
                 new_path = path.join(path.dirname(i['path']), dirname)
                 os.rename(rxn_dir, new_path)
-                prod_smi = pyMol_1.write('can').strip()
+                prod_smi = pyMol_1.write('can').split()[0]
                 update_field = {'product_inchi_key':rmg_mol_1.to_inchi_key(), 
                                 'initial_dir_name':rxn_dir, 
                                 'path':new_path, 
@@ -229,7 +228,7 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
                 dirname = dir_check(path.dirname(i['path']), rmg_mol_1.to_inchi_key(), num + 1)
                 new_path = path.join(path.dirname(i['path']), dirname)
                 os.rename(rxn_dir, new_path)
-                prod_smi = pyMol_1.write('can').strip()
+                prod_smi = pyMol_1.write('can').split()[0]
                 update_field = {'product_inchi_key':rmg_mol_1.to_inchi_key(), 
                                 'initial_dir_name':rxn_dir, 
                                 'path':new_path, 
@@ -525,6 +524,9 @@ def check_ard_barrier_jobs(generations):
                 },
                 {
                     'generations':generations
+                }, {'ard_ssm_equal':
+                    {'$nin':
+                        ['not_equal but reactant equal to product']}
                 }]}
     ssm_success_number = len(list(qm_collection.find(ssm_query)))
     ts_query = {'$and':
@@ -544,7 +546,7 @@ def check_ard_barrier_jobs(generations):
     ts_fail_and_success_number = len(list(qm_collection.find(ts_query)))
     ard_query = {'ard_status':'job_unrun'}
     ard_number = len(list(qm_collection.find(ard_query)))
-    
+    print(ssm_success_number) 
     if ssm_success_number == ts_fail_and_success_number and ard_number == 0:
         check_ts_barrier_jobs()
         

@@ -87,7 +87,7 @@ class Network(object):
 
         # initial round add all prod to self.network
         reactant_key = mol_object.toRMGMolecule().to_inchi_key()
-        reactant_smi = mol_object.write('can').strip()
+        reactant_smi = mol_object.write('can').split()[0]
         prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_key, reactant_smi, prod_mols_filtered)
         for mol in prod_mols_filtered:
             index = prod_mols.index(mol)
@@ -97,16 +97,16 @@ class Network(object):
             product_name = mol.toRMGMolecule().to_inchi_key()
             qm_collection.insert_one({
                                    'reaction': [reactant_key, product_name], 
-                                   'Reactant SMILES':mol_object.write('can').strip(), 
+                                   'Reactant SMILES':mol_object.write('can').split()[0], 
                                    'reactant_inchi_key':reactant_key, 
                                    'product_inchi_key':product_name, 
-                                   'Product SMILES':mol.write('can').strip(), 
+                                   'Product SMILES':mol.write('can').split()[0], 
                                    'path':dir_path, 
                                    'ssm_status':'job_unrun', 
                                    'generations':self.generations
                                    }
                                   )
-        statistics_collection.insert_one({'Reactant SMILES':mol_object.write('can').strip(), 'reactant_inchi_key':reactant_key, 'add how many products':len(prod_mols_filtered)})
+        statistics_collection.insert_one({'Reactant SMILES':mol_object.write('can').split()[0], 'reactant_inchi_key':reactant_key, 'add how many products':len(prod_mols_filtered)})
 
 
         

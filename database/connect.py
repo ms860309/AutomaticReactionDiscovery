@@ -23,34 +23,25 @@ db = getattr(Connector(), 'db')
 
 # debug
 """
-qm_collection = db['qm_calculate_center']
-targets = list(qm_collection.aggregate(
-    [
-        {"$match": {"$and":[
-            {
-                "ts_status": {"$in":['job_success']},
-                "energy_status": {"$in":['job_success']}
-            }
-        ]}},
-        {"$group":{"_id":"$reaction", 'barrier_energy':{'$min':"$barrier_energy"}}}
-    ]
-))
-for i in targets:
-    reaction = i['_id']
-    barrier = i['barrier_energy']
-    query = {
-        '$and':[
-            {
-                'reaction':reaction    
-            },
-            {
-                'barrier_energy':barrier
-            }
-        ]
-    }
+reaction_collection = db['reactions']
+query = {'$and':
+                [{"unique":
+                {"$in":
+                    ['new one']
+                }
+            }, {'for_debug':
+                {'$nin':
+                    ['from same']}
+            }]}
 
-query = {'ard_status':'job_unrun'}
-targets = list(qm_collection.find({},{'barrier_energy':1}))
-for i in targets:
-    print(i)
+targets = list(reaction_collection.find(query))
+dic = {}
+for idx, i in enumerate(targets):
+    rxn = i['reaction']
+    gen = i['generations']
+    barrier = i['barrier_energy']
+    name = 'reaction_{}'.format(idx)
+    dic[name] = rxn
+
+print(dic)
 """

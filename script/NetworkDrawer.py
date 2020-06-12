@@ -1,6 +1,8 @@
 
 import numpy as np
 import os
+import os.path as path
+import sys
 ################################################################################
 try:
     import cairocffi as cairo
@@ -9,6 +11,9 @@ except ImportError:
         import cairo
     except ImportError:
         cairo = None
+        
+sys.path.append(path.join(path.dirname( path.dirname( path.abspath(__file__))),'database'))
+from connect import db
 
 def create_new_surface(file_format, target=None, width=1024, height=768):
     """
@@ -67,6 +72,7 @@ class NetworkDrawer(object):
             self.options.update(options)
 
         self.network = None
+        self.dict_1 = {}
         self.left = 0.0
         self.top = 0.0
         self.right = 0.0
@@ -88,16 +94,18 @@ class NetworkDrawer(object):
         """
         PES energy is SCF energy, which could be calculate from qchem.
         """
-        dirs = os.listdir(os.path.join(os.path.abspath(os.pardir), 'reactions'))
-        for i in dirs:
-            energy_dir_path = os.path.join(os.path.join(os.path.join(os.path.abspath(os.pardir), 'reactions'), i), "Energy")
-            energy_path = os.path.join(energy_dir_path, "energy.out")
-            with open(energy_path, 'r') as f:
-                lines = f.readlines()
-                for line in lines:
-                    if line.strip().startswith('SCF   energy in the final basis set'):
-                        SCF_Energy = line.split()[-1]
-                        self.energy[i] = float(SCF_Energy)*627.5095
+        qm_collection = db['qm_calculate_center']
+        for key, value in self.dict_1.items() :
+            query = {'path':value}
+            targets = list(qm_collection.find(query))
+            reactant_inchi_key = targets[0]['reactant_inchi_key']
+            self.energy[reactant_inchi_key] = float(targets[0]['reactant_scf_energy'])*627.5095
+        self.energy['AZHSSKPUVBVXLK-UHFFFAOYSA-N'] = -230.0389150086*627.5095
+        self.energy['VHWYCFISAQVCCP-UHFFFAOYSA-N'] = -230.0385645234*627.5095
+        self.energy['YRWZLJIAWSKYAM-UHFFFAOYSA-N'] = -230.0754621699*627.5095
+        self.energy['YRUANFUOBUFKGQ-UHFFFAOYSA-N'] = -230.0231698005*627.5095
+        self.energy['GJEMYANDWMDFCA-UHFFFAOYSA-N'] = -230.0689465192*627.5095
+        self.energy['RZMLJGRDPXRMDB-UHFFFAOYSA-N'] = -230.0759236498*627.5095
         return self.energy
 
 
@@ -170,15 +178,16 @@ class NetworkDrawer(object):
         """
         Use energy to get relative height and set reactant as 0
         """
-        e_reactant = self.energy['00000']
+        e_reactant = self.energy['CABDEMAGSHRORS-UHFFFAOYSA-N']
         relative = {}
         for energy in self.energy:
             relative[energy] = self.energy[energy] - e_reactant
         return relative
+        
 
-
-    def draw(self, network, file_format, path=None):
+    def draw(self, network, dict_2, file_format, path=None):
         #network
+        self.dict_1 = dict_2
         self.network = network
         #draw parameter
         padding = self.options['padding']
@@ -204,16 +213,18 @@ class NetworkDrawer(object):
         max_E_value = self.energy[max_E_key]
         cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
         cr.set_line_width(1.0)
-        cr.move_to(padding, max_E_value - self.energy['00000'] + 20)
-        cr.line_to(padding + 10, max_E_value - self.energy['00000'] + 20)
+        cr.move_to(padding, max_E_value - self.energy['CABDEMAGSHRORS-UHFFFAOYSA-N'] + 20)
+        cr.line_to(padding + 10, max_E_value - self.energy['CABDEMAGSHRORS-UHFFFAOYSA-N'] + 20)
         cr.save()
         #draw energy number and Energy unit
-        cr.move_to(padding, max_E_value - self.energy['00000'] + 18)
+        """
+        cr.move_to(padding, max_E_value - self.energy['CABDEMAGSHRORS-UHFFFAOYSA-N'] + 18)
         cr.set_font_size(3)
         cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
-        cr.show_text(str(round(self.energy['00000'] - self.energy['00000'], 3)))
+        cr.show_text(str(round(self.energy['CABDEMAGSHRORS-UHFFFAOYSA-N'] - self.energy['CABDEMAGSHRORS-UHFFFAOYSA-N'], 3)))
         cr.restore()
         cr.save()
+        """
         #unit
         cr.move_to(width - 30, height - 5)
         cr.set_font_size(3)
@@ -222,12 +233,14 @@ class NetworkDrawer(object):
         cr.restore()
         cr.save()
         #draw dir label
-        cr.move_to(padding, max_E_value - self.energy['00000'] + 23)
+        """
+        cr.move_to(padding, max_E_value - self.energy['CABDEMAGSHRORS-UHFFFAOYSA-N'] + 23)
         cr.set_font_size(3)
         cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
-        cr.show_text('00000')
+        cr.show_text('CABDEMAGSHRORS-UHFFFAOYSA-N')
         cr.restore()
         cr.stroke()
+        """
         #intermediate and product
         for reaction in network:
             for num, intermediate in enumerate(network[reaction][1:]):
@@ -238,11 +251,11 @@ class NetworkDrawer(object):
                 cr.line_to(padding + 55 * (num+1) + 10, max_E_value - self.energy[intermediate] + 20)
                 cr.save()
                 #draw energy number
-                """
+
                 cr.move_to(padding + 55 * (num+2), max_E_value - self.energy[intermediate] + 18)
                 cr.set_font_size(3)
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
-                cr.show_text(str(round(self.energy[intermediate] - self.energy['00000'], 3)))
+                cr.show_text(str(round(self.energy[intermediate] - self.energy['CABDEMAGSHRORS-UHFFFAOYSA-N'], 3)))
                 cr.restore()
                 cr.save()
                 """
@@ -250,11 +263,12 @@ class NetworkDrawer(object):
                 cr.move_to(padding + 55 * (num+1), max_E_value - self.energy[network[reaction][num+1]] + 23)
                 cr.set_font_size(1)
                 cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
-                cr.show_text(intermediate + '('+ str(round(self.energy[intermediate] - self.energy['00000'], 3)) +')')
+                cr.show_text(intermediate + '('+ str(round(self.energy[intermediate] - self.energy['CABDEMAGSHRORS-UHFFFAOYSA-N'], 3)) +')')
                 cr.restore()
                 cr.save()
+                """
                 if len(network[reaction]) == 2:
-                    cr.move_to(padding + 10, max_E_value - self.energy['00000'] + 20)
+                    cr.move_to(padding + 10, max_E_value - self.energy['CABDEMAGSHRORS-UHFFFAOYSA-N'] + 20)
                     cr.line_to(padding + 55 * (num+1), max_E_value - self.energy[intermediate] + 20)
                     cr.restore()
                     cr.save()
@@ -264,8 +278,42 @@ class NetworkDrawer(object):
                     cr.restore()
                     cr.save()
                 cr.stroke()
-                
-#network = {'reaction2': ['00000', '00003'], 'reaction0': ['00000', '00001'], 'reaction1': ['00000', '00002']}
-network = {'reaction0': ['00000', '00001'], 'reaction1': ['00000', '00004'], 'reaction2': ['00000', '00005'], 'reaction3': ['00000', '00007'], 'reaction4': ['00000', '00010'], 'reaction5': ['00000', '00012'], 'reaction6': ['00000', '00014'], 'reaction7': ['00000', '00015'], 'reaction8': ['00000', '00017'], 'reaction9': ['00000', '00021'], 'reaction10': ['00000', '00025'], 'reaction11': ['00000', '00027'], 'reaction12': ['00000', '00028'], 'reaction13': ['00000', '00030'], 'reaction14': ['00000', '00031'], 'reaction15': ['00000', '00034'], 'reaction16': ['00000', '00036'], 'reaction17': ['00000', '00037'], 'reaction18': ['00000', '00038'], 'reaction19': ['00000', '00040'], 'reaction20': ['00000', '00041'], 'reaction21':['00000', '00048'], 'reaction22': ['00000', '00050'], 'reaction23': ['00000', '00051'], 'reaction24': ['00000', '00052'], 'reaction25': ['00000', '00054']}
-NetworkDrawer().draw(network, 'pdf', os.path.join(os.getcwd(), 'network.pdf'))
+            
 
+reaction_collection = db['reactions']
+query = {'$and':
+                [{"unique":
+                {"$in":
+                    ['new one']
+                }
+            }, {'for_debug':
+                {'$nin':
+                    ['from same']}
+            }]}
+
+targets = list(reaction_collection.find(query))
+
+dict_1 = {}
+dict_2 = {}
+for idx, i in enumerate(targets):
+    _path = i['path']
+    rxn = i['reaction']
+    gen = i['generations']
+    name = 'reaction_{}'.format(idx)
+    dict_1[name] = _path
+    dict_2[name] = [rxn,gen]
+
+dict_2 = {
+    'reaction_0':['CABDEMAGSHRORS-UHFFFAOYSA-N', 'RZKDJWZLOVYVCV-UHFFFAOYSA-N', 'AZHSSKPUVBVXLK-UHFFFAOYSA-N'],
+    'reaction_1':['CABDEMAGSHRORS-UHFFFAOYSA-N', 'MUOXUGRTQNZNJE-UHFFFAOYSA-N', 'AZHSSKPUVBVXLK-UHFFFAOYSA-N'],
+    'reaction_2':['CABDEMAGSHRORS-UHFFFAOYSA-N', 'LYCAIKOWRPUZTN-UHFFFAOYSA-N', 'UPUZLJDFULGKCC-UHFFFAOYSA-N'],
+    'reaction_3':['CABDEMAGSHRORS-UHFFFAOYSA-N', 'LYCAIKOWRPUZTN-UHFFFAOYSA-N', 'VHWYCFISAQVCCP-UHFFFAOYSA-N'],
+    'reaction_4':['CABDEMAGSHRORS-UHFFFAOYSA-N', 'UPUZLJDFULGKCC-UHFFFAOYSA-N', 'YRWZLJIAWSKYAM-UHFFFAOYSA-N'],
+    'reaction_5':['CABDEMAGSHRORS-UHFFFAOYSA-N', 'UPUZLJDFULGKCC-UHFFFAOYSA-N', 'AZHSSKPUVBVXLK-UHFFFAOYSA-N'],
+    'reaction_6':['CABDEMAGSHRORS-UHFFFAOYSA-N', 'UPUZLJDFULGKCC-UHFFFAOYSA-N', 'YRUANFUOBUFKGQ-UHFFFAOYSA-N'],
+    'reaction_7':['CABDEMAGSHRORS-UHFFFAOYSA-N', 'LYCAIKOWRPUZTN-UHFFFAOYSA-N', 'REHUGJYJIZPQAV-UHFFFAOYSA-N', 'GJEMYANDWMDFCA-UHFFFAOYSA-N'],
+    'reaction_8':['CABDEMAGSHRORS-UHFFFAOYSA-N', 'LYCAIKOWRPUZTN-UHFFFAOYSA-N', 'REHUGJYJIZPQAV-UHFFFAOYSA-N', 'RZMLJGRDPXRMDB-UHFFFAOYSA-N'],
+    'reaction_9':['CABDEMAGSHRORS-UHFFFAOYSA-N', 'LYCAIKOWRPUZTN-UHFFFAOYSA-N', 'REHUGJYJIZPQAV-UHFFFAOYSA-N', 'VHWYCFISAQVCCP-UHFFFAOYSA-N']
+}
+NetworkDrawer().draw(dict_2, dict_1, 'pdf', os.path.join(os.getcwd(), 'network.pdf'))
+        
