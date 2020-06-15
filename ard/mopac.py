@@ -23,8 +23,8 @@ class mopac(object):
         Create a directory folder called "tmp" for mopac calculation
         Create a input file called "input.mop" for mopac calculation
         """
-        path = os.path.abspath("")
-        tmpdir = os.path.join(path, 'tmp')
+
+        tmpdir = os.path.join(os.path.dirname(os.getcwd()), 'tmp')
         if os.path.exists(tmpdir):
             shutil.rmtree(tmpdir)
         os.mkdir(tmpdir)
@@ -52,13 +52,18 @@ class mopac(object):
         Hatom = gen3D.readstring('smi', '[H]')
         ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
         reac_mol_copy = reac_mol.copy()
+        reac_mol_copy, InputFile_copy= reac_mol.copy(), InputFile.copy()
+        reac_mol.gen3D(forcefield=self.forcefield, make3D=False)
         InputFile.gen3D(forcefield=self.forcefield, make3D=False)
-        """
-        arrange3D = gen3D.Arrange3D(reac_mol, InputFile)
-        msg = arrange3D.arrangeIn3D()
-        if msg != '':
-            self.logger.info(msg)
-        """
+        
+        try:
+            arrange3D = gen3D.Arrange3D(reac_mol, InputFile)
+            msg = arrange3D.arrangeIn3D()
+            if msg != '':
+                print(msg)
+        except:
+            reac_mol, InputFile = reac_mol_copy, InputFile_copy
+
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reac_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)

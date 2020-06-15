@@ -366,7 +366,7 @@ def create_irc_sub_file(TS_dir_path, IRC_dir_path, ncpus = 1, mpiprocs = 1, ompt
             f2.write('SCF_GUESS READ\n')
             f2.write('rpath_direction -1\n')
             f2.write('rpath_max_cycles 60\n')
-            f2.write('rpath_max_stepsize 80\n')
+            f2.write('rpath_max_stepsize 150\n')
             f2.write('$end\n')
             
     with open(subfile_1, 'w') as f:

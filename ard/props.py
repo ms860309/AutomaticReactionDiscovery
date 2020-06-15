@@ -15,7 +15,7 @@ Element = namedtuple("Element", ["symbol", "name", "atomic_num", "mass_amu",
                                  "covalent_radius", "vdw_radius", "bond_radius",
                                  "electronegativity", "max_bonds"])
 
-valenceelec = {1: 1, 2: 2, 6: 4, 7: 5, 8: 6, 9: 7, 10: 8, 14: 4, 15: 5, 16: 6, 17: 7, 35: 7, 18: 8, 53: 7}
+valenceelec = {1: 1, 2: 2, 6: 4, 7: 5, 8: 6, 9: 7, 10: 8, 14: 4, 15: 5, 16: 6, 17: 7, 28: 4, 35: 7, 18: 8, 53: 7}
 
 class ElementData(object):
     """Contains full periodic table element data and methods to access them

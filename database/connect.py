@@ -1,6 +1,7 @@
 import pymongo
 from pymongo import MongoClient
-
+import shutil
+import os
 class Connector(object):
 
     def __init__(self):
@@ -22,26 +23,17 @@ db = getattr(Connector(), 'db')
 
 
 # debug
-"""
-reaction_collection = db['reactions']
-query = {'$and':
-                [{"unique":
+qm_collection = db['qm_calculate_center']
+reg_query = {"irc_forward_status":
                 {"$in":
-                    ['new one']
+                    ["job_launched"]
                 }
-            }, {'for_debug':
-                {'$nin':
-                    ['from same']}
-            }]}
-
-targets = list(reaction_collection.find(query))
-dic = {}
-for idx, i in enumerate(targets):
-    rxn = i['reaction']
-    gen = i['generations']
-    barrier = i['barrier_energy']
-    name = 'reaction_{}'.format(idx)
-    dic[name] = rxn
-
-print(dic)
-"""
+            }
+targets = list(qm_collection.find(reg_query))
+for target in targets:
+    dir_path = target['path']
+    irc_path = os.path.join(dir_path, 'IRC')
+    if os.path.exists(irc_path):
+        shutil.rmtree(irc_path)
+    update_field = {'irc_status':"unrun"}
+    qm_collection.update_one({'path':dir_path}, {"$unset": {'irc_forward_jobid':"", 'irc_forward_status':"", 'irc_reverse_jobid':"", 'irc_reverse_status':""}, "$set": update_field}, True)

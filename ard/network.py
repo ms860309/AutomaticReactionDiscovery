@@ -86,9 +86,12 @@ class Network(object):
             #prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
 
         # initial round add all prod to self.network
-        reactant_key = mol_object.toRMGMolecule().to_inchi_key()
+        reactant_key = mol_object.write('inchiKey')
         reactant_smi = mol_object.write('can').split()[0]
         prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_key, reactant_smi, prod_mols_filtered)
+        print(prod_mols_filtered)
+        print(len(prod_mols_filtered))
+        raise
         for mol in prod_mols_filtered:
             index = prod_mols.index(mol)
             self.network_prod_mols.append(mol)
@@ -124,7 +127,11 @@ class Network(object):
     
     def filter_dh_mopac(self, H298_reac, prod_mol):
         H298_product = mopac(prod_mol, self.forcefield)
-        H298_prod = H298_product.mopac_get_H298(prod_mol)
+        try:
+            H298_prod = H298_product.mopac_get_H298(prod_mol)
+        except:
+            print('fail')
+            H298_prod = H298_reac
         dH = H298_prod - H298_reac
 
         if dH < self.dh_cutoff:
