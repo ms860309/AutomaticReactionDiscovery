@@ -178,8 +178,8 @@ class Generate(object):
             for bonds in products_bonds:
                 mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
                 mol.setCoordsFromMol(self.reac_mol)
-                if mol.write('inchiKey') not in self.reactant_inchikey:
-                #if mol.toRMGMolecule().to_inchi_key() not in self.reactant_inchikey:
+                #if mol.write('inchiKey') not in self.reactant_inchikey:
+                if mol.toRMGMolecule().to_inchi_key() not in self.reactant_inchikey:
                     self.prod_mols.append(mol)
                     """
                     for SSM calculation

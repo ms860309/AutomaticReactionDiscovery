@@ -585,8 +585,10 @@ def check_ard_barrier_jobs(generations):
                         {
                             'product_inchi_key':target[0]['product_inchi_key']
                         }]}
+            
             if len(list(qm_collection.find(query_2))) == 0:
                 qm_collection.update_one(target[0], {"$set": {'ard_status':'job_unrun'}}, True)
+                
             insert_exact_rxn(target[0]['reactant_inchi_key'],
                             target[0]['product_inchi_key'],
                             target[0]['Reactant SMILES'],

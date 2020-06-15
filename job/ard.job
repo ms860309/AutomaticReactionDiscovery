@@ -1,18 +1,11 @@
-#/usr/bin/bash
-#PBS -l select=1:ncpus=1:mpiprocs=1
+#!/usr/bin/bash
+#PBS -l select=1:ncpus=1:mpiprocs=1:ompthreads=1
+#PBS -q workq
+#PBS -j oe
 
-cd /home/hpc/ypli/jianyi/AutomaticReactionDiscovery/script
-
-echo "=========================================================="
-echo "Starting on : $(date)"
-echo "Running on node : $(hostname)"
-echo "Current directory : $(pwd)"
-echo "Current job ID : $PBS_JOBID"
-#echo "ARRAY_ID: $PBS_ARRAYID"
-echo "=========================================================="
-
+cd /home/jianyi/test_mopac/AutomaticReactionDiscovery/script
 source ~/.bashrc
 conda activate rmg3
 
-python ard.py input.txt reactant.xyz
+python ard.py input.txt reactant.xyz -generations 1
 conda deactivate

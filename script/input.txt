@@ -3,4 +3,4 @@ imaginarybond     0                 # Experimental function of imaginary bond
 nbreak            2                 # Maximum number of bonds to be broken
 nform             2                 # Maximum number of bonds to be formed
 dH_cutoff         10                # Heat of reaction cutoff
-dH_cutoff_method  mopac            # method
+dH_cutoff_method  1mopac            # method
