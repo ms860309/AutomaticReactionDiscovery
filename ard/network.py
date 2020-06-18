@@ -54,7 +54,6 @@ class Network(object):
         prod_mols = gen.prod_mols
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
-
         # Load thermo database and choose which libraries to search
         thermo_db = ThermoDatabase()
         thermo_db.load(os.path.join(settings['database.directory'], 'thermo'))
@@ -145,12 +144,33 @@ class Network(object):
         base_unique = [i['product_inchi_key'] for i in targets]
         compare_unique = [mol.toRMGMolecule().to_inchi_key() for mol in compare]
         isomorphic_idx =[]
+        same = {}
         for idx, i in enumerate(compare_unique):
             if i not in base_unique:
                 isomorphic_idx.append(idx)
+            else:
+                if i not in same.keys():
+                    same[i] = [idx]
+                else:
+                    same[i] += [idx]
+
         result = [compare[i] for i in isomorphic_idx]
         
+
+
+        for k, v in same.items():
+            print(k)
+            """
+            for i in same[k]:
+                print(compare[i])
+                print(add_bonds[i])
+                print(break_bonds[i])
+                print('-----')
+            """
+        
         same_unique_key = list(set(compare_unique) & set(base_unique))
+        print(same_unique_key)
+        raise
         for idx, i in enumerate(same_unique_key):
             path_target = list(qm_collection.find({'product_inchi_key':i}))
             check_1 = [reactant_key, i]
@@ -160,7 +180,7 @@ class Network(object):
                 if nums == i:
                     tmp.append(index)
             if len(tmp) == 1:
-                dc = 'ADD {} {}\nADD {} {}\nBREAK {} {}\nBREAK {} {}'.format(add_bonds[tmp[0]][0]+1, add_bonds[tmp[0]][1]+1, break_bonds[tmp[0]][1]+1, break_bonds[tmp[0]][1]+1))
+                dc = 'ADD {} {}\nADD {} {}\nBREAK {} {}\nBREAK {} {}'.format(add_bonds[tmp[0]][0]+1, add_bonds[tmp[0]][1]+1, break_bonds[tmp[0]][1]+1, break_bonds[tmp[0]][1]+1)
                 if len(check_duplicate_1) == 0 and reactant_key != i:
                     reactions_collection.insert_one({
                                         'reaction':[reactant_key, i],
@@ -193,9 +213,17 @@ class Network(object):
                                         'unique': 'reactant equal to product'})
                     
             else:
+                print(tmp)
+                for j in tmp:
+                    print(add_bonds[j])
+                    print(break_bonds[j])
+                    print(compare[j])
+                    print('---')
                 for j in tmp:
                     if len(check_duplicate_1) == 0 and reactant_key != i:
-                        dc = 'ADD {} {}\nADD {} {}\nBREAK {} {}\nBREAK {} {}'.format(add_bonds[j][0]+1, add_bonds[j][1]+1, break_bonds[j][1]+1, break_bonds[j][1]+1))
+                        #print(add_bonds[j])
+
+                        dc = 'ADD {} {}\nADD {} {}\nBREAK {} {}\nBREAK {} {}'.format(add_bonds[j][0]+1, add_bonds[j][1]+1, break_bonds[j][1]+1, break_bonds[j][1]+1)
                         reactions_collection.insert_one({
                                             'reaction':[reactant_key, i],
                                             'reactant_smi':reactant_smi,
@@ -253,7 +281,7 @@ class Network(object):
         # Generate 3D geometries
         reactant_mol.gen3D(forcefield=self.forcefield, make3D=False)
         network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
-
+        product = network_prod_mol.toNode()
         reactant_mol_copy, network_prod_mol_copy= reactant_mol.copy(), network_prod_mol.copy()
         try:
             arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
