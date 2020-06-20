@@ -156,31 +156,19 @@ class Network(object):
 
         result = [compare[i] for i in isomorphic_idx]
         
-
-
-        for k, v in same.items():
-            print(k)
-            """
-            for i in same[k]:
-                print(compare[i])
-                print(add_bonds[i])
-                print(break_bonds[i])
-                print('-----')
-            """
-        
         same_unique_key = list(set(compare_unique) & set(base_unique))
-        print(same_unique_key)
-        raise
         for idx, i in enumerate(same_unique_key):
-            path_target = list(qm_collection.find({'product_inchi_key':i}))
-            check_1 = [reactant_key, i]
-            check_duplicate_1 = list(reactions_collection.find({'reaction':check_1}))
-            tmp = []
-            for index, nums in enumerate(compare_unique):
-                if nums == i:
-                    tmp.append(index)
-            if len(tmp) == 1:
-                dc = 'ADD {} {}\nADD {} {}\nBREAK {} {}\nBREAK {} {}'.format(add_bonds[tmp[0]][0]+1, add_bonds[tmp[0]][1]+1, break_bonds[tmp[0]][1]+1, break_bonds[tmp[0]][1]+1)
+            for j in same[i]:
+                dc = ''
+                for k in add_bonds[j]:
+                    dc += 'ADD {} {}\n'.format(k[0]+1,k[1]+1)
+                for l in break_bonds[j]:
+                    dc += 'BREAK {} {}\n'.format(l[0]+1,l[1]+1)
+        
+                path_target = list(qm_collection.find({'product_inchi_key':i}))
+                check_1 = [reactant_key, i]
+                check_duplicate_1 = list(reactions_collection.find({'reaction':check_1}))
+                
                 if len(check_duplicate_1) == 0 and reactant_key != i:
                     reactions_collection.insert_one({
                                         'reaction':[reactant_key, i],
@@ -190,7 +178,8 @@ class Network(object):
                                         'generations':self.generations,
                                         'for_debug':'from same',
                                         'unique': 'new one',
-                                        'driving_coordinate':dc})
+                                        'driving_coordinate':dc,
+                                        'ssm':'job_unrun'})
                 elif len(check_duplicate_1) > 0 and reactant_key != i:
                     # aleady have
                     reactions_collection.insert_one({
@@ -200,7 +189,9 @@ class Network(object):
                                         'path':path_target[0]['path'],
                                         'generations':self.generations,
                                         'for_debug':'from same',
-                                        'unique': 'already duplicated'})
+                                        'unique': 'already duplicated',
+                                        'driving_coordinate':dc,
+                                        'ssm':'job_unrun'})
                 else:
                     # aleady have
                     reactions_collection.insert_one({
@@ -211,48 +202,7 @@ class Network(object):
                                         'generations':self.generations,
                                         'for_debug':'from same',
                                         'unique': 'reactant equal to product'})
-                    
-            else:
-                print(tmp)
-                for j in tmp:
-                    print(add_bonds[j])
-                    print(break_bonds[j])
-                    print(compare[j])
-                    print('---')
-                for j in tmp:
-                    if len(check_duplicate_1) == 0 and reactant_key != i:
-                        #print(add_bonds[j])
 
-                        dc = 'ADD {} {}\nADD {} {}\nBREAK {} {}\nBREAK {} {}'.format(add_bonds[j][0]+1, add_bonds[j][1]+1, break_bonds[j][1]+1, break_bonds[j][1]+1)
-                        reactions_collection.insert_one({
-                                            'reaction':[reactant_key, i],
-                                            'reactant_smi':reactant_smi,
-                                            'product_smi':path_target[0]['Product SMILES'],
-                                            'path':path_target[0]['path'],
-                                            'generations':self.generations,
-                                            'for_debug':'from same',
-                                            'unique': 'new one',
-                                            'driving_coordinate':dc})
-                    elif len(check_duplicate_1) > 0 and reactant_key != i:
-                        # aleady have
-                        reactions_collection.insert_one({
-                                            'reaction':[reactant_key, i],
-                                            'reactant_smi':reactant_smi,
-                                            'product_smi':path_target[0]['Product SMILES'],
-                                            'path':path_target[0]['path'],
-                                            'generations':self.generations,
-                                            'for_debug':'from same',
-                                            'unique': 'already duplicated'})
-                    else:
-                        # aleady have
-                        reactions_collection.insert_one({
-                                            'reaction':[reactant_key, i],
-                                            'reactant_smi':reactant_smi,
-                                            'product_smi':path_target[0]['Product SMILES'],
-                                            'path':path_target[0]['path'],
-                                            'generations':self.generations,
-                                            'for_debug':'from same',
-                                            'unique': 'reactant equal to product'})
         return result
 
     def unique_key_filterIsomorphic_itself(self, base):
