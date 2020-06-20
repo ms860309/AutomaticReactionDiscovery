@@ -23,6 +23,7 @@ db = getattr(Connector(), 'db')
 
 
 # debug
+"""
 qm_collection = db['qm_calculate_center']
 reg_query = {"irc_forward_status":
                 {"$in":
@@ -37,3 +38,5 @@ for target in targets:
         shutil.rmtree(irc_path)
     update_field = {'irc_status':"unrun"}
     qm_collection.update_one({'path':dir_path}, {"$unset": {'irc_forward_jobid':"", 'irc_forward_status':"", 'irc_reverse_jobid':"", 'irc_reverse_status':""}, "$set": update_field}, True)
+
+"""

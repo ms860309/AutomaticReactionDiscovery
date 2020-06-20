@@ -388,4 +388,4 @@ def update_irc_status(target, job_id, direction):
 launch_energy_jobs()
 launch_ssm_jobs()
 launch_ts_jobs()
-launch_irc_jobs()
+#launch_irc_jobs()
