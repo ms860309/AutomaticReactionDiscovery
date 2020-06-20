@@ -1,12 +1,16 @@
 # PyCharm folder
 .idea/*
 
+# VSCode folder
+.vscode/*
+
 # Compiled Python modules
 *.pyc
 *.so
 *.pyd
 nul
 *.log
+
 #Reactions folder
 result/
 tmp/
