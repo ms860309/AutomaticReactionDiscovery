@@ -461,6 +461,188 @@ def check_ts_jobs():
                             }
                 qm_collection.update_one(target, {"$set": update_field}, True)
 
+
+def select_irc_target(direction = 'forward'):
+    """
+    This method is to inform job checker which targets 
+    to check, which need meet one requirement:
+    1. status is job_launched or job_running
+    Returns a list of targe
+    """
+    qm_collection = db['qm_calculate_center']
+    irc_status = 'irc_{}_status'.format(direction)
+    query = {{irc_status:
+                        {"$in":
+                        ["job_launched", "job_running", "job_queueing"]}}
+                }
+    targets = list(qm_collection.find(query))
+
+    return targets
+
+def check_irc_status(job_id):
+    """
+    This method checks pbs status of a job given job_id
+    Returns off_queue or job_launched or job_running
+    """
+    commands = ['qstat', '-f', job_id]
+    process = subprocess.Popen(commands,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    if "Unknown Job Id" in stderr.decode():
+        return "off_queue"
+
+    # in pbs stdout is byte, so we need to decode it at first.
+    stdout = stdout.decode().strip().split()
+    idx = stdout.index('job_state')
+    if stdout[idx+2] == 'R':
+        return "job_running"
+    elif stdout[idx+2] == 'Q':
+        return "job_queueing"
+    else:
+        return "job_launched"
+    
+def check_irc_content_status(target_path, direction = 'forward'):
+    reactant_path = os.path.join(target_path, 'reactant.xyz')
+    irc_path = os.path.join(target_path, 'IRC/')
+    opt_name = '{}_opt.in'.format(direction)
+    opt_in = os.path.join(target_path, opt_name)
+    if direction == 'forward':
+        irc_output = os.path.join(irc_path, 'irc_forward.out')
+    else:
+        irc_output = os.path.join(irc_path, 'irc_reverse.out')
+
+    with open(reactant_path, 'r') as f1:
+        lines = f1.readlines()
+    atom_number = int(lines[0])
+    with open(irc_output, 'r') as f:
+        f.seek(0, 2)
+        fsize = f.tell()
+        f.seek(max(fsize - 10240, 0), 0)  # Read last 10 kB of file
+        lines = f.readlines()
+
+    if lines[-2] == ' IRC backup failure\n' or lines[-2] == ' IRC failed final bisector step\n':
+    
+        for idx, i in enumerate(lines):
+            if i.startswith('             Standard Nuclear Orientation (Angstroms)\n'):
+                break
+        geo = []
+        for i in lines[idx + 3 : idx + 3 + atom_number]:
+            atom = i.split()[1:]
+            geo.append('  '.join(atom))
+            
+        with open(opt_in, 'w') as f:
+            f.write('$molecule\n{} {}\n'.format(0, 1))
+            f.write('\n'.join(geo))
+            f.write('\n$end\n\n')
+            f.write('$rem\n')
+            f.write('JOBTYPE OPT\n')
+            f.write('METHOD B97-D3\n')
+            f.write('DFT_D D3_BJ\n')
+            f.write('BASIS def2-mSVP\n')
+            f.write('SCF_ALGORITHM DIIS\n')
+            f.write('MAX_SCF_CYCLES 150\n')
+            f.write('SCF_CONVERGENCE 8\n')
+            f.write('SYM_IGNORE TRUE\n')
+            f.write('SYMMETRY FALSE\n')
+            f.write('GEOM_OPT_MAX_CYCLES 150\n')
+            f.write('GEOM_OPT_TOL_GRADIENT 100\n')
+            f.write('GEOM_OPT_TOL_DISPLACEMENT 400\n')
+            f.write('GEOM_OPT_TOL_ENERGY 33\n')
+            f.write('WAVEFUNCTION_ANALYSIS FALSE\n')
+            f.write('$end\n')
+        return 'need opt'
+    elif lines[-5] == '        *  Thank you very much for using Q-Chem.  Have a nice day.  *\n':
+        return 'job_success'
+    elif lines[-2] == ' Bad initial gradient\n'
+        return 'Bad initial gradient'
+    elif lines[-2] == ' IRC --- Failed line search\n'
+        return 'Failed line search'
+    else:
+        return 'unknown fail information'
+    
+def check_irc_jobs():
+    """
+    This method checks job with following steps:
+    1. select jobs to check
+    2. check the job pbs-status, e.g., qstat -f "job_id"
+    3. check job content
+    4. update with new status
+    """
+    # 1. select jobs to check
+    targets = select_irc_target(direction = 'forward')
+
+    qm_collection = db['qm_calculate_center']
+    # 2. check the job pbs status
+    for target in targets:
+        job_id = target['irc_forward_jobid']
+        # 2. check the job pbs status
+        new_status = check_irc_status(job_id)
+        if new_status == "off_queue":
+            # 3. check job content
+            new_status = check_irc_content_status(target['path'], direction='forward')
+
+        # 4. check with original status which
+        # should be job_launched or job_running
+        # if any difference update status
+        irc_status = 'irc_{}_status'.format('forward')
+        orig_status = target[irc_status]
+        if orig_status != new_status:
+            if new_status == 'job_success':
+                update_field = {
+                    'irc_status':new_status, 'irc_equal':'waiting for check'
+                                }
+                qm_collection.update_one(target, {"$set": update_field}, True)
+            elif new_status == 'need opt':
+                opt_status = 'opt_{}_status'.format('forward')
+                update_field = {
+                    'irc_status':new_status, 'opt_status':'job_unrun'
+                                }
+                qm_collection.update_one(target, {"$set": update_field}, True)
+            else:
+                update_field = {
+                                'irc_status': new_status
+                            }
+                qm_collection.update_one(target, {"$set": update_field}, True)
+    
+    # 1. select jobs to check
+    targets = select_irc_target(direction = 'reverse')
+
+    qm_collection = db['qm_calculate_center']
+    # 2. check the job pbs status
+    for target in targets:
+        job_id = target['irc_reverse_jobid']
+        # 2. check the job pbs status
+        new_status = check_irc_status(job_id)
+        if new_status == "off_queue":
+            # 3. check job content
+            new_status = check_irc_content_status(target['path'], direction='reverse')
+
+        # 4. check with original status which
+        # should be job_launched or job_running
+        # if any difference update status
+        irc_status = 'irc_{}_status'.format('reverse')
+        orig_status = target[irc_status]
+        if orig_status != new_status:
+            if new_status == 'job_success':
+                update_field = {
+                    'irc_status':new_status, 'irc_equal':'waiting for check'
+                                }
+                qm_collection.update_one(target, {"$set": update_field}, True)
+            elif new_status == 'need opt':
+                opt_status = 'opt_{}_status'.format('reverse')
+                update_field = {
+                    'irc_status':new_status, 'opt_status':'job_unrun'
+                                }
+                qm_collection.update_one(target, {"$set": update_field}, True)
+            else:
+                update_field = {
+                                'irc_status': new_status
+                            }
+                qm_collection.update_one(target, {"$set": update_field}, True)
+
+
 def select_ts_barrier_target():
     """
     This method is to inform job checker which targets 
@@ -506,7 +688,13 @@ def check_ts_barrier_jobs():
     qm_collection = db['qm_calculate_center']
     
     for target in targets:
-        reactant_energy = target['reactant_scf_energy']
+        min_energy = list(qm_collection.aggregate(
+            [
+                {"$match": {'reactant_inchi_key':target[reactant_inchi_key]}},
+                {"$group":{"_id":{}, 'reactant_scf_energy':{'$min':"$reactant_scf_energy"}}}
+            ]
+        ))
+        reactant_energy = float(min_energy[0]['reactant_scf_energy'])
         ts_energy = target['ts_energy']
         barrier_energy = (float(ts_energy) - float(reactant_energy)) * 627.5095
         update_field = {'barrier_energy':barrier_energy}
@@ -596,10 +784,206 @@ def check_ard_barrier_jobs(generations):
                             target[0]['path'],
                             target[0]['generations'],
                             barrier)
-         
+
+def select_same_ssm_target():
+    """
+    This method is to inform job checker which targets 
+    to check, which need meet one requirement:
+    1. status is job_launched or job_running
+    Returns a list of targe
+    """
+    reactions_collection = db['reactions']
+    reg_query = {"ssm":
+                    {"$in": 
+                        ["job_launched", "job_running", "job_queueing"] 
+                    }
+                }
+    targets = list(reactions_collection.find(reg_query))
+
+    return targets
+
+def check_same_ssm_jobs():
+    """
+    This method checks job with following steps:
+    1. select jobs to check
+    2. check the job pbs-status, e.g., qstat -f "job_id"
+    3. check job content
+    4. update with new status
+    """
+    # 1. select jobs to check
+    targets = select_ssm_target()
+
+    reactions_collection = db['reactions']
+    
+    # 2. check the job pbs status
+    for target in targets:
+        job_id = target['ssm_jobid']
+        # 2. check the job pbs status
+        new_status = check_ssm_status(job_id)
+        if new_status == "off_queue":
+            # 3. check job content
+            new_status = check_ssm_content_status(target['path'])
+
+        # 4. check with original status which
+        # should be job_launched or job_running
+        # if any difference update status
+        orig_status = target['ssm_status']
+        if orig_status != new_status:
+
+            if new_status == 'job_success':
+                equal = same_ard_prod_and_ssm_prod_checker(target['path'])
+                if equal == 'equal':
+                    update_field = {
+                                    'ssm': new_status, "ts":"job_unrun", 'ard_ssm_equal':equal
+                                }
+                    reactions_collection.update_one(target, {"$set": update_field}, True)
+                else:
+                    update_field = {
+                                    'ssm': new_status, 'ard_ssm_equal':equal, 'unique': 'fail'
+                                }
+                    reactions_collection.update_one(target, {"$set": update_field}, True)
+            else:
+                update_field = {
+                                'ssm': new_status, 'unique': 'fail'
+                            }
+                reactions_collection.update_one(target, {"$set": update_field}, True)
+
+def same_ard_prod_and_ssm_prod_checker(rxn_dir):
+    # Use ssm product xyz to check whether ssm prod equal to ard product
+    # If equal, insert the inchi key into products pool
+    # If not equal, use ssm product as the product and insert inchi key into products pool
+    # Next generation use the ssm product to generate
+    
+    ard_prod_path = path.join(rxn_dir, 'product.xyz')
+    ssm_prod_path = path.join(rxn_dir, 'ssm_product.xyz')
+    pyMol_1 = xyz_to_pyMol(ssm_prod_path)
+    rmg_mol_1 = toRMGmol(pyMol_1)
+    pyMol_2 = xyz_to_pyMol(ard_prod_path)
+    rmg_mol_2 = toRMGmol(pyMol_2)
+    if rmg_mol_1.to_inchi_key() != rmg_mol_2.to_inchi_key():
+        return 'not_equal'
+    else:
+        return 'equal'
+
+
+def select_same_ts_target():
+    """
+    This method is to inform job checker which targets 
+    to check, which need meet one requirement:
+    1. status is job_launched or job_running
+    Returns a list of targe
+    """
+    reactions_collection = db['reactions']
+    reg_query = {"ts":
+                    {"$in": 
+                        ["job_launched", "job_running", "job_queueing"] 
+                    }
+                }
+    targets = list(reactions_collection.find(reg_query))
+
+    return targets
+
+def check_same_ts_jobs():
+    """
+    This method checks job with following steps:
+    1. select jobs to check
+    2. check the job pbs-status, e.g., qstat -f "job_id"
+    3. check job content
+    4. update with new status
+    """
+    # 1. select jobs to check
+    targets = select_same_ts_target()
+
+    reactions_collection = db['reactions']
+    # 2. check the job pbs status
+    for target in targets:
+        job_id = target['ts_jobid']
+        # 2. check the job pbs status
+        new_status = check_ts_status(job_id)
+        if new_status == "off_queue":
+            # 3. check job content
+            new_status, ts_energy= check_ts_content_status(target['path'])
+
+        # 4. check with original status which
+        # should be job_launched or job_running
+        # if any difference update status
+        orig_status = target['ts']
+        if orig_status != new_status:
+            if new_status == 'job_success':
+                update_field = {
+                                'ts': new_status, 'ts_energy':ts_energy, 'irc':'job_unrun'
+                                }
+                reactions_collection.update_one(target, {"$set": update_field}, True)
+            else:
+                update_field = {
+                                'ts': new_status, 'unique': 'fail'
+                            }
+                reactions_collection.update_one(target, {"$set": update_field}, True)
+
+def check_same_barrier():
+    reactions_collection = db['reactions']
+    qm_collection = db['qm_calculate_center']
+    
+    query = {'$and': 
+                    [
+                    { "ssm":
+                        {"$in":
+                        ['job_success']}},
+                    {'ts':
+                        {'$in':
+                            ['job_success']}}
+                    ]
+                }
+    
+    targets = list(reactions_collection.find(query))
+    
+    for target in targets:
+        reactant_inchi_key = target['reaction'][0]
+        
+        min_energy = list(qm_collection.aggregate(
+            [
+                {"$match": {'reactant_inchi_key':reactant_inchi_key}},
+                {"$group":{"_id":{}, 'reactant_scf_energy':{'$min':"$reactant_scf_energy"}}}
+            ]
+        ))
+        reactant_scf_energy = float(min_energy[0]['reactant_scf_energy'])
+        barrier = (float(target['ts_energy']) - reactant_scf_energy)*627.5095
+        update_field = {'barrier_energy':barrier}
+        reactions_collection.update_one(target, {"$set": update_field}, True)
+        
+    clean_same(targets)
+
+def clean_same(targets):
+    reactions_collection = db['reactions']
+    for target in targets:
+        min_barrier = list(reactions_collection.aggregate(
+            [
+                {"$match": {'unique': 'waiting for check'}},
+                {"$group":{"_id":'$reaction', 'barrier_energy':{'$min':"$barrier_energy"}}}
+            ]
+        ))
+        for i in min_barrier:
+            query = {'$and': 
+                            [
+                            { "reaction":i[_id]},
+                            {'unique':'waiting for check'}
+                            ]
+                        }
+            for j in list(reactions_collection.find(query)):
+                if j['barrier_energy'] == i['barrier_energy']:
+                    update_field = {'unique':'new one'}
+                    reactions_collection.update_one(target, {"$set": update_field}, True)
+                else:
+                    update_field = {'unique':'have another lower barrier reaction'}
+                    reactions_collection.update_one(target, {"$set": update_field}, True)
+
 check_energy_jobs()
 check_ssm_jobs()
 check_ts_jobs()
+check_irc_jobs()
+check_same_ssm_jobs()
+check_same_ts_jobs()
+check_same_barrier()
 
 qm_collection = db['qm_calculate_center']
 max_gen = qm_collection.find_one(sort=[("generations", -1)])

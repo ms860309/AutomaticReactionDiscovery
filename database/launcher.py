@@ -385,6 +385,14 @@ def update_irc_status(target, job_id, direction):
     update_field = {irc_status:"job_launched", irc_jobid:job_id}
     qm_collection.update_one(reg_query, {"$unset": {'irc_status':""}, "$set": update_field}, True)
 
+"""
+Submmit ssm calculation job, this ssm is from network isomorphic check which is use to check 
+whether there have connectivity between products.
+1. select unrun job
+2. push unrun job to qchem
+3. update status "job_launched"
+"""
+
 def launch_same_ssm_jobs():
     reactions_collection = db['reactions']
     query = {'ssm':'job_unrun'}
@@ -452,9 +460,101 @@ def dir_check(subdir, b_dirname, num):
     
     return new_name
 
+"""
+Submmit ts calculation job, this ssm is from network isomorphic check which is use to check 
+whether there have connectivity between products.
+1. select unrun job
+2. push unrun job to qchem
+3. update status "job_launched"
+"""
+
+def select_same_ts_target():
+    reactions_collection = db['reactions']
+    reg_query = {"ts":"job_unrun"}
+    targets = list(reactions_collection.find(reg_query))
+    selected_targets = [target['path'] for target in targets]
+    return selected_targets
+
+def launch_same_ts_jobs():
+    
+    targets = select_same_ts_target()
+    
+    for target in targets:
+        TS_dir_path = path.join(target, 'TS/')
+        os.mkdir(TS_dir_path)
+        os.chdir(TS_dir_path)
+            
+        SSM_dir_path = path.join(target, 'SSM/')
+        subfile = create_ts_sub_file(SSM_dir_path, TS_dir_path)
+        cmd = 'qsub {}'.format(subfile)
+        process = subprocess.Popen([cmd],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, shell = True)
+        stdout, stderr = process.communicate()
+        # get job id from stdout, e.g., "106849.h81"
+        job_id = stdout.decode().replace("\n", "")
+        # update status job_launched
+        update_same_ts_status(target, job_id)
+
+def update_same_ts_status(target, job_id):
+    
+    reactions_collection = db['reactions']
+    reg_query = {"path":target}
+    update_field = {"ts":"job_launched", "ts_jobid":job_id}
+    reactions_collection.update_one(reg_query, {"$set": update_field}, True)
+
+def select_same_irc_target():
+    
+    reactions_collection = db['reactions']
+    reg_query = {"irc":"job_unrun"}
+    targets = list(reactions_collection.find(reg_query))
+    selected_targets = [target['path'] for target in targets]
+    return selected_targets
+
+def launch_same_irc_jobs():
+    
+    targets = select_same_irc_target()
+    
+    for target in targets:
+        IRC_dir_path = path.join(target, 'IRC/')
+        os.mkdir(IRC_dir_path)
+        os.chdir(IRC_dir_path)
+            
+        TS_dir_path = path.join(target, 'TS/')
+        subfile_1,  subfile_2= create_irc_sub_file(TS_dir_path, IRC_dir_path)
+        cmd_1 = 'qsub {}'.format(subfile_1)
+        process_1 = subprocess.Popen([cmd_1],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, shell = True)
+        stdout, stderr = process_1.communicate()
+        # get job id from stdout, e.g., "106849.h81"
+        job_id = stdout.decode().replace("\n", "")
+        # update status job_launched
+        update_same_irc_status(target, job_id, direction = 'forward')
+        
+        cmd_2 = 'qsub {}'.format(subfile_2)
+        process_2 = subprocess.Popen([cmd_2],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, shell = True)
+        stdout, stderr = process_2.communicate()
+        # get job id from stdout, e.g., "106849.h81"
+        job_id = stdout.decode().replace("\n", "")
+        # update status job_launched
+        update_same_irc_status(target, job_id, direction = 'reverse')
 
 
+def update_same_irc_status(target, job_id, direction):
+    reactions_collection = db['reactions']
+    reg_query = {"path":target}
+    irc_status = 'irc_{}'.format(str(direction))
+    irc_jobid = 'irc_{}_jobid'.format(str(direction))
+    update_field = {irc_status:"job_launched", irc_jobid:job_id}
+    reactions_collection.update_one(reg_query, {"$unset": {'irc':""}, "$set": update_field}, True)
+    
 launch_energy_jobs()
 launch_ssm_jobs()
 launch_ts_jobs()
 #launch_irc_jobs()
+launch_same_ssm_jobs()
+launch_same_ts_jobs()
+launch_same_irc_jobs()

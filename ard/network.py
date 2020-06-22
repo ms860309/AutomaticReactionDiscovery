@@ -180,7 +180,7 @@ class Network(object):
                                         'path':path_target[0]['path'],
                                         'generations':self.generations,
                                         'for_debug':'from same',
-                                        'unique': 'new one',
+                                        'unique': 'waiting for check',
                                         'driving_coordinate':dc,
                                         'ssm':'job_unrun'})
                 elif len(check_duplicate_1) > 0 and reactant_key != i:
@@ -192,7 +192,7 @@ class Network(object):
                                         'path':path_target[0]['path'],
                                         'generations':self.generations,
                                         'for_debug':'from same',
-                                        'unique': 'already duplicated',
+                                        'unique': 'waiting for check',
                                         'driving_coordinate':dc,
                                         'ssm':'job_unrun'})
                 else:

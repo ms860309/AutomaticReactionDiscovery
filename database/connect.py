@@ -56,3 +56,12 @@ targets = list(qm_collection.find(query_2))
 for i in targets:
     print(i['reaction'][1])
 """
+qm_collection = db['qm_calculate_center']
+
+targets = list(qm_collection.aggregate(
+    [
+        {"$match": {'reactant_inchi_key':'AOPVWXNGMQWVNU-UHFFFAOYSA-N'}},
+        {"$group":{"_id":{}, 'reactant_scf_energy':{'$min':"$reactant_scf_energy"}}}
+    ]
+))
+print(targets[0]['reactant_scf_energy'])
