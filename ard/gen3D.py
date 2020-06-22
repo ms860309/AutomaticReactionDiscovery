@@ -214,6 +214,7 @@ class Molecule(pybel.Molecule):
         self.separateMol()
         for mol in self.mols:
             spc = mol.toRMGSpecies()
+            spc.generate_resonance_structures()
             spc.thermo = thermo_db.get_thermo_data(spc)
             H298 += spc.get_enthalpy(298.0) / constants.kcal_to_J
         # Return combined enthalpy of all molecules

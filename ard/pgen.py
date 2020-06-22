@@ -141,10 +141,19 @@ class Generate(object):
             raise Exception('Breaking/forming bonds is limited to a maximum of 3')
 
         # Extract bonds as an unmutable sequence (indices are made compatible with atom list)
+        """
         reactant_bonds = tuple(sorted(
             [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
              for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
         ))
+        """
+        a = []
+        reactant_bonds = [(1, 2, 1), (1, 3, 1), (1, 4, 1), (1, 5, 1), (1, 12, 1), (2, 3, 1), (2, 4, 1), (2, 6, 1), (3, 5, 1), (3, 6, 1), (3, 10, 1), (4, 5, 1), (4, 6, 1), (5, 6, 1), (7, 14, 1), (8, 15, 1), (9, 10, 1), (9, 13, 1), (10, 11, 2), (11, 12, 1), (11, 17, 1), (12, 13, 2), (13, 14, 1), (14, 15, 1), (14, 16, 1)]
+        for i in reactant_bonds:
+            a.append((i[0]-1,i[1]-1,i[2]))
+        reactant_bonds = tuple(a)
+        print(reactant_bonds)
+
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]
         
@@ -178,8 +187,8 @@ class Generate(object):
             for bonds in products_bonds:
                 mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
                 mol.setCoordsFromMol(self.reac_mol)
-                #if mol.write('inchiKey') not in self.reactant_inchikey:
-                if mol.toRMGMolecule().to_inchi_key() not in self.reactant_inchikey:
+                if mol.write('inchiKey') not in self.reactant_inchikey:
+                #if mol.toRMGMolecule().to_inchi_key() not in self.reactant_inchikey:
                     self.prod_mols.append(mol)
                     """
                     for SSM calculation

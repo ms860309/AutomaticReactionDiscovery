@@ -85,7 +85,8 @@ class Network(object):
             #prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
 
         # initial round add all prod to self.network
-        reactant_key = mol_object.toRMGMolecule().to_inchi_key()
+        reactant_key = mol_object.write('inchiKey')
+        #reactant_key = mol_object.toRMGMolecule().to_inchi_key()
         reactant_smi = mol_object.write('can').split()[0]
         prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_key, reactant_smi, prod_mols_filtered, add_bonds, break_bonds)
         for mol in prod_mols_filtered:
@@ -93,7 +94,8 @@ class Network(object):
             self.network_prod_mols.append(mol)
             # gen geo return path
             dir_path = self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
-            product_name = mol.toRMGMolecule().to_inchi_key()
+            product_name = mol.write('inchiKey')
+            #product_name = mol.toRMGMolecule().to_inchi_key()
             qm_collection.insert_one({
                                    'reaction': [reactant_key, product_name], 
                                    'Reactant SMILES':mol_object.write('can').split()[0], 
@@ -142,7 +144,8 @@ class Network(object):
         reactions_collection = db['reactions']
         targets = list(qm_collection.find({'ts_status':'job_success'}))
         base_unique = [i['product_inchi_key'] for i in targets]
-        compare_unique = [mol.toRMGMolecule().to_inchi_key() for mol in compare]
+        compare_unique = [mol.write('inchiKey') for mol in compare]
+        #compare_unique = [mol.toRMGMolecule().to_inchi_key() for mol in compare]
         isomorphic_idx =[]
         same = {}
         for idx, i in enumerate(compare_unique):
@@ -209,8 +212,8 @@ class Network(object):
         """
         Convert rmg molecule into inchi key(unique key) and check isomorphic
         """
-        
-        base_unique = [mol.toRMGMolecule().to_inchi_key() for mol in base]
+        base_unique = [mol.write('inchiKey') for mol in base]
+        #base_unique = [mol.toRMGMolecule().to_inchi_key() for mol in base]
         result = [base[base_unique.index(i)] for i in set(base_unique)]
         
         return result
@@ -252,7 +255,8 @@ class Network(object):
         subdir = os.path.join(os.path.dirname(self.ard_path), 'reactions')
         if not os.path.exists(subdir):
             os.mkdir(subdir)
-        b_dirname = network_prod_mol.toRMGMolecule().to_inchi_key()   
+        b_dirname = network_prod_mol.write('inchiKey')
+        #b_dirname = network_prod_mol.toRMGMolecule().to_inchi_key()
         targets = list(qm_collection.find({'product_inchi_key':b_dirname}))
         dirname = self.dir_check(subdir, b_dirname, len(targets) + 1)
             
