@@ -24,7 +24,8 @@ def select_ard_target():
                     [
                     { "ts_status":
                         {"$in":
-                        ['job_launched','job_running', "job_queueing"]}
+                        ['job_launched','job_running', "job_queueing"]
+                        }
                         },
                     {'ssm_status':
                         {'$in':
@@ -55,6 +56,7 @@ def launch_ard_jobs():
     qm_collection = db['qm_calculate_center']
     pool_collection = db['pool']
     status_collection = db['status']
+
     if qm_collection.estimated_document_count() == 0:
         print('The ard not start')
         print('Starting ARD network exploring')
@@ -79,27 +81,29 @@ def launch_ard_jobs():
         status_collection.insert_one({'status':'ARD had launched'})
     else:
         targets = select_ard_target()
-        for target in list(targets):
-            dir_path, gen_num, ard_ssm_equal = target[0], target[1], target[2]
-            script_path = path.join(path.dirname(path.dirname(dir_path)), 'script')
-            if os.path.exists(dir_path):
-                os.chdir(dir_path)
-            
-            if ard_ssm_equal == 'not_equal':
-                next_reactant = 'ssm_product.xyz'
-                subfile = create_ard_sub_file(dir_path, script_path, gen_num, next_reactant)
-            else:
-                next_reactant = 'product.xyz'
-                subfile = create_ard_sub_file(dir_path, script_path, gen_num, next_reactant)
-            cmd = 'qsub {}'.format(subfile)
-            process = subprocess.Popen([cmd],
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, shell = True)
-            stdout, stderr = process.communicate()
-            # get job id from stdout, e.g., "106849.h81"
-            job_id = stdout.decode().replace("\n", "")
-            # update status job_launched
-            update_ard_status(target[0], job_id)
+        if len(list(targets)) != 0:
+            for target in list(targets):
+                dir_path, gen_num, ard_ssm_equal = target[0], target[1], target[2]
+                script_path = path.join(path.dirname(path.dirname(dir_path)), 'script')
+                if os.path.exists(dir_path):
+                    os.chdir(dir_path)
+                
+                if ard_ssm_equal == 'not_equal':
+                    next_reactant = 'ssm_product.xyz'
+                    subfile = create_ard_sub_file(dir_path, script_path, gen_num, next_reactant)
+                else:
+                    next_reactant = 'product.xyz'
+                    subfile = create_ard_sub_file(dir_path, script_path, gen_num, next_reactant)
+                if not os.path.exists(subfile):
+                    cmd = 'qsub {}'.format(subfile)
+                    process = subprocess.Popen([cmd],
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE, shell = True)
+                    stdout, stderr = process.communicate()
+                    # get job id from stdout, e.g., "106849.h81"
+                    job_id = stdout.decode().replace("\n", "")
+                    # update status job_launched
+                    update_ard_status(target[0], job_id)
 
 def create_ard_sub_file(dir_path, script_path, gen_num, next_reactant, ncpus = 1, mpiprocs = 1, ompthreads = 1):
     subfile = path.join(dir_path, 'ard.job')

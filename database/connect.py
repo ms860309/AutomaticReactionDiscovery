@@ -11,7 +11,7 @@ class Connector(object):
         #self.server = 'mongodb://localhost:27017/'
         #self.mongo_db = mongo_db
         self.client = self.connect()
-        self.db = self.client['network2']
+        self.db = self.client['network']
 
     def connect(self):
         client = MongoClient(self.server, serverSelectionTimeoutMS=2000)
@@ -39,4 +39,20 @@ for target in targets:
     update_field = {'irc_status':"unrun"}
     qm_collection.update_one({'path':dir_path}, {"$unset": {'irc_forward_jobid':"", 'irc_forward_status':"", 'irc_reverse_jobid':"", 'irc_reverse_status':""}, "$set": update_field}, True)
 
+
+
+qm_collection = db['reactions']
+query = {'$and':
+                [{"for_debug":
+                {"$in":
+                    ['new one']
+                }
+            }, {'unique':
+                {'$nin':
+                    ['reactant equal to product']}
+            }]}
+query_2 = {'ssm':'job_unrun'}
+targets = list(qm_collection.find(query_2))
+for i in targets:
+    print(i['reaction'][1])
 """

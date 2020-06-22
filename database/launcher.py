@@ -366,7 +366,7 @@ def create_irc_sub_file(TS_dir_path, IRC_dir_path, ncpus = 1, mpiprocs = 1, ompt
             f2.write('SCF_GUESS READ\n')
             f2.write('rpath_direction -1\n')
             f2.write('rpath_max_cycles 60\n')
-            f2.write('rpath_max_stepsize 150\n')
+            f2.write('rpath_max_stepsize 80\n')
             f2.write('$end\n')
             
     with open(subfile_1, 'w') as f:
@@ -384,7 +384,76 @@ def update_irc_status(target, job_id, direction):
     irc_jobid = 'irc_{}_jobid'.format(str(direction))
     update_field = {irc_status:"job_launched", irc_jobid:job_id}
     qm_collection.update_one(reg_query, {"$unset": {'irc_status':""}, "$set": update_field}, True)
+
+def launch_same_ssm_jobs():
+    reactions_collection = db['reactions']
+    query = {'ssm':'job_unrun'}
+    targets = list(reactions_collection.find(query))
+    for i in targets:
+        dirname = dir_check(path.dirname(i['path']), i['reaction'][1], 1)
+        new_path = path.join(path.dirname(i['path']), dirname)
+        os.mkdir(new_path)
+        SSM_dir_path = path.join(new_path, 'SSM/')
+        os.mkdir(SSM_dir_path)
+        os.chdir(SSM_dir_path)
+        
+
+        subfile = create_same_ssm_sub_file(i['path'], SSM_dir_path, i['driving_coordinate'])
+        cmd = 'qsub {}'.format(subfile)
+        process = subprocess.Popen([cmd],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, shell = True)
+        stdout, stderr = process.communicate()
+        # get job id from stdout, e.g., "106849.h81"
+        job_id = stdout.decode().replace("\n", "")
+        # update status job_launched
+        update_same_ssm_status(i, job_id, SSM_dir_path)
+
+def create_same_ssm_sub_file(dir_path, SSM_dir_path, dc, ncpus = 1, mpiprocs = 1, ompthreads = 1):
+    subfile = path.join(SSM_dir_path, 'cal_ssm.job')
+    xyz_file = path.join(dir_path, 'reactant.xyz')
+    with open (path.join(dir_path, 'add_bonds.txt'), 'w') as f:
+        f.write(dc)
+    isomers = path.join(dir_path, 'add_bonds.txt')
+    lot_inp_file = path.join(path.join(path.dirname(path.dirname(dir_path)), 'submmit_required'), 'qstart')
+
+    shell = '#!/usr/bin/bash'
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    target_path = 'cd {}'.format(SSM_dir_path)
+    nes1 = 'module load qchem'
+    # activate conda env is necessary because gsm install on the environment
+    nes2 = 'source ~/.bashrc\nconda activate rmg3'
+    scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
+    coord_type = 'DLC'
+    command = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -lot_inp_file {} -coordinate_type {} -max_gsm_iters 100 -max_opt_steps 30 -CONV_TOL 0.0005 -ADD_NODE_TOL 0.01 -DQMAG_MAX 0.8 -num_nodes 30 -conv_Ediff 300 >status.log'.format(xyz_file, isomers, lot_inp_file, coord_type)    
+    clean_scratch = 'rm -r $QCSCRATCH'
+    with open(subfile, 'w') as f:
+        f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, nes2, scratch, command, clean_scratch))
+    return subfile
+
+def update_same_ssm_status(target, job_id, SSM_dir_path):
+    reactions_collect = db['reactions']
+    reg_query = {"path":target['path']}
+    update_field = {"ssm":"job_launched", "ssm_jobid":job_id, 'path':SSM_dir_path}
+    reactions_collect.update_one(reg_query, {"$set": update_field}, True)
+
+def dir_check(subdir, b_dirname, num):
+    """
+    When parallely run job, the dir is constructed but data is not on database yet
+    """
+    check = False
+    number = num
+    while check == False:
+        new_name = '{}_{}'.format(b_dirname, number)
+        if os.path.exists(os.path.join(subdir, new_name)):
+            number += 1
+        else:
+            check = True
     
+    return new_name
+
+
+
 launch_energy_jobs()
 launch_ssm_jobs()
 launch_ts_jobs()
