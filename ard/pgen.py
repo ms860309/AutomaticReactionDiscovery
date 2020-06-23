@@ -48,7 +48,7 @@ class Generate(object):
         self.add_bonds = []
         self.break_bonds = []
         self.initialize()
-
+        self.constraint = [0,1,2,3,4,5]
     def initialize(self):
         """
         Set the canonical SMILES for the reactant and extract the atomic
@@ -56,7 +56,6 @@ class Generate(object):
         """
         #self.reac_smi = self.reac_mol.write('can').split()[0]
         self.atoms = tuple(atom.atomicnum for atom in self.reac_mol)
-
 
     def DoU(self, products_bonds):
         """
@@ -152,11 +151,9 @@ class Generate(object):
         for i in reactant_bonds:
             a.append((i[0]-1,i[1]-1,i[2]))
         reactant_bonds = tuple(a)
-        print(reactant_bonds)
 
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]
-        
         # Initialize set for storing bonds of products
         # A set is used to ensure that no duplicate products are added
         products_bonds = set()
@@ -233,7 +230,13 @@ class Generate(object):
             bonds_broken = []
         if nbreak == 0 and nform == 0:
             # If no more bonds are to be changed, then add product (base case)
-            products.add((tuple(sorted(bonds))))
+            # Here I only consider break 2 form 2. (b 3 f 3 need some change)
+            if len(bonds_broken) > 1:
+                if (bonds_broken[0][0] not in self.constraint and bonds_broken[0][1] not in self.constraint) and (bonds_broken[1][0] not in self.constraint and bonds_broken[1][1] not in self.constraint):
+                    products.add((tuple(sorted(bonds))))
+            elif len(bonds_broken) == 1:
+                if bonds_broken[0][0] not in self.constraint and bonds_broken[0][1] not in self.constraint:
+                    products.add((tuple(sorted(bonds))))
         if nbreak > 0:
             # Break bond
             for bond_break_idx, bond_break in enumerate(bonds):
@@ -265,7 +268,8 @@ class Generate(object):
                 # Do not add bond if it has previously been broken
                 if bond_form[:2] in [bond[:2] for bond in bonds_broken]:
                     continue
-
+                if bond_form[0] in self.constraint and bond_form[1] in self.constraint:
+                    continue
                 # Form new bond and catch exception if it violates constraints
                 try:
                     valences_form = self.changeValences(valences, bond_form, 1)

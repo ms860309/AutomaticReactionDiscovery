@@ -11,7 +11,7 @@ class Connector(object):
         #self.server = 'mongodb://localhost:27017/'
         #self.mongo_db = mongo_db
         self.client = self.connect()
-        self.db = self.client['network']
+        self.db = self.client['network2']
 
     def connect(self):
         client = MongoClient(self.server, serverSelectionTimeoutMS=2000)
@@ -55,7 +55,7 @@ query_2 = {'ssm':'job_unrun'}
 targets = list(qm_collection.find(query_2))
 for i in targets:
     print(i['reaction'][1])
-"""
+
 qm_collection = db['qm_calculate_center']
 
 targets = list(qm_collection.aggregate(
@@ -65,3 +65,4 @@ targets = list(qm_collection.aggregate(
     ]
 ))
 print(targets[0]['reactant_scf_energy'])
+"""
