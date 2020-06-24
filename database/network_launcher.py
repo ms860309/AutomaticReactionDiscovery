@@ -57,7 +57,7 @@ def launch_ard_jobs():
     pool_collection = db['pool']
     status_collection = db['status']
 
-    if qm_collection.estimated_document_count() == 0:
+    if pool_collection.estimated_document_count() == 0:
         print('The ard not start')
         print('Starting ARD network exploring')
         script_path = path.join(path.dirname(path.dirname(path.abspath(__file__))), 'script')
@@ -68,7 +68,7 @@ def launch_ard_jobs():
         #initial_reactant_OBMol = next(pybel.readfile('xyz', path.join(script_path, 'reactant.xyz'))).OBMol
         #initial_reactant_inchi_key = from_ob_mol(rmgpy.molecule.molecule.Molecule(), initial_reactant_OBMol).to_inchi_key()
         initial_reactant = next(pybel.readfile('xyz', path.join(script_path, 'reactant.xyz')))
-        initial_reactant_inchi_key = initial_reactant.write('inchiKey')
+        initial_reactant_inchi_key = initial_reactant.write('inchiKey').strip()
         pool_collection.insert_one({'reactant_inchi_key':initial_reactant_inchi_key})
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],

@@ -208,16 +208,16 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
     rmg_mol_1 = toRMGmol(pyMol_1)
     pyMol_2 = xyz_to_pyMol(ard_prod_path)
     rmg_mol_2 = toRMGmol(pyMol_2)
-    if pyMol_1.write('inchiKey') != pyMol_2.write('inchiKey'):
-        num = len(list(qm_collection.find({'product_inchi_key':pyMol_1.write('inchiKey')})))
+    if pyMol_1.write('inchiKey').strip() != pyMol_2.write('inchiKey').strip():
+        num = len(list(qm_collection.find({'product_inchi_key':pyMol_1.write('inchiKey').strip()})))
         targets = list(qm_collection.find({'path':rxn_dir}))
         for i in targets:
-            if i['reactant_inchi_key'] == pyMol_1.write('inchiKey'):
-                dirname = dir_check(path.dirname(i['path']), pyMol_1.write('inchiKey'), num + 1)
+            if i['reactant_inchi_key'] == pyMol_1.write('inchiKey').strip():
+                dirname = dir_check(path.dirname(i['path']), pyMol_1.write('inchiKey').strip(), num + 1)
                 new_path = path.join(path.dirname(i['path']), dirname)
                 os.rename(rxn_dir, new_path)
                 prod_smi = pyMol_1.write('can').split()[0]
-                update_field = {'product_inchi_key':pyMol_1.write('inchiKey'), 
+                update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
                                 'initial_dir_name':rxn_dir, 
                                 'path':new_path, 
                                 'ssm_status': 'job_success', 
@@ -225,11 +225,11 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
                                 'Product SMILES': prod_smi}
                 qm_collection.update_one(i, {"$set": update_field}, True)
             else:
-                dirname = dir_check(path.dirname(i['path']), pyMol_1.write('inchiKey'), num + 1)
+                dirname = dir_check(path.dirname(i['path']), pyMol_1.write('inchiKey').strip(), num + 1)
                 new_path = path.join(path.dirname(i['path']), dirname)
                 os.rename(rxn_dir, new_path)
                 prod_smi = pyMol_1.write('can').split()[0]
-                update_field = {'product_inchi_key':pyMol_1.write('inchiKey'), 
+                update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
                                 'initial_dir_name':rxn_dir, 
                                 'path':new_path, 
                                 'ssm_status': 'job_success', 
@@ -860,7 +860,7 @@ def same_ard_prod_and_ssm_prod_checker(rxn_dir):
     rmg_mol_1 = toRMGmol(pyMol_1)
     pyMol_2 = xyz_to_pyMol(ard_prod_path)
     rmg_mol_2 = toRMGmol(pyMol_2)
-    if pyMol_1.write('inchiKey') != pyMol_2.write('inchiKey'):
+    if pyMol_1.write('inchiKey').strip() != pyMol_2.write('inchiKey').strip():
         return 'not_equal'
     else:
         return 'equal'
