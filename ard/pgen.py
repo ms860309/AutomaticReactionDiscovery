@@ -48,7 +48,11 @@ class Generate(object):
         self.add_bonds = []
         self.break_bonds = []
         self.initialize()
-        self.constraint = [0,1,2,3,4,5]
+        self.constraint = []
+        for idx, i in enumerate(self.atoms):
+            if i == 28:
+                self.constraint.append(idx)
+                
     def initialize(self):
         """
         Set the canonical SMILES for the reactant and extract the atomic

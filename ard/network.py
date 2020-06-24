@@ -46,7 +46,7 @@ class Network(object):
         qm_collection = db['qm_calculate_center']
         pool_collection = db['pool']
         statistics_collection = db['statistics']
-        targets = list(pool_collection.find({}, {'reactant_inchi_key':1}))
+        targets = list(pool_collection.find({}))
         #Add all reactant to a list for pgen filter isomorphic
         inchi_key_list = [i['reactant_inchi_key'] for i in targets]
         gen = Generate(mol_object, inchi_key_list)
@@ -61,11 +61,21 @@ class Network(object):
                                     'CBS_QB3_1dHR', 'DFT_QCI_thermo', 'BurkeH2O2', 'GRI-Mech3.0-N', ]
         # Filter reactions based on standard heat of reaction
         if self.method == "mopac":
-            H298_reactant = mopac(mol_object, self.forcefield)
-            H298_reac = H298_reactant.mopac_get_H298(mol_object)
+            if self.generations == 1:
+                H298_reactant = mopac(mol_object, self.forcefield)
+                H298_reac = H298_reactant.mopac_get_H298(mol_object)
+                update_field = {'reactant_energy':H298_reac}
+                pool_collection.update_one(targets[0], {"$set": update_field}, True)
+            elif self.generations > 1:
+                H298_reac = targets[0]['reactant_energy']
             prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol)]
         else:
-            H298_reac = self.reac_mol.getH298(thermo_db)
+            if self.generations == 1:
+                H298_reac = self.reac_mol.getH298(thermo_db)
+                update_field = {'reactant_energy':H298_reac}
+                pool_collection.update_one(targets[0], {"$set": update_field}, True)
+            elif self.generations > 1:
+                H298_reac = targets[0]['reactant_energy']
             prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, mol, thermo_db)]
         #check product isomorphic and filter them
         if self.nbreak == 3 and self.nform == 3:

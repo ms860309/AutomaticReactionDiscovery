@@ -65,8 +65,10 @@ def launch_ard_jobs():
             os.chdir(script_path)
         subfile = create_ard_sub_file(script_path, script_path, 1, 'reactant.xyz')
         # first reactant need to add to pool
-        initial_reactant_OBMol = next(pybel.readfile('xyz', path.join(script_path, 'reactant.xyz'))).OBMol
-        initial_reactant_inchi_key = from_ob_mol(rmgpy.molecule.molecule.Molecule(), initial_reactant_OBMol).to_inchi_key()
+        #initial_reactant_OBMol = next(pybel.readfile('xyz', path.join(script_path, 'reactant.xyz'))).OBMol
+        #initial_reactant_inchi_key = from_ob_mol(rmgpy.molecule.molecule.Molecule(), initial_reactant_OBMol).to_inchi_key()
+        initial_reactant = next(pybel.readfile('xyz', path.join(script_path, 'reactant.xyz')))
+        initial_reactant_inchi_key = initial_reactant.write('inchiKey')
         pool_collection.insert_one({'reactant_inchi_key':initial_reactant_inchi_key})
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
