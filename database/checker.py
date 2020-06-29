@@ -471,9 +471,10 @@ def select_irc_target(direction = 'forward'):
     """
     qm_collection = db['qm_calculate_center']
     irc_status = 'irc_{}_status'.format(direction)
-    query = {{irc_status:
-                        {"$in":
-                        ["job_launched", "job_running", "job_queueing"]}}
+    query = {irc_status:
+                    {"$in": 
+                        ["job_launched", "job_running", "job_queueing"] 
+                    }
                 }
     targets = list(qm_collection.find(query))
 
@@ -555,9 +556,9 @@ def check_irc_content_status(target_path, direction = 'forward'):
         return 'need opt'
     elif lines[-5] == '        *  Thank you very much for using Q-Chem.  Have a nice day.  *\n':
         return 'job_success'
-    elif lines[-2] == ' Bad initial gradient\n'
+    elif lines[-2] == ' Bad initial gradient\n':
         return 'Bad initial gradient'
-    elif lines[-2] == ' IRC --- Failed line search\n'
+    elif lines[-2] == ' IRC --- Failed line search\n':
         return 'Failed line search'
     else:
         return 'unknown fail information'
@@ -591,18 +592,18 @@ def check_irc_jobs():
         if orig_status != new_status:
             if new_status == 'job_success':
                 update_field = {
-                    'irc_status':new_status, 'irc_equal':'waiting for check'
+                    irc_status:new_status, 'irc_equal':'waiting for check'
                                 }
                 qm_collection.update_one(target, {"$set": update_field}, True)
             elif new_status == 'need opt':
                 opt_status = 'opt_{}_status'.format('forward')
                 update_field = {
-                    'irc_status':new_status, 'opt_status':'job_unrun'
+                    irc_status:new_status, 'opt_status':'job_unrun'
                                 }
                 qm_collection.update_one(target, {"$set": update_field}, True)
             else:
                 update_field = {
-                                'irc_status': new_status
+                                irc_status: new_status
                             }
                 qm_collection.update_one(target, {"$set": update_field}, True)
     
@@ -627,18 +628,18 @@ def check_irc_jobs():
         if orig_status != new_status:
             if new_status == 'job_success':
                 update_field = {
-                    'irc_status':new_status, 'irc_equal':'waiting for check'
+                    irc_status:new_status, 'irc_equal':'waiting for check'
                                 }
                 qm_collection.update_one(target, {"$set": update_field}, True)
             elif new_status == 'need opt':
-                opt_status = 'opt_{}_status'.format('reverse')
+                opt_status = 'opt_{}_status'.format('forward')
                 update_field = {
-                    'irc_status':new_status, 'opt_status':'job_unrun'
+                    irc_status:new_status, 'opt_status':'job_unrun'
                                 }
                 qm_collection.update_one(target, {"$set": update_field}, True)
             else:
                 update_field = {
-                                'irc_status': new_status
+                                irc_status: new_status
                             }
                 qm_collection.update_one(target, {"$set": update_field}, True)
 
@@ -659,7 +660,7 @@ def select_ts_barrier_target():
                         ['job_success']}},
                     {'energy_status':
                         {'$in':
-                            ['job_success']}}
+                            ['job_success', 'job_fail']}}
                     ]
                 }
     targets = list(qm_collection.find(query))
@@ -690,7 +691,7 @@ def check_ts_barrier_jobs():
     for target in targets:
         min_energy = list(qm_collection.aggregate(
             [
-                {"$match": {'reactant_inchi_key':target[reactant_inchi_key]}},
+                {"$match": {'reactant_inchi_key':target['reactant_inchi_key']}},
                 {"$group":{"_id":{}, 'reactant_scf_energy':{'$min':"$reactant_scf_energy"}}}
             ]
         ))
@@ -734,7 +735,6 @@ def check_ard_barrier_jobs(generations):
     ts_fail_and_success_number = len(list(qm_collection.find(ts_query)))
     ard_query = {'ard_status':'job_unrun'}
     ard_number = len(list(qm_collection.find(ard_query)))
-    print(ssm_success_number) 
     if ssm_success_number == ts_fail_and_success_number and ard_number == 0:
         check_ts_barrier_jobs()
         

@@ -83,7 +83,7 @@ def launch_ard_jobs():
         status_collection.insert_one({'status':'ARD had launched'})
     else:
         targets = select_ard_target()
-        if len(list(targets)) != 0:
+        if targets:
             for target in list(targets):
                 dir_path, gen_num, ard_ssm_equal = target[0], target[1], target[2]
                 script_path = path.join(path.dirname(path.dirname(dir_path)), 'script')
@@ -96,7 +96,8 @@ def launch_ard_jobs():
                 else:
                     next_reactant = 'product.xyz'
                     subfile = create_ard_sub_file(dir_path, script_path, gen_num, next_reactant)
-                if not os.path.exists(subfile):
+                    
+                if os.path.exists(subfile):
                     cmd = 'qsub {}'.format(subfile)
                     process = subprocess.Popen([cmd],
                                         stdout=subprocess.PIPE,
@@ -106,6 +107,7 @@ def launch_ard_jobs():
                     job_id = stdout.decode().replace("\n", "")
                     # update status job_launched
                     update_ard_status(target[0], job_id)
+                    os.remove(subfile)
 
 def create_ard_sub_file(dir_path, script_path, gen_num, next_reactant, ncpus = 1, mpiprocs = 1, ompthreads = 1):
     subfile = path.join(dir_path, 'ard.job')

@@ -190,7 +190,7 @@ class Generate(object):
                 mol.setCoordsFromMol(self.reac_mol)
                 if mol.write('inchiKey').strip() not in self.reactant_inchikey:
                 #if mol.toRMGMolecule().to_inchi_key() not in self.reactant_inchikey:
-                    self.prod_mols.append(mol)
+                    
                     """
                     for SSM calculation
                     """
@@ -220,6 +220,8 @@ class Generate(object):
                                     
                     self.add_bonds.append(form_bonds)
                     self.break_bonds.append(break_bonds)
+                    if len(form_bonds) == 2 and len(break_bonds) == 2:
+                        self.prod_mols.append(mol)
 
 
     def _generateProductsHelper(self, nbreak, nform, products, bonds, valences, bonds_form_all, bonds_broken=None):
@@ -238,9 +240,11 @@ class Generate(object):
             if len(bonds_broken) > 1:
                 if (bonds_broken[0][0] not in self.constraint and bonds_broken[0][1] not in self.constraint) and (bonds_broken[1][0] not in self.constraint and bonds_broken[1][1] not in self.constraint):
                     products.add((tuple(sorted(bonds))))
+            """
             elif len(bonds_broken) == 1:
                 if bonds_broken[0][0] not in self.constraint and bonds_broken[0][1] not in self.constraint:
                     products.add((tuple(sorted(bonds))))
+            """
         if nbreak > 0:
             # Break bond
             for bond_break_idx, bond_break in enumerate(bonds):
