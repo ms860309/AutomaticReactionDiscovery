@@ -508,7 +508,7 @@ def check_irc_content_status(target_path, direction = 'forward'):
     reactant_path = os.path.join(target_path, 'reactant.xyz')
     irc_path = os.path.join(target_path, 'IRC/')
     opt_name = '{}_opt.in'.format(direction)
-    opt_in = os.path.join(target_path, opt_name)
+    opt_in = os.path.join(irc_path, opt_name)
     if direction == 'forward':
         irc_output = os.path.join(irc_path, 'irc_forward.out')
     else:
@@ -560,6 +560,8 @@ def check_irc_content_status(target_path, direction = 'forward'):
         return 'Bad initial gradient'
     elif lines[-2] == ' IRC --- Failed line search\n':
         return 'Failed line search'
+    elif lines[-6] == ' Error in gen_scfman\n':
+        return 'Error in gen_scfman'
     else:
         return 'unknown fail information'
     
@@ -591,6 +593,7 @@ def check_irc_jobs():
         orig_status = target[irc_status]
         if orig_status != new_status:
             if new_status == 'job_success':
+                generate_xyz(target, direction='forward')
                 update_field = {
                     irc_status:new_status, 'irc_equal':'waiting for check'
                                 }
@@ -627,6 +630,7 @@ def check_irc_jobs():
         orig_status = target[irc_status]
         if orig_status != new_status:
             if new_status == 'job_success':
+                generate_xyz(target, direction='reverse')
                 update_field = {
                     irc_status:new_status, 'irc_equal':'waiting for check'
                                 }
@@ -643,7 +647,33 @@ def check_irc_jobs():
                             }
                 qm_collection.update_one(target, {"$set": update_field}, True)
 
-
+def generate_xyz(target, direction='forward'):
+    irc_path = os.path.join(target, 'IRC')
+    reactant_path = os.path.join(target, 'reactant.xyz')
+    
+    with open(reactant_path, 'r') as f1:
+        lines = f1.readlines()
+    atom_number = int(lines[0])
+    output_name = 'irc_{}.out'.format(direction)
+    output = os.path.join(irc_path, output_name)
+    with open(output, 'r') as f:
+        f.seek(0, 2)
+        fsize = f.tell()
+        f.seek(max(fsize - 6144, 0), 0)  # Read last  kB of file
+        lines = f.readlines()
+    for idx, i in enumerate(lines):
+        if i.startswith('             Standard Nuclear Orientation (Angstroms)\n'):
+            break
+    geo = []
+    for i in lines[idx + 3 : idx + 3 + atom_number]:
+        atom = i.split()[1:]
+        geo.append('  '.join(atom))
+    name = '{}.xyz'.format(direction)
+    with open(name, 'w') as f:
+        f.write(str(atom_number))
+        f.write('\n\n')
+        f.write('\n'.join(geo))
+        
 def select_ts_barrier_target():
     """
     This method is to inform job checker which targets 
@@ -977,13 +1007,191 @@ def clean_same(targets):
                     update_field = {'unique':'have another lower barrier reaction'}
                     reactions_collection.update_one(target, {"$set": update_field}, True)
 
+
+def select_irc_equal_target():
+    """
+    This method is to inform job checker which targets 
+    to check, which need meet one requirement:
+    1. status is job_launched or job_running
+    Returns a list of targe
+    """
+
+    qm_collection = db['qm_calculate_center']
+    query = {'$and': 
+                    [
+                    { "irc_forward_status":
+                        {"$in":
+                        ['job_success']}},
+                    {'irc_reverse_status':
+                        {'$in':
+                            ['job_success']}}
+                    ]
+                }
+    targets = list(qm_collection.find(reg_query))
+
+    return targets
+
+def check_irc_equal():
+
+    targets = select_irc_equal_target()
+    qm_collection = db['qm_calculate_center']
+    
+    for target in targets:
+        new_status = check_irc_equal_status(target)
+        orig_status = target['irc_equal']
+        if orig_status != new_status:
+            update_field = {
+                                'irc_equal': new_status
+                            }
+            qm_collection.update_one(target, {"$set": update_field}, True)
+            
+def check_irc_equal_status(target):
+    
+    irc_path = os.path.join(target, 'IRC/')
+    reactant_path = os.path.join(target, 'reactant.xyz')
+    product_path = os.path.join(target, 'ssm_product.xyz')
+    forward_output = os.path.join(irc_path, 'forward.xyz')
+    reverse_output = os.path.join(irc_path, 'reverse.xyz')
+    
+    pyMol_1 = xyz_to_pyMol(reactant_path)
+    pyMol_2 = xyz_to_pyMol(product_path)
+    pyMol_3 = xyz_to_pyMol(forward_output)
+    pyMol_4 = xyz_to_pyMol(reverse_output)
+    
+    if pyMol_3.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip():
+        return 'forward equal to reverse'
+    elif (pyMol_1.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip()) and (pyMol_1.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip()):
+        return 'forward and reverse equal to reactant'
+    elif (pyMol_2.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip()) and (pyMol_2.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip()):
+        return 'forward and reverse equal to product'
+    elif pyMol_1.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip():
+        return 'forward equal to reactant'
+    elif pyMol_1.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip():
+        return 'reverse equal to reactant'
+    elif pyMol_2.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip():
+        return 'forward equal to product'
+    elif pyMol_2.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip():
+        return 'reverse equal to product'
+    else:
+        return 'unknown'
+    
+def select_irc_opt_target(direction = 'forward'):
+    """
+    This method is to inform job checker which targets 
+    to check, which need meet one requirement:
+    1. status is job_launched or job_running
+    Returns a list of targe
+    """
+
+    qm_collection = db['qm_calculate_center']
+    irc_status = 'irc_{}'.format(str(direction))
+    targets = list(qm_collection.find(reg_query))
+    reg_query = {irc_status:
+                    {"$in":
+                        ["job_launched", "job_running", "job_queueing"]
+                    }
+                }
+    targets = list(qm_collection.find(reg_query))
+
+    return targets
+
+def check_irc_opt_status(job_id):
+    """
+    This method checks pbs status of a job given job_id
+    Returns off_queue or job_launched or job_running
+    """
+
+    commands = ['qstat', '-f', job_id]
+    process = subprocess.Popen(commands,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    if "Unknown Job Id" in stderr.decode():
+        return "off_queue"
+
+    # in pbs stdout is byte, so we need to decode it at first.
+    stdout = stdout.decode().strip().split()
+    idx = stdout.index('job_state')
+    if stdout[idx+2] == 'R':
+        return "job_running"
+    elif stdout[idx+2] == 'Q':
+        return 'job_queueing'
+    else:
+        return "job_launched"
+    
+def check_irc_opt_content_status(dir_path, direction = 'forward'):
+    
+    irc_path = path.join(dir_path, "IRC")
+    outputname = '{}_opt.out'.format(direction)
+    with open(outputname, 'w') as f:
+        # TO DO
+
+def check_irc_opt_job():
+    """
+    This method checks job with following steps:
+    1. select jobs to check
+    2. check the job pbs-status, e.g., qstat -f "job_id"
+    3. check job content
+    4. update with new status
+    """
+    # 1. select jobs to check
+    targets = select_irc_opt_target(direction = 'forward')
+    irc_opt_jobid = 'irc_{}_opt_jobid'.format(str('forward'))
+    qm_collection = db['qm_calculate_center']
+    
+    # 2. check the job pbs_status
+    for target in targets:
+        job_id = target[irc_opt_jobid]
+        new_status = check_irc_opt_status(job_id)
+        if new_status == "off_queue":
+                # 3. check job content
+                new_status = check_irc_opt_content_status(target['path'])
+
+                # 4. check with original status which
+                # should be job_launched or job_running
+                # if any difference update status
+                irc_status = 'irc_{}'.format(str('forward'))
+                orig_status = target[irc_status]
+                if orig_status != new_status:
+                    update_field = {
+                                       irc_status: new_status,
+                                   }
+                    qm_collection.update_one(target, {"$set": update_field}, True)
+    # 1. select jobs to check
+    targets = select_irc_opt_target(direction = 'reverse')
+    irc_opt_jobid = 'irc_{}_opt_jobid'.format(str('reverse'))
+    qm_collection = db['qm_calculate_center']
+    
+    # 2. check the job pbs_status
+    for target in targets:
+        job_id = target[irc_opt_jobid]
+        new_status = check_irc_opt_status(job_id)
+        if new_status == "off_queue":
+                # 3. check job content
+                new_status = check_irc_opt_content_status(target['path'])
+
+                # 4. check with original status which
+                # should be job_launched or job_running
+                # if any difference update status
+                irc_status = 'irc_{}'.format(str('reverse'))
+                orig_status = target[irc_status]
+                if orig_status != new_status:
+                    update_field = {
+                                       irc_status: new_status,
+                                   }
+                    qm_collection.update_one(target, {"$set": update_field}, True)
+                    
 check_energy_jobs()
 check_ssm_jobs()
 check_ts_jobs()
 check_irc_jobs()
+check_irc_equal()
+check_irc_opt_job()
 #check_same_ssm_jobs()
 #check_same_ts_jobs()
 #check_same_barrier()
+
 
 qm_collection = db['qm_calculate_center']
 max_gen = qm_collection.find_one(sort=[("generations", -1)])

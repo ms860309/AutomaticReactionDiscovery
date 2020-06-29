@@ -52,6 +52,7 @@ class Network(object):
         gen = Generate(mol_object, inchi_key_list)
         gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
         prod_mols = gen.prod_mols
+        raise
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
         # Load thermo database and choose which libraries to search

@@ -144,7 +144,7 @@ class Generate(object):
             raise Exception('Breaking/forming bonds is limited to a maximum of 3')
 
         # Extract bonds as an unmutable sequence (indices are made compatible with atom list)
-        
+        """
         reactant_bonds = tuple(sorted(
             [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
              for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
@@ -155,7 +155,7 @@ class Generate(object):
         for i in reactant_bonds:
             a.append((i[0]-1,i[1]-1,i[2]))
         reactant_bonds = tuple(a)
-        """
+        
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]
         # Initialize set for storing bonds of products
@@ -220,7 +220,9 @@ class Generate(object):
                                     
                     self.add_bonds.append(form_bonds)
                     self.break_bonds.append(break_bonds)
-                    if len(form_bonds) == 2 and len(break_bonds) == 2:
+                    print(form_bonds)
+                    print(break_bonds)
+                    if len(form_bonds) == nform and len(break_bonds) == nbreak:
                         self.prod_mols.append(mol)
 
 

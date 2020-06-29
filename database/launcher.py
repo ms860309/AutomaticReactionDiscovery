@@ -572,11 +572,85 @@ def update_same_irc_status(target, job_id, direction):
     irc_jobid = 'irc_{}_jobid'.format(str(direction))
     update_field = {irc_status:"job_launched", irc_jobid:job_id}
     reactions_collection.update_one(reg_query, {"$unset": {'irc':""}, "$set": update_field}, True)
+
+"""
+Submmit opt job which is from irc
+1. select unrun job
+2. push unrun job to qchem
+3. update status "job_launched"
+"""
+
+def select_irc_opt_target(direction = 'forward'):
     
+    qm_collection = db['qm_calculate_center']
+    irc_status = 'irc_{}_status'.format(direction)
+    reg_query = {irc_status:"need opt"}
+    targets = list(reactions_collection.find(reg_query))
+    selected_targets = [target['path'] for target in targets]
+    return selected_targets
+
+def launch_irc_opt_jobs():
+    
+    targets = select_irc_opt_target(direction = 'forward')
+    for target in targets:
+        IRC_dir_path = path.join(target, 'IRC/')
+        subfile = create_irc_opt_sub_file(IRC_dir_path, direction = 'forward')
+        cmd = 'qsub {}'.format(subfile)
+        process = subprocess.Popen([cmd],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, shell = True)
+        stdout, stderr = process.communicate()
+        # get job id from stdout, e.g., "106849.h81"
+        job_id = stdout.decode().replace("\n", "")
+        # update status job_launched
+        update_same_irc_status(target, job_id, direction = 'forward')
+        
+    targets = select_irc_opt_target(direction = 'reverse')
+    for target in targets:
+        IRC_dir_path = path.join(target, 'IRC/')
+        subfile = create_irc_opt_sub_file(IRC_dir_path, direction = 'reverse')
+        cmd = 'qsub {}'.format(subfile)
+        process = subprocess.Popen([cmd],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, shell = True)
+        stdout, stderr = process.communicate()
+        # get job id from stdout, e.g., "106849.h81"
+        job_id = stdout.decode().replace("\n", "")
+        # update status job_launched
+        update_same_irc_status(target, job_id, direction = 'reverse')
+
+
+def update_irc_opt_status(target, job_id, direction):
+    qm_collection = db['qm_calculate_center']
+    reg_query = {"path":target}
+    irc_status = 'irc_{}'.format(str(direction))
+    irc_opt_jobid = 'irc_{}_opt_jobid'.format(str(direction))
+    update_field = {irc_status:"opt_job_launched", irc_opt_jobid:job_id}
+    qm_collection.update_one(reg_query, {"$set": update_field}, True)
+    
+
+def create_irc_opt_sub_file(irc_path, direction = 'forward', ncpus = 1, mpiprocs = 1, ompthreads = 1):
+    subfile = path.join(irc_path, 'irc_opt.job')
+
+    shell = '#!/usr/bin/bash'
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    target_path = 'cd {}'.format(irc_path)
+    nes1 = 'module load qchem'
+    nes2 = 'export QCSCRATCH=/tmp/$PBS_JOBID'
+    nes3 = 'mkdir -p $QCSCRATCH'
+    inputname = '{}_opt.in'.format(direction)
+    outputname = '{}_opt.out'.format(direction)
+    nes4 = 'qchem -nt 1 {} {}'.format(inputname, outputname)
+    nes5 = 'rm -r $QCSCRATCH'
+    with open(subfile, 'w') as f:
+        f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, nes2, nes3, nes4, nes5))
+    return subfile
+
 launch_energy_jobs()
 launch_ssm_jobs()
 launch_ts_jobs()
 launch_irc_jobs()
+launch_irc_opt_jobs()
 #launch_same_ssm_jobs()
 #launch_same_ts_jobs()
 #launch_same_irc_jobs()
