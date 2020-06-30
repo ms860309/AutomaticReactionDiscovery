@@ -7,7 +7,7 @@ import pybel
 import psutil
 import time
 import logging
-
+import util
 class MopacError(Exception):
     """
     An exception class for errors that occur during mopac calculations.
@@ -19,8 +19,11 @@ class mopac(object):
     def __init__(self, reac_mol, forcefield):
         self.reac_mol = reac_mol
         self.forcefield = forcefield
-        self.logger = util.initializeLog(log_level, os.path.join(self.output_dir, 'ARD.log'), logname='main')
+        log_level = logging.INFO
+        process = psutil.Process(os.getpid())
+        self.logger = util.initializeLog(log_level, os.path.join(os.getcwd(), 'ARD.log'), logname='main')
         self.logger.info('\nARD initiated on ' + time.asctime() + '\n')
+        self.logger.info('memory usage: {}'.format(process.memory_percent()))
 
     def mopac_get_H298(self, InputFile, charge = 0, multiplicity = 'SINGLET', method = 'PM6'):
         """
@@ -78,7 +81,7 @@ class mopac(object):
 
         geometry = InputFile.toNode()
         geometry = str(geometry)
-        self.logger.info('\nStructure:\n{}\n'.format(str(geometry))
+        self.logger.info('\nStructure:\n{}\n'.format(str(geometry)))
         geometry = geometry.splitlines()
         output = []
         for i in geometry:
