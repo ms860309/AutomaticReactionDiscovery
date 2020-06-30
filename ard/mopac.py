@@ -5,6 +5,8 @@ from subprocess import Popen, PIPE
 import gen3D
 import pybel
 import psutil
+import time
+import logging
 
 class MopacError(Exception):
     """
@@ -17,6 +19,8 @@ class mopac(object):
     def __init__(self, reac_mol, forcefield):
         self.reac_mol = reac_mol
         self.forcefield = forcefield
+        self.logger = util.initializeLog(log_level, os.path.join(self.output_dir, 'ARD.log'), logname='main')
+        self.logger.info('\nARD initiated on ' + time.asctime() + '\n')
 
     def mopac_get_H298(self, InputFile, charge = 0, multiplicity = 'SINGLET', method = 'PM6'):
         """
@@ -34,9 +38,10 @@ class mopac(object):
         with open(input_path, 'w') as f:
             f.write(" AUX LARGE CHARGE={} {} {} GEO-OK".format(charge, multiplicity, method))
             f.write("\n{}".format(geometry))
-
+        start_time = time.time()
         self.runMopac(tmpdir)
         result = self.getHeatofFormation(tmpdir)
+        self.finalize(start_time, 'mopac')
         """
         info = psutil.virtual_memory()
         print("cpu numbers : {}".format(psutil.cpu_count()))
@@ -47,6 +52,7 @@ class mopac(object):
         return float(result)
     
     def genInput(self, InputFile):
+        start_time = time.time()
 
         reac_mol = self.reac_mol
         Hatom = gen3D.readstring('smi', '[H]')
@@ -72,6 +78,7 @@ class mopac(object):
 
         geometry = InputFile.toNode()
         geometry = str(geometry)
+        self.logger.info('\nStructure:\n{}\n'.format(str(geometry))
         geometry = geometry.splitlines()
         output = []
         for i in geometry:
@@ -83,7 +90,16 @@ class mopac(object):
             output.append(out)
         output = "\n".join(output)
         reac_mol.setCoordsFromMol(reac_mol_copy)
+
+        self.finalize(start_time, 'arrange')
+        
         return output
+
+    def finalize(self, start_time, jobname):
+        """
+        Finalize the job.
+        """
+        self.logger.info('Total {} run time: {:.1f} s'.format(jobname, time.time() - start_time))
 
     def getHeatofFormation(self, tmpdir):
         """

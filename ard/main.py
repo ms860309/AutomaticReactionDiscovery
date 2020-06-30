@@ -53,7 +53,7 @@ class ARD(object):
     """
 
     def __init__(self, reac_smi, imaginarybond=0, nbreak=3, nform=3, dh_cutoff=20.0, theory_low=None,
-                 forcefield='mmff94', distance=3.5, output_dir='', **kwargs):
+                 forcefield='uff', distance=3.5, output_dir='', **kwargs):
         self.reac_smi = reac_smi
         self.imaginarybond = int(imaginarybond)
         self.nbreak = int(nbreak)

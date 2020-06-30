@@ -220,8 +220,6 @@ class Generate(object):
                                     
                     self.add_bonds.append(form_bonds)
                     self.break_bonds.append(break_bonds)
-                    print(form_bonds)
-                    print(break_bonds)
                     if len(form_bonds) == nform and len(break_bonds) == nbreak:
                         self.prod_mols.append(mol)
 
