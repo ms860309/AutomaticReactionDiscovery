@@ -630,8 +630,8 @@ def update_irc_opt_status(target, job_id, direction):
     
 
 def create_irc_opt_sub_file(irc_path, direction = 'forward', ncpus = 1, mpiprocs = 1, ompthreads = 1):
-    subfile = path.join(irc_path, 'irc_opt.job')
-
+    job_name = 'irc_{}_opt.job'.format(direction)
+    subfile = path.join(irc_path, job_name)
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(irc_path)

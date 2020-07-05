@@ -220,10 +220,33 @@ class Generate(object):
                                     
                     self.add_bonds.append(form_bonds)
                     self.break_bonds.append(break_bonds)
+                    
+
+                    
                     if len(form_bonds) == nform and len(break_bonds) == nbreak:
-                        self.prod_mols.append(mol)
+                        if self.check_bond_type(bonds):
+                            self.prod_mols.append(mol)
 
-
+    def check_bond_type(self, bonds):
+        
+        bond_type = {}
+        
+        for i in range(len(self.atoms)):
+            num = 0
+            for j in bonds:
+                if j[0] == i or j[1] == i:
+                    num += j[2]
+            bond_type[i] = num
+        tmp = []
+        for idx, i in enumerate(self.atoms):
+            if i == 6:
+                if bond_type[idx] != 4:
+                    tmp.append(idx)
+        if len(tmp) == 0:
+            return 1
+        else:
+            return 0
+        
     def _generateProductsHelper(self, nbreak, nform, products, bonds, valences, bonds_form_all, bonds_broken=None):
         """
         Generate products recursively given the number of bonds that should be

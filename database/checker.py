@@ -659,13 +659,15 @@ def generate_xyz(target, direction='forward'):
     with open(output, 'r') as f:
         f.seek(0, 2)
         fsize = f.tell()
-        f.seek(max(fsize - 6144, 0), 0)  # Read last  kB of file
+        f.seek(max(fsize - 20480, 0), 0)  # Read last  20kB of file
         lines = f.readlines()
+    num = []
     for idx, i in enumerate(lines):
         if i.startswith('             Standard Nuclear Orientation (Angstroms)\n'):
-            break
+            num.append(idx)
     geo = []
-    for i in lines[idx + 3 : idx + 3 + atom_number]:
+    lines[num[-2]+3:num[-2]+15]
+    for i in lines[num[-2] + 3 : num[-2] + 3 + atom_number]:
         atom = i.split()[1:]
         geo.append('  '.join(atom))
     name = '{}.xyz'.format(direction)
@@ -1121,12 +1123,44 @@ def check_irc_opt_status(job_id):
         return "job_launched"
     
 def check_irc_opt_content_status(dir_path, direction = 'forward'):
-    
+    reactant_path = os.path.join(dir_path, 'reactant.xyz')
     irc_path = path.join(dir_path, "IRC")
+    
+    xyzname = '.xyz'.format(direction)
+    output = os.path.join(irc_path, xyzname)
+    
+    with open(reactant_path, 'r') as f1:
+        lines = f1.readlines()
+    atom_number = int(lines[0])
+    
     outputname = '{}_opt.out'.format(direction)
-    with open(outputname, 'w') as f:
-        # TO DO
+    
+    with open(outputname, 'r') as f:
+        f.seek(0, 2)
+        fsize = f.tell()
+        f.seek(max(fsize - 4096, 0), 0)  # Read last  4kB of file
+        lines = f.readlines()
+        
+    if lines[-5] == '        *  Thank you very much for using Q-Chem.  Have a nice day.  *\n':
+        for idx, i in enumerate(lines):
+            if i.startswith('                       Coordinates (Angstroms)\n'):
+                break
 
+        geo = []
+        for i in lines[idx + 2 : idx + 2 + atom_number]:
+            atom = i.split()[1:]
+            geo.append('  '.join(atom))
+
+        with open(output, 'w') as f2:
+            f2.write(str(len(geo)))
+            f2.write('\n\n')
+            f2.write('\n'.join(geo))
+            
+        return 'job_success'
+    else:
+        return 'job_fail'
+        
+    
 def check_irc_opt_job():
     """
     This method checks job with following steps:
@@ -1155,9 +1189,10 @@ def check_irc_opt_job():
                 orig_status = target[irc_status]
                 if orig_status != new_status:
                     update_field = {
-                                       irc_status: new_status,
-                                   }
+                                    irc_status: new_status
+                                }
                     qm_collection.update_one(target, {"$set": update_field}, True)
+                               
     # 1. select jobs to check
     targets = select_irc_opt_target(direction = 'reverse')
     irc_opt_jobid = 'irc_{}_opt_jobid'.format(str('reverse'))
@@ -1178,8 +1213,8 @@ def check_irc_opt_job():
                 orig_status = target[irc_status]
                 if orig_status != new_status:
                     update_field = {
-                                       irc_status: new_status,
-                                   }
+                                    irc_status: new_status
+                                }
                     qm_collection.update_one(target, {"$set": update_field}, True)
                     
 check_energy_jobs()
