@@ -16,9 +16,11 @@ class MopacError(Exception):
 
 class mopac(object):
 
-    def __init__(self, reac_mol, forcefield):
+    def __init__(self, reac_mol, forcefield, reactant_bonds, product_bonds):
         self.reac_mol = reac_mol
         self.forcefield = forcefield
+        self.reactant_bonds = reactant_bonds
+        self.product_bonds = product_bonds
         log_level = logging.INFO
         process = psutil.Process(os.getpid())
         self.logger = util.initializeLog(log_level, os.path.join(os.getcwd(), 'ARD.log'), logname='main')
@@ -66,7 +68,7 @@ class mopac(object):
         InputFile.gen3D(forcefield=self.forcefield, make3D=False)
         
         try:
-            arrange3D = gen3D.Arrange3D(reac_mol, InputFile)
+            arrange3D = gen3D.Arrange3D(reac_mol, InputFile, self.reactant_bonds, self.product_bonds)
             msg = arrange3D.arrangeIn3D()
             if msg != '':
                 print(msg)

@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-#PBS -l select=1:ncpus=1:mpiprocs=1:ompthreads=1
+#PBS -l select=1:ncpus=8:mpiprocs=1:ompthreads=8
 #PBS -q workq
 #PBS -j oe
 

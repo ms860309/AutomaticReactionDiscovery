@@ -47,6 +47,8 @@ class Generate(object):
         self.prod_mols = []
         self.add_bonds = []
         self.break_bonds = []
+        self.reactant_bonds = []
+        self.product_bonds = []
         self.initialize()
         self.constraint = []
         for idx, i in enumerate(self.atoms):
@@ -151,11 +153,14 @@ class Generate(object):
         ))
         """
         a = []
+        manual_bonds = []
         reactant_bonds = [(1, 2, 1), (1, 3, 1), (1, 4, 1), (1, 5, 1), (1, 12, 1), (2, 3, 1), (2, 4, 1), (2, 6, 1), (3, 5, 1), (3, 6, 1), (3, 10, 1), (4, 5, 1), (4, 6, 1), (5, 6, 1), (7, 14, 1), (8, 15, 1), (9, 10, 1), (9, 13, 1), (10, 11, 2), (11, 12, 1), (11, 17, 1), (12, 13, 2), (13, 14, 1), (14, 15, 1), (14, 16, 1)]
         for i in reactant_bonds:
             a.append((i[0]-1,i[1]-1,i[2]))
+            manual_bonds.append((i[0]-1, i[1]-1))
         reactant_bonds = tuple(a)
         
+        self.reactant_bonds = list(manual_bonds)
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]
         # Initialize set for storing bonds of products
@@ -226,6 +231,10 @@ class Generate(object):
                     if len(form_bonds) == nform and len(break_bonds) == nbreak:
                         if self.check_bond_type(bonds):
                             self.prod_mols.append(mol)
+                            temp = []
+                            for i in bonds:
+                                temp.append((i[0]-1, i[1]-1))
+                            self.product_bonds.append(tuple(temp))
 
     def check_bond_type(self, bonds):
         

@@ -506,7 +506,7 @@ class Arrange3D(object):
 
     """
 
-    def __init__(self, mol_1, mol_2):
+    def __init__(self, mol_1, mol_2, bonds_1, bond_2):
         if not (0 < len(mol_1.mols) <= 4 and 0 < len(mol_2.mols) <= 4):
             raise Exception('More than 4 molecules are not supported')
 
@@ -522,6 +522,8 @@ class Arrange3D(object):
         self.def_2 = None
         self.nodes_1 = None
         self.nodes_2 = None
+        self.reactant_bonds = bonds_1
+        self.product_bonds = bonds_2
 
         self.initializeVars(mol_1, mol_2)
 
@@ -553,7 +555,7 @@ class Arrange3D(object):
                 atom_in_mol_2[j] = i
 
         # Initialize broken_bonds list
-        for bond in list(set(bonds_mol_2) ^ set(bonds_mol_1)):
+        for bond in list(set(self.product_bonds) ^ set(self.reactant_bonds)):
             i, j = atom_in_mol_1[bond[0]], atom_in_mol_1[bond[1]]
             self.bonds_1.append([(i, mol_1.mols_indices[i].index(bond[0])), (j, mol_1.mols_indices[j].index(bond[1]))])
             i, j = atom_in_mol_2[bond[0]], atom_in_mol_2[bond[1]]
@@ -563,7 +565,7 @@ class Arrange3D(object):
         natoms = len(mol_1.atoms)
         connectivity = [[0 for i in range(natoms)] for k in range(natoms)]
 
-        for bond in list(set(bonds_mol_1) | set(bonds_mol_2)):
+        for bond in list(set(self.reactant_bonds) | set(self.product_bonds)):
             connectivity[bond[0]][bond[1]], connectivity[bond[1]][bond[0]] = 1, 1
 
         # Generate a list of dihedral angles to be compared between reactant and product
