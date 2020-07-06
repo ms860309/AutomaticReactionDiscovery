@@ -41,7 +41,7 @@ class mopac(object):
 
         geometry = self.genInput(InputFile)
         with open(input_path, 'w') as f:
-            f.write(" AUX LARGE CHARGE={} {} {} GEO-OK".format(charge, multiplicity, method))
+            f.write(" LARGE CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
             f.write("\n{}".format(geometry))
         start_time = time.time()
         self.runMopac(tmpdir)
@@ -66,7 +66,7 @@ class mopac(object):
         reac_mol_copy, InputFile_copy= reac_mol.copy(), InputFile.copy()
         reac_mol.gen3D(forcefield=self.forcefield, make3D=False)
         InputFile.gen3D(forcefield=self.forcefield, make3D=False)
-        
+
         try:
             arrange3D = gen3D.Arrange3D(reac_mol, InputFile, self.reactant_bonds, self.product_bonds)
             msg = arrange3D.arrangeIn3D()

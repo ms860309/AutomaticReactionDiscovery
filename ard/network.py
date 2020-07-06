@@ -64,13 +64,13 @@ class Network(object):
         # Filter reactions based on standard heat of reaction
         if self.method == "mopac":
             if self.generations == 1:
-                H298_reactant = mopac(mol_object, self.forcefield, reactant_bonds[0], reactant_bonds[0])
+                H298_reactant = mopac(mol_object, self.forcefield, reactant_bonds, reactant_bonds)
                 H298_reac = H298_reactant.mopac_get_H298(mol_object)
                 update_field = {'reactant_energy':H298_reac}
                 pool_collection.update_one(targets[0], {"$set": update_field}, True)
             elif self.generations > 1:
                 H298_reac = targets[0]['reactant_energy']
-            prod_mols_filtered = [mol for idx, mol in enumerate(prod_mols) if self.filter_dh_mopac(H298_reac, mol, reactant_bonds[0], product_bonds[idx])]
+            prod_mols_filtered = [mol for idx, mol in enumerate(prod_mols) if self.filter_dh_mopac(H298_reac, mol, reactant_bonds, product_bonds[idx])]
         else:
             if self.generations == 1:
                 H298_reac = self.reac_mol.getH298(thermo_db)
@@ -100,6 +100,7 @@ class Network(object):
         reactant_key = mol_object.write('inchiKey').strip()
         #reactant_key = mol_object.toRMGMolecule().to_inchi_key()
         reactant_smi = mol_object.write('can').split()[0]
+        print(prod_mols_filtered)
         prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_key, reactant_smi, prod_mols_filtered, add_bonds, break_bonds)
         for mol in prod_mols_filtered:
             index = prod_mols.index(mol)

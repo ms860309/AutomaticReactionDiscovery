@@ -234,7 +234,7 @@ class Generate(object):
                             temp = []
                             for i in bonds:
                                 temp.append((i[0]-1, i[1]-1))
-                            self.product_bonds.append(tuple(temp))
+                            self.product_bonds.append(temp)
 
     def check_bond_type(self, bonds):
         
