@@ -106,7 +106,7 @@ class Network(object):
             index = prod_mols.index(mol)
             self.network_prod_mols.append(mol)
             # gen geo return path
-            dir_path = self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
+            dir_path = self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index], reactant_bonds, product_bonds[index])
             product_name = mol.write('inchiKey').strip()
             #product_name = mol.toRMGMolecule().to_inchi_key()
             qm_collection.insert_one({
@@ -232,7 +232,7 @@ class Network(object):
         return result
 
 
-    def gen_geometry(self, reactant_mol, network_prod_mol, add_bonds, break_bonds, **kwargs):
+    def gen_geometry(self, reactant_mol, network_prod_mol, add_bonds, break_bonds, reactant_bonds, product_bonds, **kwargs):
         #database
         qm_collection = db['qm_calculate_center']
         # These two lines are required so that new coordinates are
@@ -250,7 +250,7 @@ class Network(object):
         product = network_prod_mol.toNode()
         reactant_mol_copy, network_prod_mol_copy= reactant_mol.copy(), network_prod_mol.copy()
         try:
-            arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
+            arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol, reactant_bonds, product_bonds)
             msg = arrange3D.arrangeIn3D()
             if msg != '':
                 print(msg)

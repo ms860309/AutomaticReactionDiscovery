@@ -222,18 +222,15 @@ class Generate(object):
                             for j in form_bonds:
                                 if i[0] == j[0] and i[1] == j[1]:
                                     form_bonds.remove(j)
-                                    
-                    self.add_bonds.append(form_bonds)
-                    self.break_bonds.append(break_bonds)
-                    
-
                     
                     if len(form_bonds) == nform and len(break_bonds) == nbreak:
                         if self.check_bond_type(bonds):
+                            self.add_bonds.append(form_bonds)
+                            self.break_bonds.append(break_bonds)
                             self.prod_mols.append(mol)
                             temp = []
                             for i in bonds:
-                                temp.append((i[0]-1, i[1]-1))
+                                temp.append((i[0], i[1]))
                             self.product_bonds.append(temp)
 
     def check_bond_type(self, bonds):

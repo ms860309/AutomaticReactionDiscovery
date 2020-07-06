@@ -8,6 +8,9 @@ import psutil
 import time
 import logging
 import util
+import pybel
+import difflib
+
 class MopacError(Exception):
     """
     An exception class for errors that occur during mopac calculations.
@@ -38,8 +41,9 @@ class mopac(object):
             shutil.rmtree(tmpdir)
         os.mkdir(tmpdir)
         input_path = os.path.join(tmpdir, 'input.mop')
-
+        product_path = os.path.join(tmpdir, 'prod.xyz')
         geometry = self.genInput(InputFile)
+        
         with open(input_path, 'w') as f:
             f.write("LARGE CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
             f.write("\n{}".format(geometry))
@@ -47,6 +51,7 @@ class mopac(object):
         self.runMopac(tmpdir)
         result = self.getHeatofFormation(tmpdir)
         self.finalize(start_time, 'mopac')
+        
         """
         info = psutil.virtual_memory()
         print("cpu numbers : {}".format(psutil.cpu_count()))
@@ -66,7 +71,7 @@ class mopac(object):
         reac_mol_copy, InputFile_copy= reac_mol.copy(), InputFile.copy()
         reac_mol.gen3D(forcefield=self.forcefield, make3D=False)
         InputFile.gen3D(forcefield=self.forcefield, make3D=False)
-
+        
         try:
             arrange3D = gen3D.Arrange3D(reac_mol, InputFile, self.reactant_bonds, self.product_bonds)
             msg = arrange3D.arrangeIn3D()
@@ -83,6 +88,7 @@ class mopac(object):
 
         geometry = InputFile.toNode()
         geometry = str(geometry)
+        self.fast_bonds_filter(geometry)
         self.logger.info('\nStructure:\n{}\n'.format(str(geometry)))
         geometry = geometry.splitlines()
         output = []
@@ -99,7 +105,31 @@ class mopac(object):
         self.finalize(start_time, 'arrange')
         
         return output
-
+    
+    def fast_bonds_filter(self, geometry):
+        xyz_path = os.path.join(os.path.dirname(os.getcwd()), 'filter')
+        if os.path.exists(xyz_path):
+            shutil.rmtree(xyz_path)
+        os.mkdir(xyz_path)
+        prod_path = os.path.join(xyz_path, 'prod.xyz')
+        with open(prod_path, 'w') as f:
+            f.write('17\n\n')
+            f.write(str(geometry))
+        mol = next(pybel.readfile('xyz', prod_path))
+        bonds_mol_1 = []
+        for bond in pybel.ob.OBMolBondIter(mol.OBMol):
+            a = bond.GetBeginAtomIdx() - 1
+            b = bond.GetEndAtomIdx() - 1
+            if a < b:
+                bonds_mol_1.append((a, b))
+            else:
+                bonds_mol_1.append((b, a))
+        bonds_mol_1 = sorted(bonds_mol_1)
+        a = difflib.SequenceMatcher(None, self.reactant_bonds, bonds_mol_1).ratio()
+        b = difflib.SequenceMatcher(None, self.product_bonds, bonds_mol_1).ratio()
+        print(a*100)
+        print(b*100)
+        
     def finalize(self, start_time, jobname):
         """
         Finalize the job.
@@ -113,8 +143,6 @@ class mopac(object):
         input_path = os.path.join(tmpdir, "input.out")
         with open(input_path, 'r') as f:
             lines = f.readlines()
-        print(lines)
-        raise
         for idx, line in enumerate(lines):
             if line.strip().startswith('FINAL HEAT OF FORMATION'):
                 break
