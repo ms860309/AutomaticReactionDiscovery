@@ -27,7 +27,7 @@ class mopac(object):
         self.logger.info('\nARD initiated on ' + time.asctime() + '\n')
         self.logger.info('memory usage: {}'.format(process.memory_percent()))
 
-    def mopac_get_H298(self, InputFile, charge = 0, multiplicity = 'SINGLET', method = 'PM6'):
+    def mopac_get_H298(self, InputFile, charge = 0, multiplicity = 'SINGLET', method = 'PM7'):
         """
         Create a directory folder called "tmp" for mopac calculation
         Create a input file called "input.mop" for mopac calculation
@@ -41,7 +41,7 @@ class mopac(object):
 
         geometry = self.genInput(InputFile)
         with open(input_path, 'w') as f:
-            f.write(" LARGE CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
+            f.write("LARGE CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
             f.write("\n{}".format(geometry))
         start_time = time.time()
         self.runMopac(tmpdir)
@@ -113,13 +113,16 @@ class mopac(object):
         input_path = os.path.join(tmpdir, "input.out")
         with open(input_path, 'r') as f:
             lines = f.readlines()
-            for line in lines:
-                try:
-                    if line.strip().startswith('FINAL HEAT OF FORMATION'):
-                        HeatofFormation = line.split()[5]
-                except:
-                    HeatofFormation = False
-                    raise MopacError('Mopac calculation error')
+        print(lines)
+        raise
+        for idx, line in enumerate(lines):
+            if line.strip().startswith('FINAL HEAT OF FORMATION'):
+                break
+        string = lines[idx].split()
+        if string[0] == 'FINAL':
+            HeatofFormation = string[5]
+        else:
+            HeatofFormation = False
         return HeatofFormation
 
     def runMopac(self, tmpdir):
