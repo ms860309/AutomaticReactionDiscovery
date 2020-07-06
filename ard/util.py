@@ -41,8 +41,10 @@ def initializeLog(level, logfile, logname=None):
     formatter = logging.Formatter('%(levelname)s%(message)s')
 
     # Create file handler
+    """
     if os.path.exists(logfile):
         os.remove(logfile)
+    """
     fh = logging.FileHandler(filename=logfile)
     fh.setLevel(min(logging.DEBUG, level))
     fh.setFormatter(formatter)
