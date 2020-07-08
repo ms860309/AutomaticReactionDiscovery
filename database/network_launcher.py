@@ -114,12 +114,13 @@ def create_ard_sub_file(dir_path, script_path, gen_num, next_reactant, ncpus = 1
     product_xyz_path = path.join(dir_path, next_reactant)
     ard_path = path.join(script_path, 'ard.py')
     input_path = path.join(script_path, 'input.txt')
+    bonds_path = path.join(dir_path, 'bonds.txt')
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(script_path)
     nes1 = 'source ~/.bashrc'
     nes2 = 'conda activate rmg3'
-    command = 'python {} {} {} -generations {}'.format(ard_path, input_path, product_xyz_path, gen_num)    
+    command = 'python {} {} {} {} -generations {}'.format(ard_path, input_path, product_xyz_path, bonds_path, gen_num)    
     deactivate = 'conda deactivate'
     
     with open(subfile, 'w') as f:

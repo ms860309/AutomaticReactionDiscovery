@@ -136,7 +136,7 @@ class Generate(object):
             products_bonds = products_bonds
         return products_bonds
 
-    def generateProducts(self, nbreak=3, nform=3):
+    def generateProducts(self, nbreak=3, nform=3, reactant_bonds = None):
         """
         Generate all possible products from the reactant under the constraints
         of breaking a maximum of `nbreak` and forming a maximum of `nform`
@@ -146,20 +146,20 @@ class Generate(object):
             raise Exception('Breaking/forming bonds is limited to a maximum of 3')
 
         # Extract bonds as an unmutable sequence (indices are made compatible with atom list)
-        """
-        reactant_bonds = tuple(sorted(
-            [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
-             for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
-        ))
-        """
-        a = []
-        manual_bonds = []
-        reactant_bonds = [(1, 2, 1), (1, 3, 1), (1, 4, 1), (1, 5, 1), (1, 12, 1), (2, 3, 1), (2, 4, 1), (2, 6, 1), (3, 5, 1), (3, 6, 1), (3, 10, 1), (4, 5, 1), (4, 6, 1), (5, 6, 1), (7, 14, 1), (8, 15, 1), (9, 10, 1), (9, 13, 1), (10, 11, 2), (11, 12, 1), (11, 17, 1), (12, 13, 2), (13, 14, 1), (14, 15, 1), (14, 16, 1)]
-        for i in reactant_bonds:
-            a.append((i[0]-1,i[1]-1,i[2]))
-            manual_bonds.append((i[0]-1, i[1]-1))
-        reactant_bonds = tuple(a)
-        
+        if reactant_bonds == None:
+            reactant_bonds = tuple(sorted(
+                [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
+                for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
+            ))
+            manual_bonds =[(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1)
+                            for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
+        else:
+            a = []
+            manual_bonds = []
+            for i in reactant_bonds:
+                a.append((i[0]-1,i[1]-1,i[2]))
+                manual_bonds.append((i[0]-1, i[1]-1))
+            reactant_bonds = tuple(a)
         self.reactant_bonds = list(manual_bonds)
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]

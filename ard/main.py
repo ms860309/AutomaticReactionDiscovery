@@ -75,7 +75,7 @@ class ARD(object):
 
 def readInput(input_file):
     # Allowed keywords
-    keys = ('reac_smi', 'imaginarybond', 'nbreak', 'nform', 'dh_cutoff', 'dh_cutoff_method')
+    keys = ('reac_smi', 'imaginarybond', 'nbreak', 'nform', 'dh_cutoff', 'dh_cutoff_method', 'manual_bonds')
     # Read all data from file
     with open(input_file, 'r') as f:
         input_data = f.read().splitlines()
@@ -94,7 +94,12 @@ def readInput(input_file):
                 
     return input_dict
 
-
+def extract_bonds(bonds):
+    with open(bonds, 'r') as f:
+        lines = f.read()
+    lines = eval(lines)
+    return lines
+    
 def readXYZ(xyz):
     mol = next(pybel.readfile('xyz', xyz))
     mol = gen3D.Molecule(mol.OBMol)

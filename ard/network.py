@@ -37,6 +37,7 @@ class Network(object):
         self.ard_path = kwargs['ard_path']
         self.generations = kwargs['generations']
         self.method = kwargs["dh_cutoff_method"]
+        self.reactant_bonds = kwargs['bonds']
         
 
     def genNetwork(self, mol_object, **kwargs):
@@ -50,7 +51,10 @@ class Network(object):
         #Add all reactant to a list for pgen filter isomorphic
         inchi_key_list = [i['reactant_inchi_key'] for i in targets]
         gen = Generate(mol_object, inchi_key_list)
-        gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
+        if self.reactant_bonds == []:
+            gen.generateProducts(nbreak=self.nbreak, nform=self.nform, reactant_bonds=None)
+        else:
+            gen.generateProducts(nbreak=self.nbreak, nform=self.nform, reactant_bonds=self.reactant_bonds)
         prod_mols = gen.prod_mols
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
@@ -100,7 +104,6 @@ class Network(object):
         reactant_key = mol_object.write('inchiKey').strip()
         #reactant_key = mol_object.toRMGMolecule().to_inchi_key()
         reactant_smi = mol_object.write('can').split()[0]
-        print(prod_mols_filtered)
         prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_key, reactant_smi, prod_mols_filtered, add_bonds, break_bonds)
         for mol in prod_mols_filtered:
             index = prod_mols.index(mol)

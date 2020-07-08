@@ -26,9 +26,9 @@ class mopac(object):
         self.product_bonds = product_bonds
         log_level = logging.INFO
         process = psutil.Process(os.getpid())
-        self.logger = util.initializeLog(log_level, os.path.join(os.getcwd(), 'ARD.log'), logname='main')
-        self.logger.info('\nARD initiated on ' + time.asctime() + '\n')
-        self.logger.info('memory usage: {}'.format(process.memory_percent()))
+        #self.logger = util.initializeLog(log_level, os.path.join(os.getcwd(), 'ARD.log'), logname='main')
+        #self.logger.info('\nARD initiated on ' + time.asctime() + '\n')
+        #self.logger.info('memory usage: {}'.format(process.memory_percent()))
 
     def mopac_get_H298(self, InputFile, charge = 0, multiplicity = 'SINGLET', method = 'PM7'):
         """
@@ -88,8 +88,8 @@ class mopac(object):
 
         geometry = InputFile.toNode()
         geometry = str(geometry)
-        self.fast_bonds_filter(geometry)
-        self.logger.info('\nStructure:\n{}\n'.format(str(geometry)))
+        #self.fast_bonds_filter(geometry)
+        #self.logger.info('\nStructure:\n{}\n'.format(str(geometry)))
         geometry = geometry.splitlines()
         output = []
         for i in geometry:
@@ -102,7 +102,7 @@ class mopac(object):
         output = "\n".join(output)
         reac_mol.setCoordsFromMol(reac_mol_copy)
 
-        self.finalize(start_time, 'arrange')
+        #self.finalize(start_time, 'arrange')
         
         return output
     
@@ -134,7 +134,7 @@ class mopac(object):
         """
         Finalize the job.
         """
-        self.logger.info('Total {} run time: {:.1f} s'.format(jobname, time.time() - start_time))
+        #self.logger.info('Total {} run time: {:.1f} s'.format(jobname, time.time() - start_time))
 
     def getHeatofFormation(self, tmpdir):
         """
