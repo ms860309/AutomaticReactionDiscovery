@@ -86,6 +86,7 @@ class mopac(object):
         InputFile.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
 
+        InputFile.gen3D(forcefield=self.forcefield, make3D=False)
         geometry = InputFile.toNode()
         geometry = str(geometry)
         #self.fast_bonds_filter(geometry)

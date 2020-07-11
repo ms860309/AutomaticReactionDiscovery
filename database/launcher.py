@@ -585,7 +585,7 @@ def select_irc_opt_target(direction = 'forward'):
     qm_collection = db['qm_calculate_center']
     irc_status = 'irc_{}_status'.format(direction)
     reg_query = {irc_status:"need opt"}
-    targets = list(reactions_collection.find(reg_query))
+    targets = list(qm_collection.find(reg_query))
     selected_targets = [target['path'] for target in targets]
     return selected_targets
 
@@ -649,8 +649,8 @@ def create_irc_opt_sub_file(irc_path, direction = 'forward', ncpus = 1, mpiprocs
 launch_energy_jobs()
 launch_ssm_jobs()
 launch_ts_jobs()
-launch_irc_jobs()
-launch_irc_opt_jobs()
+#launch_irc_jobs()
+#launch_irc_opt_jobs()
 #launch_same_ssm_jobs()
 #launch_same_ts_jobs()
 #launch_same_irc_jobs()

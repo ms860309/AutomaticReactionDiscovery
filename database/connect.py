@@ -24,10 +24,14 @@ db = getattr(Connector(), 'db')
 
 # debug
 """
-pool_collection = db['pool']
-targets = list(pool_collection.find({}))
-reactant_inchi_key = targets[0]['reactant_inchi_key']
-H298_reac = targets[0]['energy']
-print(H298_reac)
-print(reactant_inchi_key)
+qm_collection = db['qm_calculate_center']
+query = {'ssm':'job_fail'}
+targets = list(qm_collection.find(reg_query))
+for target in targets:
+    dir_path = target['path']
+    ssm_path = os.path.join(dir_path, 'SSM')
+    if os.path.exists(ssm_path):
+        shutil.rmtree(ssm_path)
+    update_field = {ssm_status:"job_unrun"}
+    qm_collection.update_one(target, {"$unset": {'ssm_jobid':""}, "$set": update_field}, True)
 """

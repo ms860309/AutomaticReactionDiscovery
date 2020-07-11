@@ -266,6 +266,7 @@ class Network(object):
         network_prod_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
 
+        network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
         reactant = reactant_mol.toNode()
         product = network_prod_mol.toNode()
         subdir = os.path.join(os.path.dirname(self.ard_path), 'reactions')
