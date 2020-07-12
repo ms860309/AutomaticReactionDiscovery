@@ -79,7 +79,7 @@ class mopac(object):
                 print(msg)
         except:
             reac_mol, InputFile = reac_mol_copy, InputFile_copy
-
+        
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reac_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)

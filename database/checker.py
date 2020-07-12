@@ -666,7 +666,6 @@ def generate_xyz(target, direction='forward'):
         if i.startswith('             Standard Nuclear Orientation (Angstroms)\n'):
             num.append(idx)
     geo = []
-    lines[num[-2]+3:num[-2]+15]
     for i in lines[num[-2] + 3 : num[-2] + 3 + atom_number]:
         atom = i.split()[1:]
         geo.append('  '.join(atom))
