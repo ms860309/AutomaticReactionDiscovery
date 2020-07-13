@@ -141,10 +141,13 @@ class Network(object):
     
     def filter_dh_mopac(self, H298_reac, prod_mol, reactant_bonds, product_bonds):
         H298_product = mopac(prod_mol, self.forcefield, reactant_bonds, product_bonds)
+        H298_prod = H298_product.mopac_get_H298(prod_mol)
+        """
         try:
             H298_prod = H298_product.mopac_get_H298(prod_mol)
         except:
             H298_prod = H298_reac
+        """
         dH = H298_prod - H298_reac
 
         if dH < self.dh_cutoff:
@@ -252,6 +255,13 @@ class Network(object):
         network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
         product = network_prod_mol.toNode()
         reactant_mol_copy, network_prod_mol_copy= reactant_mol.copy(), network_prod_mol.copy()
+        
+        arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol, reactant_bonds, product_bonds)
+        msg = arrange3D.arrangeIn3D()
+        if msg != '':
+            print(msg)
+                
+        """
         try:
             arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol, reactant_bonds, product_bonds)
             msg = arrange3D.arrangeIn3D()
@@ -259,7 +269,7 @@ class Network(object):
                 print(msg)
         except:
             reactant_mol, network_prod_mol = reactant_mol_copy, network_prod_mol_copy
-
+        """
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reactant_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)

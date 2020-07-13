@@ -37,7 +37,7 @@ def readstring(format, string):
     mol = pybel.readstring(format, string)
     return Molecule(mol.OBMol)
 
-def make3DandOpt(mol, forcefield='mmff94', make3D=True):
+def make3DandOpt(mol, forcefield='uff', make3D=True):
     """
     Generate 3D coordinates and optimize them using a force field.
     """
@@ -91,13 +91,15 @@ class Molecule(pybel.Molecule):
     this is not the case, then segmentation faults may occur.
     """
 
-    def __init__(self, OBMol):
+    def __init__(self, OBMol, reactant_bonds = None, product_bonds = None):
         super(Molecule, self).__init__(OBMol)
         self.mols_indices = None
         self.mols = None
         self.rotors = None
         self.atom_in_rotor = None
         self.close_atoms = None
+        self.reactant_bonds = reactant_bonds
+        self.product_bonds = product_bonds
 
     def __getitem__(self, item):
         for atom in self:
@@ -290,7 +292,7 @@ class Molecule(pybel.Molecule):
         self.OBMol.SetEnergy(energy)
         return ngrad
 
-    def gen3D(self, forcefield='mmff94', make3D=True):
+    def gen3D(self, forcefield='uff', make3D=True):
         """
         Generate 3D coordinates using the specified force field.
         """
@@ -397,7 +399,12 @@ class Molecule(pybel.Molecule):
         molecule.
         """
         # Extract bonds
-        bonds = [[bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1] for bond in pybel.ob.OBMolBondIter(self.OBMol)]
+        if self.reactant_bonds != None:
+            bonds = []
+            for i in self.reactant_bonds:
+                bonds.append([i[0]-1, i[1]-1])
+        else:
+            bonds = [[bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1] for bond in pybel.ob.OBMolBondIter(self.OBMol)]
 
         if bonds:
             # Create first molecular fragment from first bond and start keeping track of atoms
@@ -536,7 +543,7 @@ class Arrange3D(object):
         self.mol_1, self.mol_2 = mol_1, mol_2
         self.d_intermol = d_intermol
         self.d_intramol = d_intramol
-
+        
         bonds_mol_1 = [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1)
                        for bond in pybel.ob.OBMolBondIter(mol_1.OBMol)]
         bonds_mol_2 = [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1)
@@ -553,7 +560,7 @@ class Arrange3D(object):
         for i, mol_indices in enumerate(mol_2.mols_indices):
             for j in mol_indices:
                 atom_in_mol_2[j] = i
-
+                
         # Initialize broken_bonds list
         for bond in list(set(self.product_bonds) ^ set(self.reactant_bonds)):
             i, j = atom_in_mol_1[bond[0]], atom_in_mol_1[bond[1]]

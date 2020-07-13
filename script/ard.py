@@ -34,12 +34,14 @@ if __name__ == '__main__':
     reactant_file = os.path.abspath(args.reactant)
 
     kwargs = readInput(input_file)
-    OBMol = readXYZ(reactant_file)
+    
     if kwargs['manual_bonds'] == '1':
         bonds = extract_bonds(args.bonds)
         kwargs['bonds'] = bonds
     else:
         kwargs['bonds'] = []
+    OBMol = readXYZ(reactant_file, kwargs['bonds'])
+
     kwargs['reac_smi']= OBMol
     # Set output directory
     output_dir = path.abspath(path.dirname(input_file))

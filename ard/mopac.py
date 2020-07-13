@@ -72,6 +72,12 @@ class mopac(object):
         reac_mol.gen3D(forcefield=self.forcefield, make3D=False)
         InputFile.gen3D(forcefield=self.forcefield, make3D=False)
         
+        arrange3D = gen3D.Arrange3D(reac_mol, InputFile, self.reactant_bonds, self.product_bonds)
+        msg = arrange3D.arrangeIn3D()
+        if msg != '':
+            print(msg)
+                
+        """
         try:
             arrange3D = gen3D.Arrange3D(reac_mol, InputFile, self.reactant_bonds, self.product_bonds)
             msg = arrange3D.arrangeIn3D()
@@ -79,6 +85,7 @@ class mopac(object):
                 print(msg)
         except:
             reac_mol, InputFile = reac_mol_copy, InputFile_copy
+        """
         
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reac_mol.gen3D(make3D=False)
@@ -89,6 +96,7 @@ class mopac(object):
         InputFile.gen3D(forcefield=self.forcefield, make3D=False)
         geometry = InputFile.toNode()
         geometry = str(geometry)
+
         #self.fast_bonds_filter(geometry)
         #self.logger.info('\nStructure:\n{}\n'.format(str(geometry)))
         geometry = geometry.splitlines()
