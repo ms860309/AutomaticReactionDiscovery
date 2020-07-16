@@ -41,7 +41,6 @@ class mopac(object):
             shutil.rmtree(tmpdir)
         os.mkdir(tmpdir)
         input_path = os.path.join(tmpdir, 'input.mop')
-        product_path = os.path.join(tmpdir, 'prod.xyz')
         geometry = self.genInput(InputFile)
         
         with open(input_path, 'w') as f:

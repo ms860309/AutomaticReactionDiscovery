@@ -42,13 +42,13 @@ if __name__ == '__main__':
         kwargs['bonds'] = []
     OBMol = readXYZ(reactant_file)
 
-    kwargs['reac_smi']= OBMol
+    kwargs['reac_smi'] = OBMol
     # Set output directory
     output_dir = path.abspath(path.dirname(input_file))
     kwargs['output_dir'] = output_dir
     kwargs['generations'] = args.generations
     kwargs['ard_path'] = ard_path
-
+    kwargs['reactant_path'] = reactant_file
     # Execute job
     ard = ARD(**kwargs)
     ard.executeXYZ(**kwargs)

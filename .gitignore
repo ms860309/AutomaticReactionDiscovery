@@ -16,3 +16,4 @@ result/
 tmp/
 reactions/
 __pycache__/
+.vscode/

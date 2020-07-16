@@ -6,6 +6,7 @@ import pybel
 from rmgpy import settings
 from rmgpy.data.thermo import ThermoDatabase
 from rmgpy.molecule import Molecule
+from subprocess import Popen, PIPE
 
 import constants
 import gen3D
@@ -38,7 +39,7 @@ class Network(object):
         self.generations = kwargs['generations']
         self.method = kwargs["dh_cutoff_method"]
         self.reactant_bonds = kwargs['bonds']
-        
+        self.reactant_path = kwargs['reactant_path']
 
     def genNetwork(self, mol_object, **kwargs):
         """
@@ -68,8 +69,7 @@ class Network(object):
         # Filter reactions based on standard heat of reaction
         if self.method == "mopac":
             if self.generations == 1:
-                H298_reactant = mopac(mol_object, self.forcefield, reactant_bonds, reactant_bonds)
-                H298_reac = H298_reactant.mopac_get_H298(mol_object)
+                H298_reac = self.mopac_reac_H298(self.reactant_path)
                 update_field = {'reactant_energy':H298_reac}
                 pool_collection.update_one(targets[0], {"$set": update_field}, True)
             elif self.generations > 1:
@@ -126,6 +126,46 @@ class Network(object):
         statistics_collection.insert_one({'Reactant SMILES':mol_object.write('can').split()[0], 'reactant_inchi_key':reactant_key, 'add how many products':len(prod_mols_filtered)})
 
 
+    def mopac_reac_H298(self, path, charge = 0, multiplicity = 'SINGLET', method = 'PM7'):
+
+        with open(self.reactant_path, 'r') as f:
+            lines = f.readlines()
+        output = []
+        for line in lines[2:]:
+            line = line.split()
+            atom = line[0] + " "
+            k = line[1:] + [""]
+            l = " 1 ".join(k)
+            out = atom + l
+            output.append(out)
+        output = "\n".join(output)
+
+        tmpdir = os.path.join(os.path.dirname(os.path.dirname(self.reactant_path)), 'tmp')
+        if os.path.exists(tmpdir):
+            shutil.rmtree(tmpdir)
+        os.mkdir(tmpdir)
+        input_path = os.path.join(tmpdir, 'input.mop')
+        
+        with open(input_path, 'w') as f:
+            f.write("LARGE CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
+            f.write("\n{}".format(output))
+
+        p = Popen(['mopac', input_path])
+        p.wait()
+
+        input_path = os.path.join(tmpdir, "input.out")
+        with open(input_path, 'r') as f:
+            lines = f.readlines()
+        for idx, line in enumerate(lines):
+            if line.strip().startswith('FINAL HEAT OF FORMATION'):
+                break
+        string = lines[idx].split()
+        if string[0] == 'FINAL':
+            HeatofFormation = string[5]
+        else:
+            HeatofFormation = False
+        return float(HeatofFormation)
+        
         
     def filterThreshold(self, H298_reac, prod_mol, thermo_db):
         """

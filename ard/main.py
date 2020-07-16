@@ -100,7 +100,7 @@ def extract_bonds(bonds):
     lines = eval(lines)
     return lines
     
-def readXYZ(xyz, reactant_bonds = None, product_bonds = None):
+def readXYZ(xyz):
     mol = next(pybel.readfile('xyz', xyz))
     mol = gen3D.Molecule(mol.OBMol)
     return mol

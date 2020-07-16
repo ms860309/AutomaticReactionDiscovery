@@ -536,7 +536,7 @@ class Arrange3D(object):
         self.mol_1, self.mol_2 = mol_1, mol_2
         self.d_intermol = d_intermol
         self.d_intramol = d_intramol
-        
+
         bonds_mol_1 = [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1)
                        for bond in pybel.ob.OBMolBondIter(mol_1.OBMol)]
         bonds_mol_2 = [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1)
@@ -545,7 +545,7 @@ class Arrange3D(object):
         # atom_in_mol tells which mol the atom is in
         atom_in_mol_1 = [0] * len(mol_1.atoms)
         atom_in_mol_2 = [0] * len(mol_2.atoms)
-        
+
         for i, mol_indices in enumerate(mol_1.mols_indices):
             for j in mol_indices:
                 atom_in_mol_1[j] = i
@@ -553,7 +553,7 @@ class Arrange3D(object):
         for i, mol_indices in enumerate(mol_2.mols_indices):
             for j in mol_indices:
                 atom_in_mol_2[j] = i
-                
+
         # Initialize broken_bonds list
         for bond in list(set(self.product_bonds) ^ set(self.reactant_bonds)):
             i, j = atom_in_mol_1[bond[0]], atom_in_mol_1[bond[1]]
