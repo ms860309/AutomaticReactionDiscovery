@@ -161,6 +161,7 @@ class Generate(object):
                 manual_bonds.append((i[0]-1, i[1]-1))
             reactant_bonds = tuple(a)
         self.reactant_bonds = list(manual_bonds)
+
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]
         # Initialize set for storing bonds of products
