@@ -91,15 +91,13 @@ class Molecule(pybel.Molecule):
     this is not the case, then segmentation faults may occur.
     """
 
-    def __init__(self, OBMol, reactant_bonds = None, product_bonds = None):
+    def __init__(self, OBMol):
         super(Molecule, self).__init__(OBMol)
         self.mols_indices = None
         self.mols = None
         self.rotors = None
         self.atom_in_rotor = None
         self.close_atoms = None
-        self.reactant_bonds = reactant_bonds
-        self.product_bonds = product_bonds
 
     def __getitem__(self, item):
         for atom in self:
@@ -399,12 +397,7 @@ class Molecule(pybel.Molecule):
         molecule.
         """
         # Extract bonds
-        if self.reactant_bonds != None:
-            bonds = []
-            for i in self.reactant_bonds:
-                bonds.append([i[0]-1, i[1]-1])
-        else:
-            bonds = [[bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1] for bond in pybel.ob.OBMolBondIter(self.OBMol)]
+        bonds = [[bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1] for bond in pybel.ob.OBMolBondIter(self.OBMol)]
 
         if bonds:
             # Create first molecular fragment from first bond and start keeping track of atoms
