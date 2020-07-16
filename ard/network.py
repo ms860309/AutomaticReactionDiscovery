@@ -59,7 +59,7 @@ class Network(object):
         prod_mols = gen.prod_mols
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
-        reactant_bonds = gen.reactant_bonds
+        reactant_bonds = [(i[0]-1, i[1]-1) for i in self.reactant_bonds]
         product_bonds = gen.product_bonds
         # Load thermo database and choose which libraries to search
         thermo_db = ThermoDatabase()

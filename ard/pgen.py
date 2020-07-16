@@ -47,7 +47,6 @@ class Generate(object):
         self.prod_mols = []
         self.add_bonds = []
         self.break_bonds = []
-        self.reactant_bonds = []
         self.product_bonds = []
         self.initialize()
         self.constraint = []
@@ -151,16 +150,12 @@ class Generate(object):
                 [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
                 for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
             ))
-            manual_bonds =[(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1)
-                            for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
         else:
             a = []
             manual_bonds = []
             for i in reactant_bonds:
                 a.append((i[0]-1,i[1]-1,i[2]))
-                manual_bonds.append((i[0]-1, i[1]-1))
             reactant_bonds = tuple(a)
-        self.reactant_bonds = list(manual_bonds)
 
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]

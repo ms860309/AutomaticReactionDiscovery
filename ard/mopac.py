@@ -70,7 +70,6 @@ class mopac(object):
         reac_mol_copy, InputFile_copy= reac_mol.copy(), InputFile.copy()
         reac_mol.gen3D(forcefield=self.forcefield, make3D=False)
         InputFile.gen3D(forcefield=self.forcefield, make3D=False)
-        
         try:
             arrange3D = gen3D.Arrange3D(reac_mol, InputFile, self.reactant_bonds, self.product_bonds)
             msg = arrange3D.arrangeIn3D()

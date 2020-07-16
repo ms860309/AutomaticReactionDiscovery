@@ -75,7 +75,6 @@ class Node(object):
         except ValueError:
             print('One or more atoms are missing a coordinate', file=sys.stderr)
             raise
-
         # self.atoms can be generated from atomic numbers or from atom labels
         self.atoms = [int(atom) for atom in atoms]
 
@@ -92,7 +91,7 @@ class Node(object):
         return_string = ''
         for anum, atom in enumerate(self.coords):
             element = ELEMENT_TABLE.from_atomic_number(self.atoms[anum])
-            return_string += '{0}  {1[0]: 14.8f}{1[1]: 14.8f}{1[2]: 14.8f}\n'.format(
+            return_string += '{0}  {1[0]: 17.11f}{1[1]: 17.11f}{1[2]: 17.11f}\n'.format(
                 element.symbol, atom)
         return return_string[:-1]
 
