@@ -141,13 +141,11 @@ class Network(object):
     
     def filter_dh_mopac(self, H298_reac, prod_mol, reactant_bonds, product_bonds):
         H298_product = mopac(prod_mol, self.forcefield, reactant_bonds, product_bonds)
-        H298_prod = H298_product.mopac_get_H298(prod_mol)
-        """
         try:
             H298_prod = H298_product.mopac_get_H298(prod_mol)
         except:
             H298_prod = H298_reac
-        """
+
         dH = H298_prod - H298_reac
 
         if dH < self.dh_cutoff:
