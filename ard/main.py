@@ -67,7 +67,7 @@ class ARD(object):
     def executeXYZ(self, **kwargs):
         
         reac_mol = self.reac_smi
-        reac_mol.gen3D(forcefield=self.forcefield)
+        #reac_mol.gen3D(forcefield=self.forcefield)
         network = Network(reac_mol, forcefield = self.forcefield, **kwargs)
         network.genNetwork(reac_mol)
     
