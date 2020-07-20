@@ -68,13 +68,15 @@ class Network(object):
                                     'CBS_QB3_1dHR', 'DFT_QCI_thermo', 'BurkeH2O2', 'GRI-Mech3.0-N', ]
         # Filter reactions based on standard heat of reaction
         if self.method == "mopac":
+            """
             if self.generations == 1:
                 H298_reac = self.mopac_reac_H298(self.reactant_path)
                 update_field = {'reactant_energy':H298_reac}
                 pool_collection.update_one(targets[0], {"$set": update_field}, True)
             elif self.generations > 1:
                 H298_reac = targets[0]['reactant_energy']
-            prod_mols_filtered = [mol for idx, mol in enumerate(prod_mols) if self.filter_dh_mopac(H298_reac, mol, reactant_bonds, product_bonds[idx])]
+            """
+            prod_mols_filtered = [mol for idx, mol in enumerate(prod_mols) if self.filter_dh_mopac(mol_object, mol, reactant_bonds, product_bonds[idx])]
         else:
             if self.generations == 1:
                 H298_reac = self.reac_mol.getH298(thermo_db)
@@ -179,12 +181,9 @@ class Network(object):
             return 1
         return 0
     
-    def filter_dh_mopac(self, H298_reac, prod_mol, reactant_bonds, product_bonds):
-        H298_product = mopac(prod_mol, self.forcefield, reactant_bonds, product_bonds)
-        try:
-            H298_prod = H298_product.mopac_get_H298(prod_mol)
-        except:
-            H298_prod = H298_reac
+    def filter_dh_mopac(self, reac_obj, prod_mol, reactant_bonds, product_bonds):
+        H298_product = mopac(reac_obj, self.forcefield, reactant_bonds, product_bonds)
+        H298_reac, H298_prod = H298_product.mopac_get_H298(prod_mol)
 
         dH = H298_prod - H298_reac
 

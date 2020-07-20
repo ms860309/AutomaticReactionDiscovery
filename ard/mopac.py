@@ -40,15 +40,22 @@ class mopac(object):
         if os.path.exists(tmpdir):
             shutil.rmtree(tmpdir)
         os.mkdir(tmpdir)
-        input_path = os.path.join(tmpdir, 'input.mop')
-        geometry = self.genInput(InputFile)
+        reactant_path = os.path.join(tmpdir, 'reactant.mop')
+        product_path = os.path.join(tmpdir, 'product.mop')
+        reac_geo, geometry = self.genInput(InputFile)
         
-        with open(input_path, 'w') as f:
+        with open(reactant_path, 'w') as f:
+            f.write("LARGE CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
+            f.write("\n{}".format(reac_geo))
+        start_time = time.time()
+        self.runMopac(tmpdir, 'reactant.mop')
+        reactant = self.getHeatofFormation(tmpdir, 'reactant.out')
+
+        with open(product_path, 'w') as f:
             f.write("LARGE CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
             f.write("\n{}".format(geometry))
-        start_time = time.time()
-        self.runMopac(tmpdir)
-        result = self.getHeatofFormation(tmpdir)
+        self.runMopac(tmpdir, 'product.mop')
+        product = self.getHeatofFormation(tmpdir, 'product.out')
         self.finalize(start_time, 'mopac')
         
         """
@@ -58,7 +65,7 @@ class mopac(object):
         print("memory used : {}".format(psutil.Process(os.getpid()).memory_info().rss))
         print("memory used percent : {}".format(info.percent))
         """
-        return float(result)
+        return float(reactant), float(product)
     
     def genInput(self, InputFile):
         start_time = time.time()
@@ -68,8 +75,9 @@ class mopac(object):
         ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
         reac_mol_copy = reac_mol.copy()
         reac_mol_copy, InputFile_copy= reac_mol.copy(), InputFile.copy()
-        reac_mol.gen3D(forcefield=self.forcefield, make3D=False)
-        InputFile.gen3D(forcefield=self.forcefield, make3D=False)
+
+        #reac_mol.gen3D(forcefield=self.forcefield, make3D=False)
+        #InputFile.gen3D(forcefield=self.forcefield, make3D=False)
         try:
             arrange3D = gen3D.Arrange3D(reac_mol, InputFile, self.reactant_bonds, self.product_bonds)
             msg = arrange3D.arrangeIn3D()
@@ -84,13 +92,13 @@ class mopac(object):
         InputFile.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
 
-        InputFile.gen3D(forcefield=self.forcefield, make3D=False)
-        geometry = InputFile.toNode()
-        geometry = str(geometry)
+        #InputFile.gen3D(forcefield=self.forcefield, make3D=False)
+        geometry = str(InputFile.toNode())
 
         #self.fast_bonds_filter(geometry)
         #self.logger.info('\nStructure:\n{}\n'.format(str(geometry)))
         geometry = geometry.splitlines()
+
         output = []
         for i in geometry:
             i_list = i.split()
@@ -100,11 +108,23 @@ class mopac(object):
             out = atom + l
             output.append(out)
         output = "\n".join(output)
+
+        reactant_geo = str(reac_mol.toNode()).splitlines()
+        reac_geo = []
+        for i in reactant_geo:
+            i_list = i.split()
+            atom = i_list[0] + " "
+            k = i_list[1:] + [""]
+            l = " 1 ".join(k)
+            out = atom + l
+            reac_geo.append(out)
+        reac_geo = "\n".join(reac_geo)
+
         reac_mol.setCoordsFromMol(reac_mol_copy)
 
         #self.finalize(start_time, 'arrange')
         
-        return output
+        return reac_geo, output
     
     def fast_bonds_filter(self, geometry):
         xyz_path = os.path.join(os.path.dirname(os.getcwd()), 'filter')
@@ -136,11 +156,11 @@ class mopac(object):
         """
         #self.logger.info('Total {} run time: {:.1f} s'.format(jobname, time.time() - start_time))
 
-    def getHeatofFormation(self, tmpdir):
+    def getHeatofFormation(self, tmpdir, target = 'reactant.out'):
         """
         if Error return False, which HF may be 0.0
         """
-        input_path = os.path.join(tmpdir, "input.out")
+        input_path = os.path.join(tmpdir, target)
         with open(input_path, 'r') as f:
             lines = f.readlines()
         for idx, line in enumerate(lines):
@@ -153,7 +173,7 @@ class mopac(object):
             HeatofFormation = False
         return HeatofFormation
 
-    def runMopac(self, tmpdir):
-        input_path = os.path.join(tmpdir, "input.mop")
+    def runMopac(self, tmpdir, target = 'reactant.mop'):
+        input_path = os.path.join(tmpdir, target)
         p = Popen(['mopac', input_path])
         p.wait()
