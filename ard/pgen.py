@@ -181,7 +181,6 @@ class Generate(object):
                     bonds_form_all
                 )
 
-            
         if products_bonds:
             #Filter the products_bonds which doesn't follow DoU rule
             #products_bonds = self.DoU(products_bonds)
@@ -221,6 +220,12 @@ class Generate(object):
                     
                     if len(form_bonds) == nform and len(break_bonds) == nbreak:
                         if self.check_bond_type(bonds):
+                            for i in form_bonds:
+                                if i[2] == 2:
+                                    form_bonds.remove(i)
+                            for i in break_bonds:
+                                if i[2] == 2:
+                                    break_bonds.remove(i)
                             self.add_bonds.append(form_bonds)
                             self.break_bonds.append(break_bonds)
                             self.prod_mols.append(mol)

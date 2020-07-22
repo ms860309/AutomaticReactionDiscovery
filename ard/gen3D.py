@@ -526,6 +526,12 @@ class Arrange3D(object):
         self.product_bonds = bonds_2
 
         self.initializeVars(mol_1, mol_2)
+        # Now consider nickel
+        self.atoms = tuple(atom.atomicnum for atom in self.mol_1)
+        self.constraint = []
+        for idx, i in enumerate(self.atoms):
+            if i == 28:
+                self.constraint.append(idx)
 
     def initializeVars(self, mol_1, mol_2, d_intermol=3.0, d_intramol=2.0):
         """
@@ -841,11 +847,20 @@ class Arrange3D(object):
             mol = mols[i]
             coords = nodes[i].coords
             for j in range(len(mol.rotors)):
+
+                for origin_coords_idx in self.constraint:
+                    constrained_origin_coords.append(coords[origin_coords_idx])
+
                 coords = self.rotateRotor(coords, tort_disps[nrots], mol.rotors[j], mol.atom_in_rotor[j])
                 nrots += 1
             if i != 0:
                 coords = self.rotateMol(coords, rot_disps[3 * (i - 1):3 * i])
                 coords = self.translate(coords, trans_disps[3 * (i - 1):3 * i])
+
+            # let constrained coords back to origin coords
+            for idx in self.constraint:
+                coords[idx] = constrained_origin_coords[idx]
+                
             coords_all.append(coords)
         return coords_all
 

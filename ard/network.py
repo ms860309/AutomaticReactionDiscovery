@@ -34,7 +34,6 @@ class Network(object):
         self.output_dir = kwargs['output_dir']
         self.reactions = {}
         self.network_prod_mols = []
-        self.add_bonds = []
         self.ard_path = kwargs['ard_path']
         self.generations = kwargs['generations']
         self.method = kwargs["dh_cutoff_method"]
@@ -107,6 +106,7 @@ class Network(object):
         #reactant_key = mol_object.toRMGMolecule().to_inchi_key()
         reactant_smi = mol_object.write('can').split()[0]
         prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_key, reactant_smi, prod_mols_filtered, add_bonds, break_bonds)
+        statistics_collection.insert_one({'Reactant SMILES':mol_object.write('can').split()[0], 'reactant_inchi_key':reactant_key, 'add how many products':len(prod_mols_filtered)})
         for mol in prod_mols_filtered:
             index = prod_mols.index(mol)
             self.network_prod_mols.append(mol)
@@ -125,7 +125,6 @@ class Network(object):
                                    'generations':self.generations
                                    }
                                   )
-        statistics_collection.insert_one({'Reactant SMILES':mol_object.write('can').split()[0], 'reactant_inchi_key':reactant_key, 'add how many products':len(prod_mols_filtered)})
 
 
     def mopac_reac_H298(self, path, charge = 0, multiplicity = 'SINGLET', method = 'PM7'):
@@ -288,8 +287,8 @@ class Network(object):
         Hatom = gen3D.readstring('smi', '[H]')
         ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
         # Generate 3D geometries
-        reactant_mol.gen3D(forcefield=self.forcefield, make3D=False)
-        network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
+        #reactant_mol.gen3D(forcefield=self.forcefield, make3D=False)
+        #network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
         product = network_prod_mol.toNode()
         reactant_mol_copy, network_prod_mol_copy= reactant_mol.copy(), network_prod_mol.copy()
         
@@ -307,7 +306,7 @@ class Network(object):
         network_prod_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
 
-        network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
+        #network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
         reactant = reactant_mol.toNode()
         product = network_prod_mol.toNode()
         subdir = os.path.join(os.path.dirname(self.ard_path), 'reactions')
