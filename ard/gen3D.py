@@ -860,7 +860,7 @@ class Arrange3D(object):
             # let constrained coords back to origin coords
             for idx in self.constraint:
                 coords[idx] = constrained_origin_coords[idx]
-                
+            
             coords_all.append(coords)
         return coords_all
 
