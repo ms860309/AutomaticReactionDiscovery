@@ -299,13 +299,13 @@ class Network(object):
                 print(msg)
         except:
             reactant_mol, network_prod_mol = reactant_mol_copy, network_prod_mol_copy
-            
+        """
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reactant_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
         network_prod_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
-
+        """
         #network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
         reactant = reactant_mol.toNode()
         product = network_prod_mol.toNode()
