@@ -205,9 +205,9 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
     ard_prod_path = path.join(rxn_dir, 'product.xyz')
     ssm_prod_path = path.join(rxn_dir, 'ssm_product.xyz')
     pyMol_1 = xyz_to_pyMol(ssm_prod_path)
-    rmg_mol_1 = toRMGmol(pyMol_1)
+    #rmg_mol_1 = toRMGmol(pyMol_1)
     pyMol_2 = xyz_to_pyMol(ard_prod_path)
-    rmg_mol_2 = toRMGmol(pyMol_2)
+    #rmg_mol_2 = toRMGmol(pyMol_2)
     if pyMol_1.write('inchiKey').strip() != pyMol_2.write('inchiKey').strip():
         num = len(list(qm_collection.find({'product_inchi_key':pyMol_1.write('inchiKey').strip()})))
         targets = list(qm_collection.find({'path':rxn_dir}))
@@ -888,9 +888,9 @@ def same_ard_prod_and_ssm_prod_checker(rxn_dir):
     ard_prod_path = path.join(rxn_dir, 'product.xyz')
     ssm_prod_path = path.join(rxn_dir, 'ssm_product.xyz')
     pyMol_1 = xyz_to_pyMol(ssm_prod_path)
-    rmg_mol_1 = toRMGmol(pyMol_1)
+    #rmg_mol_1 = toRMGmol(pyMol_1)
     pyMol_2 = xyz_to_pyMol(ard_prod_path)
-    rmg_mol_2 = toRMGmol(pyMol_2)
+    #rmg_mol_2 = toRMGmol(pyMol_2)
     if pyMol_1.write('inchiKey').strip() != pyMol_2.write('inchiKey').strip():
         return 'not_equal'
     else:

@@ -19,18 +19,17 @@ class MopacError(Exception):
 
 class mopac(object):
 
-    def __init__(self, reac_mol, forcefield, reactant_bonds, product_bonds):
-        self.reac_mol = reac_mol
+    def __init__(self, forcefield, reactant_bonds, product_bonds):
         self.forcefield = forcefield
         self.reactant_bonds = reactant_bonds
         self.product_bonds = product_bonds
         log_level = logging.INFO
         process = psutil.Process(os.getpid())
-        #self.logger = util.initializeLog(log_level, os.path.join(os.getcwd(), 'ARD.log'), logname='main')
-        #self.logger.info('\nARD initiated on ' + time.asctime() + '\n')
-        #self.logger.info('memory usage: {}'.format(process.memory_percent()))
+        self.logger = util.initializeLog(log_level, os.path.join(os.getcwd(), 'ARD.log'), logname='main')
+        self.logger.info('\nARD initiated on ' + time.asctime() + '\n')
+        self.logger.info('memory usage: {}'.format(process.memory_percent()))
 
-    def mopac_get_H298(self, InputFile, charge = 0, multiplicity = 'SINGLET', method = 'PM7'):
+    def mopac_get_H298(self, reac_obj, InputFile, charge = 0, multiplicity = 'SINGLET', method = 'PM7'):
         """
         Create a directory folder called "tmp" for mopac calculation
         Create a input file called "input.mop" for mopac calculation
@@ -42,7 +41,7 @@ class mopac(object):
         os.mkdir(tmpdir)
         reactant_path = os.path.join(tmpdir, 'reactant.mop')
         product_path = os.path.join(tmpdir, 'product.mop')
-        reac_geo, geometry = self.genInput(InputFile)
+        reac_geo, geometry = self.genInput(reac_obj, InputFile)
         
         with open(reactant_path, 'w') as f:
             f.write("LARGE CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
@@ -67,36 +66,31 @@ class mopac(object):
         """
         return float(reactant), float(product)
     
-    def genInput(self, InputFile):
+    def genInput(self, reac_mol, InputFile):
         start_time = time.time()
 
-        reac_mol = self.reac_mol
         Hatom = gen3D.readstring('smi', '[H]')
         ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
-        reac_mol_copy = reac_mol.copy()
+
+        reac_mol.gen3D(forcefield=self.forcefield, make3D=False)
+        InputFile.gen3D(forcefield=self.forcefield, make3D=False)
         reac_mol_copy, InputFile_copy= reac_mol.copy(), InputFile.copy()
 
-        #reac_mol.gen3D(forcefield=self.forcefield, make3D=False)
-        #InputFile.gen3D(forcefield=self.forcefield, make3D=False)
-        try:
-            arrange3D = gen3D.Arrange3D(reac_mol, InputFile, self.reactant_bonds, self.product_bonds)
-            msg = arrange3D.arrangeIn3D()
-            if msg != '':
-                print(msg)
-        except:
-            reac_mol, InputFile = reac_mol_copy, InputFile_copy
-        """
+        arrange3D = gen3D.Arrange3D(reac_mol, InputFile, self.reactant_bonds, self.product_bonds)
+        msg = arrange3D.arrangeIn3D()
+        if msg != '':
+            print(msg)
+
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reac_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
         InputFile.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
-        """
-        #InputFile.gen3D(forcefield=self.forcefield, make3D=False)
+
         geometry = str(InputFile.toNode())
 
         #self.fast_bonds_filter(geometry)
-        #self.logger.info('\nStructure:\n{}\n'.format(str(geometry)))
+        self.logger.info('\nStructure:\n{}\n'.format(str(geometry)))
         geometry = geometry.splitlines()
 
         output = []
@@ -154,7 +148,7 @@ class mopac(object):
         """
         Finalize the job.
         """
-        #self.logger.info('Total {} run time: {:.1f} s'.format(jobname, time.time() - start_time))
+        self.logger.info('Total {} run time: {:.1f} s'.format(jobname, time.time() - start_time))
 
     def getHeatofFormation(self, tmpdir, target = 'reactant.out'):
         """

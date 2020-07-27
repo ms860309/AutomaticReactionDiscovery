@@ -181,8 +181,8 @@ class Network(object):
         return 0
     
     def filter_dh_mopac(self, reac_obj, prod_mol, reactant_bonds, product_bonds):
-        H298_product = mopac(reac_obj, self.forcefield, reactant_bonds, product_bonds)
-        H298_reac, H298_prod = H298_product.mopac_get_H298(prod_mol)
+        H298_product = mopac(self.forcefield, reactant_bonds, product_bonds)
+        H298_reac, H298_prod = H298_product.mopac_get_H298(reac_obj, prod_mol)
 
         dH = H298_prod - H298_reac
 
@@ -289,7 +289,7 @@ class Network(object):
         # Generate 3D geometries
         #reactant_mol.gen3D(forcefield=self.forcefield, make3D=False)
         #network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
-        product = network_prod_mol.toNode()
+
         reactant_mol_copy, network_prod_mol_copy= reactant_mol.copy(), network_prod_mol.copy()
         
         try:

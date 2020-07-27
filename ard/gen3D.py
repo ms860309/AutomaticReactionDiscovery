@@ -842,17 +842,18 @@ class Arrange3D(object):
         tort_disps = disps[6 * (nmols - 1):]
         coords_all = []
         nrots = 0
-
+        constrained_origin_coords = []
         for i in range(0, nmols):
             mol = mols[i]
             coords = nodes[i].coords
+
+            for origin_coords_idx in self.constraint:
+                constrained_origin_coords.append(coords[origin_coords_idx])
+
             for j in range(len(mol.rotors)):
-
-                for origin_coords_idx in self.constraint:
-                    constrained_origin_coords.append(coords[origin_coords_idx])
-
                 coords = self.rotateRotor(coords, tort_disps[nrots], mol.rotors[j], mol.atom_in_rotor[j])
                 nrots += 1
+
             if i != 0:
                 coords = self.rotateMol(coords, rot_disps[3 * (i - 1):3 * i])
                 coords = self.translate(coords, trans_disps[3 * (i - 1):3 * i])
@@ -860,7 +861,7 @@ class Arrange3D(object):
             # let constrained coords back to origin coords
             for idx in self.constraint:
                 coords[idx] = constrained_origin_coords[idx]
-            
+
             coords_all.append(coords)
         return coords_all
 
