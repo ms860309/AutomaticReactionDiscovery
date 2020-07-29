@@ -91,14 +91,14 @@ class Molecule(pybel.Molecule):
     this is not the case, then segmentation faults may occur.
     """
 
-    def __init__(self, OBMol):
+    def __init__(self, OBMol, bonds = None):
         super(Molecule, self).__init__(OBMol)
         self.mols_indices = None
         self.mols = None
         self.rotors = None
         self.atom_in_rotor = None
         self.close_atoms = None
-
+        self.bonds = bonds
     def __getitem__(self, item):
         for atom in self:
             if item == atom.idx - 1:
@@ -117,8 +117,13 @@ class Molecule(pybel.Molecule):
 
         for atom in self:
             OBMol.AddAtom(atom.OBAtom)
-        for bond in pybel.ob.OBMolBondIter(self.OBMol):
-            OBMol.AddBond(bond)
+
+        if not self.bonds:
+            for bond in pybel.ob.OBMolBondIter(self.OBMol):
+                OBMol.AddBond(bond)
+        else:
+            for i in self.bonds:
+                OBMol.AddBond(i[0], i[1], i[2])
 
         OBMol.SetTotalSpinMultiplicity(self.spin)
         OBMol.SetHydrogensAdded()
@@ -397,7 +402,10 @@ class Molecule(pybel.Molecule):
         molecule.
         """
         # Extract bonds
-        bonds = [[bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1] for bond in pybel.ob.OBMolBondIter(self.OBMol)]
+        if not self.bonds:
+            bonds = [[bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1] for bond in pybel.ob.OBMolBondIter(self.OBMol)]
+        else:
+            bonds = [[i[0]-1, i[1]-1] for i in self.bonds]
 
         if bonds:
             # Create first molecular fragment from first bond and start keeping track of atoms
@@ -628,7 +636,6 @@ class Arrange3D(object):
         """
         ret = ''
         dof = self.dof_1 + self.def_2
-
         if dof != 0:
             disps_guess = np.array([0.0]*dof)
             result = optimize.minimize(self.objectiveFunction, disps_guess,
@@ -842,26 +849,16 @@ class Arrange3D(object):
         tort_disps = disps[6 * (nmols - 1):]
         coords_all = []
         nrots = 0
-        constrained_origin_coords = []
         for i in range(0, nmols):
             mol = mols[i]
             coords = nodes[i].coords
-
-            for origin_coords_idx in self.constraint:
-                constrained_origin_coords.append(coords[origin_coords_idx])
-
             for j in range(len(mol.rotors)):
                 coords = self.rotateRotor(coords, tort_disps[nrots], mol.rotors[j], mol.atom_in_rotor[j])
                 nrots += 1
-
+            
             if i != 0:
                 coords = self.rotateMol(coords, rot_disps[3 * (i - 1):3 * i])
                 coords = self.translate(coords, trans_disps[3 * (i - 1):3 * i])
-
-            # let constrained coords back to origin coords
-            for idx in self.constraint:
-                coords[idx] = constrained_origin_coords[idx]
-
             coords_all.append(coords)
         return coords_all
 
@@ -899,6 +896,10 @@ class Arrange3D(object):
         intermolecular and intramolecular distances between two atoms are
         greater than user specified values.
         """
+        
+        print(type(self.mol_1.mols))
+        print(self.mol_1.mols_indices)
+
         coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, disps[:self.dof_1])
         coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, disps[self.dof_1:])
         intermol_dists = [self.minIntermolDist(coords_1), self.minIntermolDist(coords_2)]

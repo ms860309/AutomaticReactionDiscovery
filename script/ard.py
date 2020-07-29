@@ -40,7 +40,7 @@ if __name__ == '__main__':
         kwargs['bonds'] = bonds
     else:
         kwargs['bonds'] = []
-    OBMol = readXYZ(reactant_file)
+    OBMol = readXYZ(reactant_file, kwargs['bonds'])
 
     kwargs['reac_smi'] = OBMol
     # Set output directory
