@@ -43,7 +43,7 @@ def make3DandOpt(mol, forcefield='uff', make3D=True):
     """
     if make3D:
         mol.make3D(forcefield=forcefield)
-    mol.localopt(forcefield=forcefield)
+    mol.localopt(forcefield=forcefield, steps = 1)
 
 def makeMolFromAtomsAndBonds(atoms, bonds, spin=None):
     """
@@ -91,14 +91,14 @@ class Molecule(pybel.Molecule):
     this is not the case, then segmentation faults may occur.
     """
 
-    def __init__(self, OBMol, bonds = None):
+    def __init__(self, OBMol):
         super(Molecule, self).__init__(OBMol)
         self.mols_indices = None
         self.mols = None
         self.rotors = None
         self.atom_in_rotor = None
         self.close_atoms = None
-        self.bonds = bonds
+
     def __getitem__(self, item):
         for atom in self:
             if item == atom.idx - 1:
@@ -117,13 +117,8 @@ class Molecule(pybel.Molecule):
 
         for atom in self:
             OBMol.AddAtom(atom.OBAtom)
-
-        if not self.bonds:
-            for bond in pybel.ob.OBMolBondIter(self.OBMol):
-                OBMol.AddBond(bond)
-        else:
-            for i in self.bonds:
-                OBMol.AddBond(i[0], i[1], i[2])
+        for bond in pybel.ob.OBMolBondIter(self.OBMol):
+            OBMol.AddBond(bond)
 
         OBMol.SetTotalSpinMultiplicity(self.spin)
         OBMol.SetHydrogensAdded()
@@ -236,6 +231,7 @@ class Molecule(pybel.Molecule):
         for atom, other_atom in zip(self, other):
             coord_vec = other_atom.OBAtom.GetVector()
             atom.OBAtom.SetVector(coord_vec)
+
 
     def isCarbeneOrNitrene(self):
         """
@@ -402,10 +398,7 @@ class Molecule(pybel.Molecule):
         molecule.
         """
         # Extract bonds
-        if not self.bonds:
-            bonds = [[bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1] for bond in pybel.ob.OBMolBondIter(self.OBMol)]
-        else:
-            bonds = [[i[0]-1, i[1]-1] for i in self.bonds]
+        bonds = [[bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1] for bond in pybel.ob.OBMolBondIter(self.OBMol)]
 
         if bonds:
             # Create first molecular fragment from first bond and start keeping track of atoms
@@ -514,7 +507,7 @@ class Arrange3D(object):
 
     """
 
-    def __init__(self, mol_1, mol_2, bonds_1, bonds_2):
+    def __init__(self, mol_1, mol_2):
         if not (0 < len(mol_1.mols) <= 4 and 0 < len(mol_2.mols) <= 4):
             raise Exception('More than 4 molecules are not supported')
 
@@ -530,8 +523,6 @@ class Arrange3D(object):
         self.def_2 = None
         self.nodes_1 = None
         self.nodes_2 = None
-        self.reactant_bonds = bonds_1
-        self.product_bonds = bonds_2
 
         self.initializeVars(mol_1, mol_2)
         # Now consider nickel
@@ -569,7 +560,7 @@ class Arrange3D(object):
                 atom_in_mol_2[j] = i
 
         # Initialize broken_bonds list
-        for bond in list(set(self.product_bonds) ^ set(self.reactant_bonds)):
+        for bond in list(set(bonds_mol_2) ^ set(bonds_mol_1)):
             i, j = atom_in_mol_1[bond[0]], atom_in_mol_1[bond[1]]
             self.bonds_1.append([(i, mol_1.mols_indices[i].index(bond[0])), (j, mol_1.mols_indices[j].index(bond[1]))])
             i, j = atom_in_mol_2[bond[0]], atom_in_mol_2[bond[1]]
@@ -579,7 +570,7 @@ class Arrange3D(object):
         natoms = len(mol_1.atoms)
         connectivity = [[0 for i in range(natoms)] for k in range(natoms)]
 
-        for bond in list(set(self.reactant_bonds) | set(self.product_bonds)):
+        for bond in list(set(bonds_mol_1) | set(bonds_mol_2)):
             connectivity[bond[0]][bond[1]], connectivity[bond[1]][bond[0]] = 1, 1
 
         # Generate a list of dihedral angles to be compared between reactant and product
@@ -896,10 +887,6 @@ class Arrange3D(object):
         intermolecular and intramolecular distances between two atoms are
         greater than user specified values.
         """
-        
-        print(type(self.mol_1.mols))
-        print(self.mol_1.mols_indices)
-
         coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, disps[:self.dof_1])
         coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, disps[self.dof_1:])
         intermol_dists = [self.minIntermolDist(coords_1), self.minIntermolDist(coords_2)]

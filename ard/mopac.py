@@ -19,10 +19,8 @@ class MopacError(Exception):
 
 class mopac(object):
 
-    def __init__(self, forcefield, reactant_bonds, product_bonds):
+    def __init__(self, forcefield):
         self.forcefield = forcefield
-        self.reactant_bonds = reactant_bonds
-        self.product_bonds = product_bonds
         log_level = logging.INFO
         process = psutil.Process(os.getpid())
         self.logger = util.initializeLog(log_level, os.path.join(os.getcwd(), 'ARD.log'), logname='main')
@@ -74,9 +72,9 @@ class mopac(object):
 
         reac_mol.gen3D(forcefield=self.forcefield, make3D=False)
         InputFile.gen3D(forcefield=self.forcefield, make3D=False)
-        reac_mol_copy, InputFile_copy= reac_mol.copy(), InputFile.copy()
 
-        arrange3D = gen3D.Arrange3D(reac_mol, InputFile, self.reactant_bonds, self.product_bonds)
+        reac_mol_copy = reac_mol.copy()
+        arrange3D = gen3D.Arrange3D(reac_mol, InputFile)
         msg = arrange3D.arrangeIn3D()
         if msg != '':
             print(msg)
@@ -88,8 +86,6 @@ class mopac(object):
         ff.Setup(Hatom.OBMol)
 
         geometry = str(InputFile.toNode())
-
-        #self.fast_bonds_filter(geometry)
         self.logger.info('\nStructure:\n{}\n'.format(str(geometry)))
         geometry = geometry.splitlines()
 
@@ -115,34 +111,10 @@ class mopac(object):
         reac_geo = "\n".join(reac_geo)
 
         reac_mol.setCoordsFromMol(reac_mol_copy)
-
         #self.finalize(start_time, 'arrange')
         
         return reac_geo, output
     
-    def fast_bonds_filter(self, geometry):
-        xyz_path = os.path.join(os.path.dirname(os.getcwd()), 'filter')
-        if os.path.exists(xyz_path):
-            shutil.rmtree(xyz_path)
-        os.mkdir(xyz_path)
-        prod_path = os.path.join(xyz_path, 'prod.xyz')
-        with open(prod_path, 'w') as f:
-            f.write('17\n\n')
-            f.write(str(geometry))
-        mol = next(pybel.readfile('xyz', prod_path))
-        bonds_mol_1 = []
-        for bond in pybel.ob.OBMolBondIter(mol.OBMol):
-            a = bond.GetBeginAtomIdx() - 1
-            b = bond.GetEndAtomIdx() - 1
-            if a < b:
-                bonds_mol_1.append((a, b))
-            else:
-                bonds_mol_1.append((b, a))
-        bonds_mol_1 = sorted(bonds_mol_1)
-        a = difflib.SequenceMatcher(None, self.reactant_bonds, bonds_mol_1).ratio()
-        b = difflib.SequenceMatcher(None, self.product_bonds, bonds_mol_1).ratio()
-        print(a*100)
-        print(b*100)
         
     def finalize(self, start_time, jobname):
         """

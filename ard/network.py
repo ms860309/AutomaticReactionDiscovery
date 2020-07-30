@@ -51,15 +51,10 @@ class Network(object):
         #Add all reactant to a list for pgen filter isomorphic
         inchi_key_list = [i['reactant_inchi_key'] for i in targets]
         gen = Generate(mol_object, inchi_key_list)
-        if self.reactant_bonds == []:
-            gen.generateProducts(nbreak=self.nbreak, nform=self.nform, reactant_bonds=None)
-        else:
-            gen.generateProducts(nbreak=self.nbreak, nform=self.nform, reactant_bonds=self.reactant_bonds)
+        gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
         prod_mols = gen.prod_mols
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
-        reactant_bonds = [(i[0]-1, i[1]-1) for i in self.reactant_bonds]
-        product_bonds = gen.product_bonds
         # Load thermo database and choose which libraries to search
         thermo_db = ThermoDatabase()
         thermo_db.load(os.path.join(settings['database.directory'], 'thermo'))
@@ -75,7 +70,7 @@ class Network(object):
             elif self.generations > 1:
                 H298_reac = targets[0]['reactant_energy']
             """
-            prod_mols_filtered = [mol for idx, mol in enumerate(prod_mols) if self.filter_dh_mopac(mol_object, mol, reactant_bonds, product_bonds[idx])]
+            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, mol)]
         else:
             if self.generations == 1:
                 H298_reac = self.reac_mol.getH298(thermo_db)
@@ -180,8 +175,8 @@ class Network(object):
             return 1
         return 0
     
-    def filter_dh_mopac(self, reac_obj, prod_mol, reactant_bonds, product_bonds):
-        H298_product = mopac(self.forcefield, reactant_bonds, product_bonds)
+    def filter_dh_mopac(self, reac_obj, prod_mol):
+        H298_product = mopac(self.forcefield)
         H298_reac, H298_prod = H298_product.mopac_get_H298(reac_obj, prod_mol)
 
         dH = H298_prod - H298_reac
@@ -274,7 +269,7 @@ class Network(object):
         return result
 
 
-    def gen_geometry(self, reactant_mol, network_prod_mol, add_bonds, break_bonds, reactant_bonds, product_bonds, **kwargs):
+    def gen_geometry(self, reactant_mol, network_prod_mol, add_bonds, break_bonds, **kwargs):
         #database
         qm_collection = db['qm_calculate_center']
         # These two lines are required so that new coordinates are
@@ -286,27 +281,23 @@ class Network(object):
         # product structures.
         Hatom = gen3D.readstring('smi', '[H]')
         ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
-        # Generate 3D geometries
-        #reactant_mol.gen3D(forcefield=self.forcefield, make3D=False)
-        #network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
 
-        reactant_mol_copy, network_prod_mol_copy= reactant_mol.copy(), network_prod_mol.copy()
-        
-        try:
-            arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol, reactant_bonds, product_bonds)
-            msg = arrange3D.arrangeIn3D()
-            if msg != '':
-                print(msg)
-        except:
-            reactant_mol, network_prod_mol = reactant_mol_copy, network_prod_mol_copy
-        """
+        reactant_mol.gen3D(forcefield=self.forcefield, make3D=False)
+        network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
+
+        reac_mol_copy = reactant_mol.copy()
+        arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
+        msg = arrange3D.arrangeIn3D()
+        if msg != '':
+            print(msg)
+
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
         reactant_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
         network_prod_mol.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
-        """
-        #network_prod_mol.gen3D(forcefield=self.forcefield, make3D=False)
+
+
         reactant = reactant_mol.toNode()
         product = network_prod_mol.toNode()
         subdir = os.path.join(os.path.dirname(self.ard_path), 'reactions')
@@ -324,6 +315,8 @@ class Network(object):
         self.makeDrawFile(reactant, 'reactant.xyz', **kwargs)
         self.makeDrawFile(product, 'product.xyz', **kwargs)
         self.makeisomerFile(add_bonds, break_bonds, **kwargs)
+
+        reactant_mol.setCoordsFromMol(reac_mol_copy)
         return output_dir
 
     def dir_check(self, subdir, b_dirname, num):

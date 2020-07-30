@@ -15,10 +15,11 @@ import time
 import pybel
 from rmgpy import settings
 from rmgpy.data.thermo import ThermoDatabase
-from rmgpy.molecule import Molecule
+import rmgpy.molecule
 
 import constants
 import gen3D
+from gen3D import Molecule
 import util
 from quantum import QuantumError
 from node import Node
@@ -102,5 +103,15 @@ def extract_bonds(bonds):
     
 def readXYZ(xyz, bonds = None):
     mol = next(pybel.readfile('xyz', xyz))
-    mol = gen3D.Molecule(mol.OBMol, bonds)
-    return mol
+    if bonds:
+        m = Molecule(pybel.ob.OBMol())
+        OBMol = m.OBMol
+        for i in mol:
+            a = pybel.ob.OBAtom()
+            a.SetAtomicNum(i.atomicnum)
+            a.SetVector(i.coords[0], i.coords[1], i.coords[2])
+            OBMol.AddAtom(a)
+        for bond in bonds:
+            OBMol.AddBond(bond[0], bond[1], bond[2])
+    mol_obj = gen3D.Molecule(OBMol)
+    return mol_obj
