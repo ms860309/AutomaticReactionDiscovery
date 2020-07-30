@@ -43,7 +43,7 @@ def make3DandOpt(mol, forcefield='uff', make3D=True):
     """
     if make3D:
         mol.make3D(forcefield=forcefield)
-    mol.localopt(forcefield=forcefield, steps = 1)
+    mol.localopt(forcefield=forcefield)
 
 def makeMolFromAtomsAndBonds(atoms, bonds, spin=None):
     """
@@ -722,6 +722,7 @@ class Arrange3D(object):
             coord_vect_2 = coords[bond[1][0]][bond[1][1]]
             diff = coord_vect_1 - coord_vect_2
             dist.append(np.sqrt(diff.dot(diff)))
+
         return dist
 
     @staticmethod
@@ -865,7 +866,15 @@ class Arrange3D(object):
         d1 = self.calcDihedralAngs(coords_1, self.torsions_1)
         d2 = self.calcDihedralAngs(coords_2, self.torsions_2)
         val_b, val_d = 0.0, 0.0
-
+        print(coords_1)
+        print('-----')
+        print(coords_2)
+        print('-----')
+        print(self.bonds_1)
+        print('-----')
+        print(self.bonds_2)
+        print('-----')
+        raise
         for i in range(len(b1)):
             val_b += np.abs(b1[i]-b2[i])
         for i in range(len(d1)):
