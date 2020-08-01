@@ -98,6 +98,12 @@ class Molecule(pybel.Molecule):
         self.rotors = None
         self.atom_in_rotor = None
         self.close_atoms = None
+        self.constraint = []
+
+        for idx, obatom in enumerate(pybel.ob.OBMolAtomIter(OBMol)):
+            number = obatom.GetAtomicNum()
+            if number == 28:
+                self.constraint.append(idx)
 
     def __getitem__(self, item):
         for atom in self:
@@ -105,7 +111,7 @@ class Molecule(pybel.Molecule):
                 return atom
         else:
             raise IndexError('index out of range')
-
+        
     def copy(self):
         """
         Create copy of `self`. The copy is somewhat reduced in that it only
@@ -399,7 +405,6 @@ class Molecule(pybel.Molecule):
         """
         # Extract bonds
         bonds = [[bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1] for bond in pybel.ob.OBMolBondIter(self.OBMol)]
-
         if bonds:
             # Create first molecular fragment from first bond and start keeping track of atoms
             molecules = [bonds[0][:]]
@@ -451,25 +456,25 @@ class Molecule(pybel.Molecule):
         self.rotors = []
         self.atom_in_rotor = []
         natoms = len(self.atoms)
-
         for bond_1 in pybel.ob.OBMolBondIter(self.OBMol):
             if bond_1.IsRotor():
                 ref_1, ref_2 = bond_1.GetBeginAtomIdx() - 1, bond_1.GetEndAtomIdx() - 1
-                self.rotors.append((ref_1, ref_2))
-                atom_in_rotor = [False] * natoms
-                atom_in_rotor[ref_1] = True
-                new_atom = True
+                if (ref_1 not in self.constraint) and (ref_2 not in self.constraint):
+                    self.rotors.append((ref_1, ref_2))
+                    atom_in_rotor = [False] * natoms
+                    atom_in_rotor[ref_1] = True
+                    new_atom = True
 
-                while new_atom:
-                    new_atom = False
-                    for bond_2 in pybel.ob.OBMolBondIter(self.OBMol):
-                        ref_3, ref_4 = bond_2.GetBeginAtomIdx() - 1, bond_2.GetEndAtomIdx() - 1
-                        if not (ref_1 == ref_3 and ref_2 == ref_4):
-                            if atom_in_rotor[ref_3] ^ atom_in_rotor[ref_4]:
-                                atom_in_rotor[ref_3], atom_in_rotor[ref_4] = True, True
-                                new_atom = True
+                    while new_atom:
+                        new_atom = False
+                        for bond_2 in pybel.ob.OBMolBondIter(self.OBMol):
+                            ref_3, ref_4 = bond_2.GetBeginAtomIdx() - 1, bond_2.GetEndAtomIdx() - 1
+                            if not (ref_1 == ref_3 and ref_2 == ref_4):
+                                if atom_in_rotor[ref_3] ^ atom_in_rotor[ref_4]:
+                                    atom_in_rotor[ref_3], atom_in_rotor[ref_4] = True, True
+                                    new_atom = True
 
-                self.atom_in_rotor.append(atom_in_rotor)
+                    self.atom_in_rotor.append(atom_in_rotor)
 
     def detCloseAtoms(self, d):
         """
@@ -525,12 +530,6 @@ class Arrange3D(object):
         self.nodes_2 = None
 
         self.initializeVars(mol_1, mol_2)
-        # Now consider nickel
-        self.atoms = tuple(atom.atomicnum for atom in self.mol_1)
-        self.constraint = []
-        for idx, i in enumerate(self.atoms):
-            if i == 28:
-                self.constraint.append(idx)
 
     def initializeVars(self, mol_1, mol_2, d_intermol=3.0, d_intramol=2.0):
         """
@@ -841,6 +840,7 @@ class Arrange3D(object):
         tort_disps = disps[6 * (nmols - 1):]
         coords_all = []
         nrots = 0
+
         for i in range(0, nmols):
             mol = mols[i]
             coords = nodes[i].coords
@@ -866,15 +866,7 @@ class Arrange3D(object):
         d1 = self.calcDihedralAngs(coords_1, self.torsions_1)
         d2 = self.calcDihedralAngs(coords_2, self.torsions_2)
         val_b, val_d = 0.0, 0.0
-        print(coords_1)
-        print('-----')
-        print(coords_2)
-        print('-----')
-        print(self.bonds_1)
-        print('-----')
-        print(self.bonds_2)
-        print('-----')
-        raise
+
         for i in range(len(b1)):
             val_b += np.abs(b1[i]-b2[i])
         for i in range(len(d1)):
