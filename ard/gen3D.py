@@ -459,7 +459,7 @@ class Molecule(pybel.Molecule):
         for bond_1 in pybel.ob.OBMolBondIter(self.OBMol):
             if bond_1.IsRotor():
                 ref_1, ref_2 = bond_1.GetBeginAtomIdx() - 1, bond_1.GetEndAtomIdx() - 1
-                if (ref_1 not in self.constraint) and (ref_2 not in self.constraint):
+                if (ref_1 not in self.constraint) or (ref_2 not in self.constraint):
                     self.rotors.append((ref_1, ref_2))
                     atom_in_rotor = [False] * natoms
                     atom_in_rotor[ref_1] = True
@@ -473,8 +473,8 @@ class Molecule(pybel.Molecule):
                                 if atom_in_rotor[ref_3] ^ atom_in_rotor[ref_4]:
                                     atom_in_rotor[ref_3], atom_in_rotor[ref_4] = True, True
                                     new_atom = True
-
                     self.atom_in_rotor.append(atom_in_rotor)
+                    #TODO need to check atom in rotor
 
     def detCloseAtoms(self, d):
         """
@@ -530,6 +530,13 @@ class Arrange3D(object):
         self.nodes_2 = None
 
         self.initializeVars(mol_1, mol_2)
+
+        # Now consider nickel
+        self.atoms = tuple(atom.atomicnum for atom in self.mol_1)
+        self.constraint = []
+        for idx, i in enumerate(self.atoms):
+            if i == 28:
+                self.constraint.append(idx)
 
     def initializeVars(self, mol_1, mol_2, d_intermol=3.0, d_intramol=2.0):
         """
@@ -808,6 +815,10 @@ class Arrange3D(object):
         """
         n = len(coords)
         centroid = coords.sum(axis=0) / n
+        if rotor[0] in self.constraint:
+            rotor = (rotor[1], rotor[0])
+        else:
+            rotor = (rotor[0], rotor[1])
         coords = self.translate(coords, -coords[rotor[0]])
         axis = coords[rotor[0]] - coords[rotor[1]]
         rot_mat = util.rotationMatrix(angle, axis)
