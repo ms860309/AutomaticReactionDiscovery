@@ -109,7 +109,7 @@ def launch_ard_jobs():
                     update_ard_status(target[0], job_id)
                     os.remove(subfile)
 
-def create_ard_sub_file(dir_path, script_path, gen_num, next_reactant, ncpus = 1, mpiprocs = 1, ompthreads = 1):
+def create_ard_sub_file(dir_path, script_path, gen_num, next_reactant, ncpus = 8, mpiprocs = 1, ompthreads = 8):
     subfile = path.join(dir_path, 'ard.job')
     product_xyz_path = path.join(dir_path, next_reactant)
     ard_path = path.join(script_path, 'ard.py')

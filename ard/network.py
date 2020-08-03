@@ -106,7 +106,7 @@ class Network(object):
             index = prod_mols.index(mol)
             self.network_prod_mols.append(mol)
             # gen geo return path
-            dir_path = self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index], reactant_bonds, product_bonds[index])
+            dir_path = self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
             product_name = mol.write('inchiKey').strip()
             #product_name = mol.toRMGMolecule().to_inchi_key()
             qm_collection.insert_one({
