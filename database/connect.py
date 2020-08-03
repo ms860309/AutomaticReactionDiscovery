@@ -25,13 +25,13 @@ db = getattr(Connector(), 'db')
 # debug
 """
 qm_collection = db['qm_calculate_center']
-query = {'ssm':'job_fail'}
-targets = list(qm_collection.find(reg_query))
+query = {'ssms_tatus':'job_fail'}
+targets = list(qm_collection.find(query))
 for target in targets:
     dir_path = target['path']
     ssm_path = os.path.join(dir_path, 'SSM')
     if os.path.exists(ssm_path):
         shutil.rmtree(ssm_path)
-    update_field = {ssm_status:"job_unrun"}
+    update_field = {'ssm_status':"job_unrun"}
     qm_collection.update_one(target, {"$unset": {'ssm_jobid':""}, "$set": update_field}, True)
 """
