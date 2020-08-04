@@ -270,7 +270,7 @@ class Network(object):
 
 
     def gen_geometry(self, reac_mol, network_prod_mol, add_bonds, break_bonds, **kwargs):
-        #database
+        # database
         qm_collection = db['qm_calculate_center']
         # These two lines are required so that new coordinates are
         # generated for each new product. Otherwise, Open Babel tries to
