@@ -2,6 +2,6 @@ reac_smi          0                 # Reactant SMILES
 imaginarybond     0                 # Experimental function of imaginary bond
 nbreak            2                 # Maximum number of bonds to be broken
 nform             2                 # Maximum number of bonds to be formed
-dH_cutoff         10                # Heat of reaction cutoff
+dH_cutoff         40                # Heat of reaction cutoff
 dH_cutoff_method  mopac             # method
 manual_bonds      1                 # Manully specify bonds function

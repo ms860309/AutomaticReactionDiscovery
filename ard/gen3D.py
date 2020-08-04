@@ -474,7 +474,6 @@ class Molecule(pybel.Molecule):
                                     atom_in_rotor[ref_3], atom_in_rotor[ref_4] = True, True
                                     new_atom = True
                     self.atom_in_rotor.append(atom_in_rotor)
-                    #TODO need to check atom in rotor
 
     def detCloseAtoms(self, d):
         """

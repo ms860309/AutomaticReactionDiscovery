@@ -96,7 +96,7 @@ class mopac(object):
             i_list = i.split()
             atom = i_list[0] + " "
             k = i_list[1:] + [""]
-            l = " 1 ".join(k)
+            l = " 0 ".join(k)
             out = atom + l
             output.append(out)
         output = "\n".join(output)
@@ -107,7 +107,7 @@ class mopac(object):
             i_list = i.split()
             atom = i_list[0] + " "
             k = i_list[1:] + [""]
-            l = " 1 ".join(k)
+            l = " 0 ".join(k)
             out = atom + l
             reac_geo.append(out)
         reac_geo = "\n".join(reac_geo)

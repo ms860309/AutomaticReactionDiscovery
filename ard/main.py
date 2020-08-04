@@ -113,5 +113,7 @@ def readXYZ(xyz, bonds = None):
             OBMol.AddAtom(a)
         for bond in bonds:
             OBMol.AddBond(bond[0], bond[1], bond[2])
-    mol_obj = gen3D.Molecule(OBMol)
+        mol_obj = gen3D.Molecule(OBMol)
+    else:
+        mol_obj = gen3D.Molecule(mol.OBMol)
     return mol_obj
