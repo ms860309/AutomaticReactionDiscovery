@@ -269,7 +269,7 @@ class Network(object):
         return result
 
 
-    def gen_geometry(self, reac_mol, network_prod_mol, add_bonds, break_bonds, **kwargs):
+    def gen_geometry(self, reactant_mol, network_prod_mol, add_bonds, break_bonds, **kwargs):
         # database
         qm_collection = db['qm_calculate_center']
         # These two lines are required so that new coordinates are
@@ -282,9 +282,9 @@ class Network(object):
         Hatom = gen3D.readstring('smi', '[H]')
         ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
 
-        reac_mol.separateMol()
-        if len(reac_mol.mols) > 1:
-            reac_mol.mergeMols()
+        reactant_mol.separateMol()
+        if len(reactant_mol.mols) > 1:
+            reactant_mol.mergeMols()
         network_prod_mol.separateMol()
         if len(network_prod_mol.mols) > 1:
             network_prod_mol.mergeMols()
