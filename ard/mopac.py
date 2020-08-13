@@ -21,11 +21,13 @@ class mopac(object):
 
     def __init__(self, forcefield):
         self.forcefield = forcefield
+        self.constraint = [0,1,2,3,4,5]  # for debug
+
         log_level = logging.INFO
         process = psutil.Process(os.getpid())
-        self.logger = util.initializeLog(log_level, os.path.join(os.getcwd(), 'ARD.log'), logname='main')
-        self.logger.info('\nARD initiated on ' + time.asctime() + '\n')
-        self.logger.info('memory usage: {}'.format(process.memory_percent()))
+        #self.logger = util.initializeLog(log_level, os.path.join(os.getcwd(), 'ARD.log'), logname='main')
+        #self.logger.info('\nARD initiated on ' + time.asctime() + '\n')
+        #self.logger.info('memory usage: {}'.format(process.memory_percent()))
 
     def mopac_get_H298(self, reac_obj, prod_obj, charge = 0, multiplicity = 'SINGLET', method = 'PM7'):
         """
@@ -42,14 +44,14 @@ class mopac(object):
         reac_geo, geometry = self.genInput(reac_obj, prod_obj)
         
         with open(reactant_path, 'w') as f:
-            f.write("LARGE CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
+            f.write("CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
             f.write("\n{}".format(reac_geo))
         start_time = time.time()
         self.runMopac(tmpdir, 'reactant.mop')
         reactant = self.getHeatofFormation(tmpdir, 'reactant.out')
 
         with open(product_path, 'w') as f:
-            f.write("LARGE CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
+            f.write("CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
             f.write("\n{}".format(geometry))
         self.runMopac(tmpdir, 'product.mop')
         product = self.getHeatofFormation(tmpdir, 'product.out')
@@ -89,25 +91,31 @@ class mopac(object):
         prod_obj.gen3D(make3D=False)
         ff.Setup(Hatom.OBMol)
 
-        self.logger.info('\nStructure:\n{}\n'.format(str(prod_obj.toNode())))
+        #self.logger.info('\nStructure:\n{}\n'.format(str(prod_obj.toNode())))
         geometry = str(prod_obj.toNode()).splitlines()
         output = []
-        for i in geometry:
+        for idx, i in enumerate(geometry):
             i_list = i.split()
             atom = i_list[0] + " "
             k = i_list[1:] + [""]
-            l = " 0 ".join(k)
+            if idx in self.constraint:
+                l = " 0 ".join(k)
+            else:
+                l = " 1 ".join(k)
             out = atom + l
             output.append(out)
         output = "\n".join(output)
 
         reactant_geo = str(reac_mol.toNode()).splitlines()
         reac_geo = []
-        for i in reactant_geo:
+        for idx, i in enumerate(reactant_geo):
             i_list = i.split()
             atom = i_list[0] + " "
             k = i_list[1:] + [""]
-            l = " 0 ".join(k)
+            if idx in self.constraint:
+                l = " 0 ".join(k)
+            else:
+                l = " 1 ".join(k)
             out = atom + l
             reac_geo.append(out)
         reac_geo = "\n".join(reac_geo)
