@@ -130,7 +130,7 @@ class mopac(object):
         """
         Finalize the job.
         """
-        self.logger.info('Total {} run time: {:.1f} s'.format(jobname, time.time() - start_time))
+        #self.logger.info('Total {} run time: {:.1f} s'.format(jobname, time.time() - start_time))
 
     def getHeatofFormation(self, tmpdir, target = 'reactant.out'):
         """

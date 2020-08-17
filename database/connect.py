@@ -25,7 +25,7 @@ db = getattr(Connector(), 'db')
 # debug
 """
 qm_collection = db['qm_calculate_center']
-query = {'ssms_tatus':'job_fail'}
+query = {'ssm_status':'job_fail'}
 targets = list(qm_collection.find(query))
 for target in targets:
     dir_path = target['path']
