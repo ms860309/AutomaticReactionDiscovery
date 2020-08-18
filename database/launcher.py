@@ -3,6 +3,7 @@ import subprocess
 import os
 from os import path
 import shutil
+from shutil import copyfile
 import sys
 sys.path.append(path.join(path.dirname( path.dirname( path.abspath(__file__))),'script'))
 # gsm is in script dir for launch gsm
@@ -165,6 +166,11 @@ def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 1, mpiprocs = 1, ompth
     ts_input_file = path.join(TS_dir_path, 'ts.in')
     ts_output_file = path.join(TS_dir_path, 'ts.out')
     subfile = path.join(TS_dir_path, 'cal_ts.job')
+    base_dir_path = path.join(path.dirname(path.dirname(path.dirname(SSM_dir_path))), 'config')
+    ts_lot = path.join(base_dir_path, 'freq_ts.lot')
+
+    with open(ts_lot) as f:
+        config = [line.strip() for line in f]
 
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
@@ -176,48 +182,13 @@ def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 1, mpiprocs = 1, ompth
     
     with open(tsnode_path, 'r') as f1:
         lines = f1.readlines()
-        with open(ts_input_file, 'w') as f2:
-            # geometry
-            f2.write('$molecule\n')
-            f2.write('0 1\n')
-            for line in lines[2:]:
-                f2.write(line)
-            f2.write('$end\n')
-            # jobtype
-            f2.write('$rem\n')
-            f2.write('JOBTYPE FREQ\n')
-            f2.write('METHOD B97-D3\n')
-            f2.write('DFT_D D3_BJ\n')
-            f2.write('BASIS def2-mSVP\n')
-            f2.write('SCF_ALGORITHM DIIS\n')
-            f2.write('MAX_SCF_CYCLES 150\n')
-            f2.write('SCF_CONVERGENCE 8\n')
-            f2.write('SYM_IGNORE TRUE\n')
-            f2.write('SYMMETRY FALSE\n')
-            f2.write('WAVEFUNCTION_ANALYSIS FALSE\n')
-            f2.write('$end\n')
-            f2.write('\n@@@\n\n')
-            f2.write('$molecule\n')
-            f2.write('read\n')
-            f2.write('$end\n')
-            f2.write('$rem\n')
-            f2.write('JOBTYPE TS\n')
-            f2.write('METHOD B97-D3\n')
-            f2.write('DFT_D D3_BJ\n')
-            f2.write('BASIS def2-mSVP\n')
-            f2.write('SCF_GUESS READ\n')
-            f2.write('GEOM_OPT_HESSIAN READ\n')
-            f2.write('SCF_ALGORITHM DIIS\n')
-            f2.write('MAX_SCF_CYCLES 150\n')
-            f2.write('SCF_CONVERGENCE 8\n')
-            f2.write('SYM_IGNORE TRUE\n')
-            f2.write('SYMMETRY FALSE\n')
-            f2.write('GEOM_OPT_MAX_CYCLES 150\n')
-            f2.write('GEOM_OPT_TOL_GRADIENT 100\n')
-            f2.write('GEOM_OPT_TOL_DISPLACEMENT 400\n')
-            f2.write('GEOM_OPT_TOL_ENERGY 33\n')
-            f2.write('WAVEFUNCTION_ANALYSIS FALSE\n')
-            f2.write('$end\n')
+    with open(ts_input_file, 'w') as f2:
+        for i, text in enumerate(config):
+            if text.startswith('$molecule'):
+                cblock = lines[2:]
+                cblock.insert(0, '0  1')
+                config[(i+1):(i+1)] = cblock
+                break
             
     with open(subfile, 'w') as f:
         f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, scratch, command, clean_scratch))
@@ -646,9 +617,11 @@ def create_irc_opt_sub_file(irc_path, direction = 'forward', ncpus = 1, mpiprocs
         f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, nes2, nes3, nes4, nes5))
     return subfile
 
-launch_energy_jobs()
+#launch_energy_jobs()
 launch_ssm_jobs()
-launch_ts_jobs()
+#launch_ts_jobs()  #need test
+
+
 #launch_irc_jobs()
 #launch_irc_opt_jobs()
 #launch_same_ssm_jobs()
