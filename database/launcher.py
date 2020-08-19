@@ -166,7 +166,7 @@ def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 1, mpiprocs = 1, ompth
     ts_input_file = path.join(TS_dir_path, 'ts.in')
     ts_output_file = path.join(TS_dir_path, 'ts.out')
     subfile = path.join(TS_dir_path, 'cal_ts.job')
-    base_dir_path = path.join(path.dirname(path.dirname(path.dirname(SSM_dir_path))), 'config')
+    base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(SSM_dir_path)))), 'config')
     ts_lot = path.join(base_dir_path, 'freq_ts.lot')
 
     with open(ts_lot) as f:
@@ -181,7 +181,7 @@ def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 1, mpiprocs = 1, ompth
     clean_scratch = 'rm -r $QCSCRATCH'
     
     with open(tsnode_path, 'r') as f1:
-        lines = f1.readlines()
+        lines = f1.read().splitlines()
     with open(ts_input_file, 'w') as f2:
         for i, text in enumerate(config):
             if text.startswith('$molecule'):
@@ -189,7 +189,8 @@ def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 1, mpiprocs = 1, ompth
                 cblock.insert(0, '0  1')
                 config[(i+1):(i+1)] = cblock
                 break
-            
+        for line in config:
+            f2.write(line + '\n')
     with open(subfile, 'w') as f:
         f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, scratch, command, clean_scratch))
         
