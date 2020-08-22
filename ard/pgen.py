@@ -47,7 +47,6 @@ class Generate(object):
         self.prod_mols = []
         self.add_bonds = []
         self.break_bonds = []
-        self.product_bonds = []
         self.initialize()
         self.constraint = []
         for idx, i in enumerate(self.atoms):
@@ -135,7 +134,7 @@ class Generate(object):
             products_bonds = products_bonds
         return products_bonds
 
-    def generateProducts(self, nbreak=3, nform=3):
+    def generateProducts(self, nbreak=2, nform=2):
         """
         Generate all possible products from the reactant under the constraints
         of breaking a maximum of `nbreak` and forming a maximum of `nform`
@@ -149,7 +148,6 @@ class Generate(object):
             [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
              for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
         ))
-
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]
         # Initialize set for storing bonds of products
@@ -173,59 +171,47 @@ class Generate(object):
                     reactant_valences,
                     bonds_form_all
                 )
-
+                
         if products_bonds:
             #Filter the products_bonds which doesn't follow DoU rule
             #products_bonds = self.DoU(products_bonds)
-
             for bonds in products_bonds:
-                mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
-                mol.setCoordsFromMol(self.reac_mol)
-                if mol.write('inchiKey').strip() not in self.reactant_inchikey:
-                #if mol.toRMGMolecule().to_inchi_key() not in self.reactant_inchikey:
-                    
-                    """
-                    for SSM calculation
-                    """
-                    break_bonds = []
-                    form_bonds = []
-                    a = set(reactant_bonds)
-                    b = set(bonds)
-                    for i in list(b.symmetric_difference(a)):
-                        if i not in b:
-                            # which is breaked
-                            break_bonds.append(i)
-                        else:
-                            # which is formed
-                            form_bonds.append(i)
-                    # deal with double bonds
+                #for SSM calculation
+                break_bonds = []
+                form_bonds = []
+                for i in list(set(bonds) ^ set(reactant_bonds)):
+                    if i not in bonds:
+                        # which is breaked
+                        break_bonds.append(i)
+                    else:
+                        # which is formed
+                        form_bonds.append(i)
+                # deal with double bonds
+                for i in form_bonds:
+                    if i[2] > 1 and i in bonds:
+                        for j in break_bonds:
+                            if i[0] == j[0] and i[1] == j[1]:
+                                break_bonds.remove(j)
+                # deal with double bonds
+                for i in break_bonds:
+                    if i[2] > 1 and i in reactant_bonds:
+                        for j in form_bonds:
+                            if i[0] == j[0] and i[1] == j[1]:
+                                form_bonds.remove(j)
+
+                if self.check_bond_type(bonds):
                     for i in form_bonds:
-                        if i[2] > 1 and i in bonds:
-                            for j in break_bonds:
-                                if i[0] == j[0] and i[1] == j[1]:
-                                    break_bonds.remove(j)
-                    # deal with double bonds
+                        if i[2] == 2:
+                            form_bonds.remove(i)
                     for i in break_bonds:
-                        if i[2] > 1 and i in reactant_bonds:
-                            for j in form_bonds:
-                                if i[0] == j[0] and i[1] == j[1]:
-                                    form_bonds.remove(j)
-                    
-                    #if len(form_bonds) == nform and len(break_bonds) == nbreak:
-                    if self.check_bond_type(bonds):
-                        for i in form_bonds:
-                            if i[2] == 2:
-                                form_bonds.remove(i)
-                        for i in break_bonds:
-                            if i[2] == 2:
-                                break_bonds.remove(i)
-                        self.add_bonds.append(form_bonds)
-                        self.break_bonds.append(break_bonds)
+                        if i[2] == 2:
+                            break_bonds.remove(i)
+                    self.add_bonds.append(form_bonds)
+                    self.break_bonds.append(break_bonds)
+                    mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
+                    mol.setCoordsFromMol(self.reac_mol)
+                    if mol.write('inchiKey').strip() not in self.reactant_inchikey:
                         self.prod_mols.append(mol)
-                        temp = []
-                        for i in bonds:
-                            temp.append((i[0], i[1]))
-                        self.product_bonds.append(temp)
 
     def check_bond_type(self, bonds):
         
@@ -240,7 +226,7 @@ class Generate(object):
         tmp = []
         for idx, i in enumerate(self.atoms):
             if i == 6:
-                if bond_type[idx] != 4:
+                if bond_type[idx] > 4:   # use !=  or  >   need test
                     tmp.append(idx)
         if len(tmp) == 0:
             return 1
@@ -259,15 +245,17 @@ class Generate(object):
             bonds_broken = []
         if nbreak == 0 and nform == 0:
             # If no more bonds are to be changed, then add product (base case)
-            # Here I only consider break 2 form 2. (b 3 f 3 need some change)
-            if len(bonds_broken) > 1:
-                if (bonds_broken[0][0] not in self.constraint and bonds_broken[0][1] not in self.constraint) and (bonds_broken[1][0] not in self.constraint and bonds_broken[1][1] not in self.constraint):
-                    products.add((tuple(sorted(bonds))))
-            """
-            elif len(bonds_broken) == 1:
-                if bonds_broken[0][0] not in self.constraint and bonds_broken[0][1] not in self.constraint:
-                    products.add((tuple(sorted(bonds))))
-            """
+            if len(bonds_broken) == 2:
+                if not (bonds_broken[0][0] in self.constraint and bonds_broken[0][1] in self.constraint):
+                    if not (bonds_broken[1][0] in self.constraint and bonds_broken[1][1] in self.constraint):
+                        products.add((tuple(sorted(bonds))))
+            elif len(bonds_broken) == 3:
+                if not (bonds_broken[0][0] in self.constraint and bonds_broken[0][1] in self.constraint):
+                    if not (bonds_broken[1][0] in self.constraint and bonds_broken[1][1] in self.constraint):
+                        if not (bonds_broken[2][0] in self.constraint and bonds_broken[2][1] in self.constraint):
+                            products.add((tuple(sorted(bonds))))
+            else:
+                products.add((tuple(sorted(bonds))))
         if nbreak > 0:
             # Break bond
             for bond_break_idx, bond_break in enumerate(bonds):
