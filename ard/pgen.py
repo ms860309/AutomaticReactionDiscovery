@@ -48,6 +48,8 @@ class Generate(object):
         self.add_bonds = []
         self.break_bonds = []
         self.initialize()
+        coords = [atom.coords for atom in self.reac_mol]
+        self.reactant_coords = [np.array(coords).reshape(len(self.atoms), 3)]
         self.constraint = []
         for idx, i in enumerate(self.atoms):
             if i == 28:
@@ -171,7 +173,7 @@ class Generate(object):
                     reactant_valences,
                     bonds_form_all
                 )
-                
+
         if products_bonds:
             #Filter the products_bonds which doesn't follow DoU rule
             #products_bonds = self.DoU(products_bonds)
@@ -206,12 +208,22 @@ class Generate(object):
                     for i in break_bonds:
                         if i[2] == 2:
                             break_bonds.remove(i)
+
+                    dist = self.check_bond_length(self.reactant_coords, form_bonds)
+                    with open('./debug.txt', 'a') as f:
+                        f.write(str(dist))
+                        f.write('\n')
+                        f.write(str(form_bonds))
+                        f.write('\n')
+                        f.write('---------')
+                        f.write('\n')
                     self.add_bonds.append(form_bonds)
                     self.break_bonds.append(break_bonds)
                     mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
                     mol.setCoordsFromMol(self.reac_mol)
                     if mol.write('inchiKey').strip() not in self.reactant_inchikey:
                         self.prod_mols.append(mol)
+            raise
 
     def check_bond_type(self, bonds):
         
@@ -232,6 +244,22 @@ class Generate(object):
             return 1
         else:
             return 0
+    
+    def check_bond_length(self, coords, add_bonds):
+        """
+        Use reactant coordinate to check if the add bonds's bond length is too long.
+        Return a 'list of distance'.
+        """
+        dist = []
+        form_bond = []
+        for i in add_bonds:
+            form_bond.append([(0, i[0]), (0, i[1])])
+        for bond in form_bond:
+            coord_vect_1 = coords[bond[0][0]][bond[0][1]]
+            coord_vect_2 = coords[bond[1][0]][bond[1][1]]
+            diff = coord_vect_1 - coord_vect_2
+            dist.append(np.sqrt(diff.dot(diff)))
+        return dist
         
     def _generateProductsHelper(self, nbreak, nform, products, bonds, valences, bonds_form_all, bonds_broken=None):
         """
