@@ -209,21 +209,14 @@ class Generate(object):
                         if i[2] == 2:
                             break_bonds.remove(i)
 
-                    dist = self.check_bond_length(self.reactant_coords, form_bonds)
-                    with open('./debug.txt', 'a') as f:
-                        f.write(str(dist))
-                        f.write('\n')
-                        f.write(str(form_bonds))
-                        f.write('\n')
-                        f.write('---------')
-                        f.write('\n')
+                    #dist = self.check_bond_length(self.reactant_coords, form_bonds)
+
                     self.add_bonds.append(form_bonds)
                     self.break_bonds.append(break_bonds)
                     mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
                     mol.setCoordsFromMol(self.reac_mol)
                     if mol.write('inchiKey').strip() not in self.reactant_inchikey:
                         self.prod_mols.append(mol)
-            raise
 
     def check_bond_type(self, bonds):
         
@@ -251,14 +244,11 @@ class Generate(object):
         Return a 'list of distance'.
         """
         dist = []
-        form_bond = []
-        for i in add_bonds:
-            form_bond.append([(0, i[0]), (0, i[1])])
-        for bond in form_bond:
-            coord_vect_1 = coords[bond[0][0]][bond[0][1]]
-            coord_vect_2 = coords[bond[1][0]][bond[1][1]]
+        for bond in add_bonds:
+            coord_vect_1 = coords[0][bond[0]]
+            coord_vect_2 = coords[0][bond[1]]
             diff = coord_vect_1 - coord_vect_2
-            dist.append(np.sqrt(diff.dot(diff)))
+            dist.append(np.linalg.norm(diff))
         return dist
         
     def _generateProductsHelper(self, nbreak, nform, products, bonds, valences, bonds_form_all, bonds_broken=None):

@@ -726,7 +726,7 @@ class Arrange3D(object):
             coord_vect_1 = coords[bond[0][0]][bond[0][1]]
             coord_vect_2 = coords[bond[1][0]][bond[1][1]]
             diff = coord_vect_1 - coord_vect_2
-            dist.append(np.sqrt(diff.dot(diff)))
+            dist.append(np.linalg.norm(diff))
 
         return dist
 

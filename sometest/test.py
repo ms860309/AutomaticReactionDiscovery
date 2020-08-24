@@ -11,14 +11,11 @@ def check_bond_length(coords, add_bonds):
     Return a 'list of distance'.
     """
     dist = []
-    form_bond = []
-    for i in add_bonds:
-        form_bond.append([(0, i[0]), (0, i[1])])
-    for bond in form_bond:
-        coord_vect_1 = coords[bond[0][0]][bond[0][1]]
-        coord_vect_2 = coords[bond[1][0]][bond[1][1]]
+    for bond in add_bonds:
+        coord_vect_1 = coords[0][bond[0]]
+        coord_vect_2 = coords[0][bond[1]]
         diff = coord_vect_1 - coord_vect_2
-        dist.append(np.sqrt(diff.dot(diff)))
+        dist.append(np.linalg.norm(diff))
     return dist
 
 server = 'mongodb+srv://jianyi:aa123@cluster0-wo5fn.gcp.mongodb.net/test?retryWrites=true&w=majority'
@@ -50,7 +47,6 @@ for i in a:
         if line[0] == 'ADD':
             tmp.append((int(line[1])-1, int(line[2])-1))
     dist = check_bond_length(reactant_coords, tmp)
-
     with open('debug.txt', 'a') as f:
         f.write(i)
         f.write('\n')
