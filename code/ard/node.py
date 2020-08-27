@@ -7,13 +7,14 @@ of molecules in Cartesian coordinates and evaluating energies and gradients
 using quantum chemical calculations.
 """
 
-from __future__ import print_function, division
-
+# standard library imports
 import sys
 
+#third party
 import numpy as np
 import pybel
 
+# local application imports
 import props
 import gen3D
 

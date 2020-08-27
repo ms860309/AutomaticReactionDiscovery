@@ -6,15 +6,16 @@ Contains classes for reading data from quantum software log files and for
 executing quantum jobs.
 """
 
-from __future__ import print_function, division
-
+# standard library imports
 import os
 import re
-import subprocess
 import sys
 
+#third party
 import numpy as np
+import subprocess
 
+# local application imports
 import constants
 import props
 

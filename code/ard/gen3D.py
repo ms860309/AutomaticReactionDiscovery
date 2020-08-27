@@ -6,10 +6,11 @@ Contains functions and classes for generating 3D geometries using Open Babel.
 Also contains functionality for estimating thermo using group additivity and
 RMG database values.
 """
-from __future__ import division
 
+# standard library imports
 import os
 
+#third party
 import numpy as np
 from scipy import optimize
 import pybel
@@ -20,6 +21,7 @@ from rmgpy.data.thermo import ThermoDatabase
 from rmgpy.molecule.adjlist import to_adjacency_list
 from rmgpy.molecule.converter import from_ob_mol
 
+# local application imports
 import constants
 import props
 import util

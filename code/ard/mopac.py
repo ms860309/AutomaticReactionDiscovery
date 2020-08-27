@@ -1,15 +1,20 @@
-from node import Node
-import shutil
+# standard library imports
 import os
-from subprocess import Popen, PIPE
-import gen3D
-import pybel
-import psutil
+import shutil
 import time
+import psutil
+
+#third party
 import logging
-import util
-import pybel
+from subprocess import Popen, PIPE
 import difflib
+import pybel
+
+# local application imports
+from node import Node
+import gen3D
+import util
+
 
 class MopacError(Exception):
     """
@@ -17,7 +22,7 @@ class MopacError(Exception):
     """
     pass
 
-class mopac(object):
+class Mopac(object):
 
     def __init__(self, forcefield):
         self.forcefield = forcefield

@@ -1,23 +1,27 @@
+# standard library imports
 import os
 import time
 import psutil
+import copy
+import shutil
 
+#third party
 import pybel
 from rmgpy import settings
 from rmgpy.data.thermo import ThermoDatabase
 from rmgpy.molecule import Molecule
 from subprocess import Popen, PIPE
 
+# local application imports
 import constants
 import gen3D
 import util
 from quantum import QuantumError
 from node import Node
 from pgen import Generate
-from mopac import mopac
-import copy
-import shutil
-import time
+from mopac import Mopac
+
+
 #database
 from connect import db
 

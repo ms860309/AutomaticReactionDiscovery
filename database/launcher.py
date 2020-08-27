@@ -104,7 +104,7 @@ def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 1, mpiprocs = 1, ompthre
     subfile = path.join(SSM_dir_path, 'cal_ssm.job')
     xyz_file = path.join(dir_path, 'reactant.xyz')
     isomers = path.join(dir_path, 'add_bonds.txt')
-    lot_inp_file = path.join(path.join(path.dirname(path.dirname(dir_path)), 'submmit_required'), 'qstart')
+    lot_inp_file = path.join(path.join(path.dirname(path.dirname(dir_path)), 'config'), 'qstart')
 
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
@@ -417,7 +417,7 @@ def create_same_ssm_sub_file(dir_path, SSM_dir_path, dc, ncpus = 1, mpiprocs = 1
     with open (path.join(dir_path, 'add_bonds.txt'), 'w') as f:
         f.write(dc)
     isomers = path.join(dir_path, 'add_bonds.txt')
-    lot_inp_file = path.join(path.join(path.dirname(path.dirname(dir_path)), 'submmit_required'), 'qstart')
+    lot_inp_file = path.join(path.join(path.dirname(path.dirname(dir_path)), 'config'), 'qstart')
 
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)

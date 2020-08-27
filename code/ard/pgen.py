@@ -5,8 +5,10 @@
 Contains the :class:`Generate` for generating product structures.
 """
 
+#third party
 import pybel
 
+# local application imports
 import props
 import gen3D
 import numpy as np

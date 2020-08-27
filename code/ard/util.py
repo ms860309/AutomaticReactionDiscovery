@@ -5,17 +5,18 @@
 Provides utility functions and classes.
 """
 
-from __future__ import division
-
-import bisect
-from functools import wraps
-import logging
+# standard library imports
 import os
 import shutil
 import time
 
+#third party
+import bisect
+from functools import wraps
+import logging
 import numpy as np
 
+# local application imports
 from quantum import Gaussian, QChem, NWChem
 
 ###############################################################################

@@ -7,16 +7,16 @@ includes filtering reactions, generating 3D geometries, and running transition
 state searches.
 """
 
-from __future__ import print_function
-
+# standard library imports
 import os
 import time
 
+#third party
 import pybel
-from rmgpy import settings
-from rmgpy.data.thermo import ThermoDatabase
-import rmgpy.molecule
+import openbabel as ob
+import multiprocessing as mp
 
+# local application imports
 import constants
 import gen3D
 from gen3D import Molecule
@@ -26,10 +26,7 @@ from node import Node
 from pgen import Generate
 from network import Network
 
-from imaginary import Imaginary
-from filter_rule import _filter
-import openbabel as ob
-import multiprocessing as mp
+
 ###############################################################################
 
 class ARD(object):
