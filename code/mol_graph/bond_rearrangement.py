@@ -7,12 +7,13 @@ import itertools
 # local application imports
 from atoms import get_maximal_valance
 from geom import get_neighbour_list
+from geom import get_points_on_sphere
 from graph import get_bond_type_list
 from graph import get_fbonds
 from graph import is_isomorphic
 from graph import connected_components
 
-def get_bond_rearrangs(reactant, product, name):
+def get_bond_rearrangs(reactant, product):
     """For a reactant and product (complex) find the set of breaking and
     forming bonds that will turn reactants into products. This works by
     determining the types of bonds that have been made/broken (i.e CH) and
@@ -26,18 +27,17 @@ def get_bond_rearrangs(reactant, product, name):
     Returns:
         list: list of bond rearrang objects linking reacs and prods
     """
-
+    """
     if os.path.exists(f'{name}_bond_rearrangs.txt'):
         return get_bond_rearrangs_from_file(f'{name}_bond_rearrangs.txt')
 
     if is_isomorphic(reactant.graph, product.graph) and product.n_atoms > 3:
         return None
-
+    """
     possible_bond_rearrs = []
 
     reac_bond_dict = get_bond_type_list(reactant.graph)
     prod_bond_dict = get_bond_type_list(product.graph)
-
     # list of bonds where this type of bond (e.g C-H) has less bonds in
     # products than reactants
     all_possible_bbonds = []
@@ -84,7 +84,7 @@ def get_bond_rearrangs(reactant, product, name):
         funcs = [get_fbonds_bbonds_2b]
     else:
         return None
-    
+
     for func in funcs:
         possible_bond_rearrs = func(reactant, product, possible_bond_rearrs,
                                     all_possible_bbonds,
@@ -96,13 +96,12 @@ def get_bond_rearrangs(reactant, product, name):
         if len(possible_bond_rearrs) > 0:
             # This function will return with the first bond rearrangement
             # that leads to products
-
             n_bond_rearrangs = len(possible_bond_rearrs)
             if n_bond_rearrangs > 1:
                 possible_bond_rearrs = strip_equivalent_bond_rearrangs(reactant, possible_bond_rearrs)
 
-            save_bond_rearrangs_to_file(possible_bond_rearrs,
-                                        filename=f'{name}_bond_rearrangs.txt')
+            #save_bond_rearrangs_to_file(possible_bond_rearrs,
+                                        #filename=f'{name}_bond_rearrangs.txt')
 
             return possible_bond_rearrs
 
@@ -400,7 +399,6 @@ class BondRearrangement:
         # Calculate the neighbour lists while the molecules are all far away
         if self.active_atom_nl is None:
             self.active_atom_nl = [get_neighbour_list(species=mol, atom_i=atom)[:depth] for atom in self.active_atoms]
-
         # Shift the molecules back to where they were
         shift_molecules(vectors=[-vector for vector in shift_vectors])
 

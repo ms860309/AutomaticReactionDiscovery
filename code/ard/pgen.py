@@ -7,11 +7,17 @@ Contains the :class:`Generate` for generating product structures.
 
 #third party
 import pybel
+import networkx as nx
 
 # local application imports
 import props
+import constants
 import gen3D
 import numpy as np
+from graph import make_graph, is_isomorphic
+from bond_rearrangement import get_bond_rearrangs, BondRearrangement
+from atoms import Atom
+from species import Species
 
 ELEMENT_TABLE = props.ElementData()
 ###############################################################################
@@ -42,9 +48,11 @@ class Generate(object):
           (beginAtomIdx, endAtomIdx, bondOrder)
     """
 
-    def __init__(self, reac_mol, reactant_inchikey):
+    def __init__(self, reac_mol, reactant_inchikey, reactant_graph, bond_dissociation_cutoff):
         self.reac_mol = reac_mol
         self.reactant_inchikey = reactant_inchikey
+        self.reac_mol_graph = reactant_graph
+        self.bond_dissociation_cutoff = float(bond_dissociation_cutoff)
         self.atoms = None
         self.prod_mols = []
         self.add_bonds = []
@@ -218,7 +226,8 @@ class Generate(object):
                     mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
                     mol.setCoordsFromMol(self.reac_mol)
                     if mol.write('inchiKey').strip() not in self.reactant_inchikey:
-                        self.prod_mols.append(mol)
+                        if self.check_bond_dissociation_energy(bonds, break_bonds):
+                            self.prod_mols.append(mol)
 
     def check_bond_type(self, bonds):
         
@@ -240,6 +249,38 @@ class Generate(object):
         else:
             return 0
     
+    def check_bond_dissociation_energy(self, bond_list, bbond_list):
+        energy = 0.0
+
+        reactant_graph = self.reac_mol_graph
+        atoms = []
+        for i in range(reactant_graph.n_atoms):
+            atoms.append(Atom(atomic_symbol=reactant_graph.atoms[i].label))
+        product = Species(atoms)
+
+        graph = nx.Graph()
+
+        for i in range(reactant_graph.n_atoms):
+            graph.add_node(i, atom_label=reactant_graph.atoms[i].label, stereo=False)
+
+        if bond_list is not None:
+            [graph.add_edge(bond[0], bond[1], pi=False, active=False) for bond in bond_list]
+            product.graph = graph
+
+        for break_bond in bbond_list:
+            first_atom = reactant_graph.atoms[break_bond[0]].label
+            second_atom = reactant_graph.atoms[break_bond[1]].label
+            
+            try:
+                energy += props.bond_dissociation_energy[first_atom + second_atom]
+            except:
+                energy += props.bond_dissociation_energy[second_atom + first_atom]
+        
+        if energy/constants.cal_to_J >= self.bond_dissociation_cutoff:
+            return False
+        else:
+            return True
+
     def check_bond_length(self, coords, add_bonds):
         """
         Use reactant coordinate to check if the add bonds's bond length is too long.

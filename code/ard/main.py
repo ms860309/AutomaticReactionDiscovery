@@ -25,7 +25,9 @@ from quantum import QuantumError
 from node import Node
 from pgen import Generate
 from network import Network
-
+from input_output import xyz_file_to_atoms
+from species import Species
+from graph import make_graph
 
 ###############################################################################
 
@@ -53,27 +55,22 @@ class ARD(object):
     def __init__(self, reac_smi, imaginarybond=0, nbreak=3, nform=3, dh_cutoff=20.0, theory_low=None,
                  forcefield='uff', distance=3.5, output_dir='', **kwargs):
         self.reac_smi = reac_smi
-        self.imaginarybond = int(imaginarybond)
-        self.nbreak = int(nbreak)
-        self.nform = int(nform)
-        self.dh_cutoff = float(dh_cutoff)
-        self.theory_low = theory_low
+        self.reactant_graph = kwargs['graph']
         self.forcefield = forcefield
-        self.distance = float(distance)
-        self.output_dir = output_dir
 
     def executeXYZ(self, **kwargs):
         
         reac_mol = self.reac_smi
+        reactant_graph = self.reactant_graph
         #reac_mol.gen3D(forcefield=self.forcefield)
-        network = Network(reac_mol, forcefield = self.forcefield, **kwargs)
+        network = Network(reac_mol, reactant_graph, forcefield = self.forcefield, **kwargs)
         network.genNetwork(reac_mol)
     
 ###############################################################################
 
 def readInput(input_file):
     # Allowed keywords
-    keys = ('reac_smi', 'imaginarybond', 'nbreak', 'nform', 'dh_cutoff', 'dh_cutoff_method', 'manual_bonds')
+    keys = ('reac_smi', 'imaginarybond', 'nbreak', 'nform', 'dh_cutoff', 'dh_cutoff_method', 'manual_bonds', 'graph', 'bond_dissociation_cutoff')
     # Read all data from file
     with open(input_file, 'r') as f:
         input_data = f.read().splitlines()
@@ -113,4 +110,8 @@ def readXYZ(xyz, bonds = None):
         mol_obj = gen3D.Molecule(OBMol)
     else:
         mol_obj = gen3D.Molecule(mol.OBMol)
-    return mol_obj
+
+    reactant_graph = Species(xyz_file_to_atoms(xyz))
+    reactant_bonds = [(i[0]-1, i[1]-1) for i in bonds]
+    make_graph(reactant_graph, bond_list= reactant_bonds)
+    return mol_obj, reactant_graph

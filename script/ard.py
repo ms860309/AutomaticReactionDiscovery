@@ -49,10 +49,15 @@ if __name__ == '__main__':
         kwargs['bonds'] = bonds
     else:
         kwargs['bonds'] = []
-    OBMol = readXYZ(reactant_file, kwargs['bonds'])
+    OBMol, reactant_graph = readXYZ(reactant_file, kwargs['bonds'])
 
     kwargs['reac_smi'] = OBMol
 
+    if kwargs['graph'] == '1':
+        kwargs['graph'] = reactant_graph
+    else:
+        kwargs['graph'] = None
+        
     # Set output directory
     output_dir = path.abspath(path.dirname(input_file))
     kwargs['output_dir'] = output_dir

@@ -101,7 +101,6 @@ class Molecule(pybel.Molecule):
         self.atom_in_rotor = None
         self.close_atoms = None
         self.constraint = []
-
         for idx, obatom in enumerate(pybel.ob.OBMolAtomIter(OBMol)):
             number = obatom.GetAtomicNum()
             if number == 28:

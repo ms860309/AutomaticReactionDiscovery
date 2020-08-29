@@ -29,12 +29,14 @@ info = psutil.virtual_memory()
 
 class Network(object):
 
-    def __init__(self, reac_mol, forcefield, **kwargs):
+    def __init__(self, reac_mol, reactant_graph, forcefield, **kwargs):
         self.reac_mol = reac_mol
+        self.reactant_graph = reactant_graph
         self.nbreak = int(kwargs['nbreak'])
         self.nform = int(kwargs['nform'])
         self.forcefield = forcefield
         self.dh_cutoff = float(kwargs['dh_cutoff'])
+        self.bond_dissociation_cutoff = kwargs['bond_dissociation_cutoff']
         self.output_dir = kwargs['output_dir']
         self.reactions = {}
         self.network_prod_mols = []
@@ -54,9 +56,11 @@ class Network(object):
         targets = list(pool_collection.find({}))
         #Add all reactant to a list for pgen filter isomorphic
         inchi_key_list = [i['reactant_inchi_key'] for i in targets]
-        gen = Generate(mol_object, inchi_key_list)
+        gen = Generate(mol_object, inchi_key_list, self.reactant_graph, self.bond_dissociation_cutoff)
         gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
         prod_mols = gen.prod_mols
+        print(len(prod_mols))
+        raise
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
         # Load thermo database and choose which libraries to search
@@ -180,7 +184,7 @@ class Network(object):
         return 0
     
     def filter_dh_mopac(self, reac_obj, prod_mol):
-        H298_product = mopac(self.forcefield)
+        H298_product = Mopac(self.forcefield)
         H298_reac, H298_prod = H298_product.mopac_get_H298(reac_obj, prod_mol)
 
         dH = H298_prod - H298_reac

@@ -19,6 +19,10 @@ Element = namedtuple("Element", ["symbol", "name", "atomic_num", "mass_amu",
 
 valenceelec = {1: 1, 2: 2, 6: 4, 7: 5, 8: 6, 9: 7, 10: 8, 14: 4, 15: 5, 16: 6, 17: 7, 28: 4, 35: 7, 18: 8, 53: 7}
 
+# data from http://staff.ustc.edu.cn/~luo971/2010-91-CRC-BDEs-Tables.pdf
+# unit is kj/mol
+bond_dissociation_energy = {'HH':435.7799, 'CH':338.4, 'OH':429.91, 'NiH':240, 'CC':618.3, 'CO':1076.38, 'NiC':337.0, 'OO':498.36, 'NiO':366, 'NiNi':204}
+
 class ElementData(object):
     """Contains full periodic table element data and methods to access them
     """
