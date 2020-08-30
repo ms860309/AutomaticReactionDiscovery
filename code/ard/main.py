@@ -115,4 +115,36 @@ def readXYZ(xyz, bonds = None):
     reactant_bonds = [(i[0]-1, i[1]-1) for i in bonds]
     make_graph(reactant_graph, bond_list= reactant_bonds)
 
+    """
+    #debuging
+    bs = [(1,2,1),(1,3,1),(1,4,1),(1,5,1),(1,13,1),(2,3,1),(2,4,1),(2,6,1),(3,5,1),(3,6,1),(3,10,1),(4,5,1),(4,6,1),(4,21,1),(5,6,1),(7,14,1),(8,15,1),(9,10,1),(9,13,1),(10,11,1),(10,16,1),(11,12,1),(11,17,1),(11,20,1),(12,13,1),(12,18,1),(13,14,1),(14,15,1),(14,19,1)]
+    atoms = tuple(atom.atomicnum for atom in mol_obj)
+    mol = gen3D.makeMolFromAtomsAndBonds(atoms, bs)
+    mol.setCoordsFromMol(mol_obj)
+
+    Hatom = gen3D.readstring('smi', '[H]')
+    ff = pybel.ob.OBForceField.FindForceField('UFF')
+
+    mol_obj.separateMol()
+    if len(mol_obj.mols) > 1:
+        mol_obj.mergeMols()
+    mol.separateMol()
+    if len(mol.mols) > 1:
+        mol.mergeMols()
+
+    gen3D.make3DandOpt(mol_obj, 'UFF', make3D = False)
+    gen3D.make3DandOpt(mol, 'UFF', make3D = False)
+
+    arrange3D = gen3D.Arrange3D(mol_obj, mol)
+    msg = arrange3D.arrangeIn3D()
+
+    ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
+    mol_obj.gen3D(make3D=False)
+    ff.Setup(Hatom.OBMol)
+    mol.gen3D(make3D=False)
+    ff.Setup(Hatom.OBMol)
+
+    print(mol.toNode())
+    raise
+    """
     return mol_obj, reactant_graph

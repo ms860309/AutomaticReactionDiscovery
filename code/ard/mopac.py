@@ -106,7 +106,6 @@ class Mopac(object):
         dist = self.check_bond_length(reac_mol, self.form_bonds) # return the maximum value in array
 
         if dist >= threshold:
-            print(1111111111111111111111111)
             return False, False
         else:
             #self.logger.info('\nStructure:\n{}\n'.format(str(prod_obj.toNode())))
