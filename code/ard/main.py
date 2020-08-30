@@ -114,4 +114,5 @@ def readXYZ(xyz, bonds = None):
     reactant_graph = Species(xyz_file_to_atoms(xyz))
     reactant_bonds = [(i[0]-1, i[1]-1) for i in bonds]
     make_graph(reactant_graph, bond_list= reactant_bonds)
+
     return mol_obj, reactant_graph

@@ -9,6 +9,7 @@ import logging
 from subprocess import Popen, PIPE
 import difflib
 import pybel
+import numpy as np
 
 # local application imports
 from node import Node
@@ -24,9 +25,11 @@ class MopacError(Exception):
 
 class Mopac(object):
 
-    def __init__(self, forcefield):
+    def __init__(self, forcefield, form_bonds):
         self.forcefield = forcefield
+        self.form_bonds = form_bonds
         self.constraint = [0,1,2,3,4,5]  # for debug
+
 
         log_level = logging.INFO
         process = psutil.Process(os.getpid())
@@ -46,33 +49,36 @@ class Mopac(object):
         os.mkdir(tmpdir)
         reactant_path = os.path.join(tmpdir, 'reactant.mop')
         product_path = os.path.join(tmpdir, 'product.mop')
-        reac_geo, geometry = self.genInput(reac_obj, prod_obj)
+        reac_geo, prod_geo = self.genInput(reac_obj, prod_obj)
         
-        with open(reactant_path, 'w') as f:
-            f.write("CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
-            f.write("\n{}".format(reac_geo))
-        start_time = time.time()
-        self.runMopac(tmpdir, 'reactant.mop')
-        reactant = self.getHeatofFormation(tmpdir, 'reactant.out')
+        if reac_geo == False and prod_geo == False:
+            return float(0.0), float(999999.0)
+        else:
+            with open(reactant_path, 'w') as f:
+                f.write("CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
+                f.write("\n{}".format(reac_geo))
+            start_time = time.time()
+            self.runMopac(tmpdir, 'reactant.mop')
+            reactant = self.getHeatofFormation(tmpdir, 'reactant.out')
 
-        with open(product_path, 'w') as f:
-            f.write("CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
-            f.write("\n{}".format(geometry))
-        self.runMopac(tmpdir, 'product.mop')
-        product = self.getHeatofFormation(tmpdir, 'product.out')
-        self.finalize(start_time, 'mopac')
-        
-        """
-        info = psutil.virtual_memory()
-        print("cpu numbers : {}".format(psutil.cpu_count()))
-        print("total memory : {}".format(info.total))
-        print("memory used : {}".format(psutil.Process(os.getpid()).memory_info().rss))
-        print("memory used percent : {}".format(info.percent))
-        """
-        return float(reactant), float(product)
+            with open(product_path, 'w') as f:
+                f.write("CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
+                f.write("\n{}".format(prod_geo))
+            self.runMopac(tmpdir, 'product.mop')
+            product = self.getHeatofFormation(tmpdir, 'product.out')
+            self.finalize(start_time, 'mopac')
+            
+            """
+            info = psutil.virtual_memory()
+            print("cpu numbers : {}".format(psutil.cpu_count()))
+            print("total memory : {}".format(info.total))
+            print("memory used : {}".format(psutil.Process(os.getpid()).memory_info().rss))
+            print("memory used percent : {}".format(info.percent))
+            """
+            return float(reactant), float(product)
     
-    def genInput(self, reac_mol, prod_obj):
-        start_time = time.time()
+    def genInput(self, reac_mol, prod_obj, threshold = 4.0):
+        #start_time = time.time()
 
         Hatom = gen3D.readstring('smi', '[H]')
         ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
@@ -91,44 +97,61 @@ class Mopac(object):
             print(msg)
 
         ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
-        reac_mol.gen3D(make3D=False)
+        gen3D.make3DandOpt(reac_mol, self.forcefield, make3D = False)
         ff.Setup(Hatom.OBMol)
-        prod_obj.gen3D(make3D=False)
+        gen3D.make3DandOpt(prod_obj, self.forcefield, make3D = False)
         ff.Setup(Hatom.OBMol)
-
-        #self.logger.info('\nStructure:\n{}\n'.format(str(prod_obj.toNode())))
-        geometry = str(prod_obj.toNode()).splitlines()
-        output = []
-        for idx, i in enumerate(geometry):
-            i_list = i.split()
-            atom = i_list[0] + " "
-            k = i_list[1:] + [""]
-            if idx in self.constraint:
-                l = " 0 ".join(k)
-            else:
-                l = " 1 ".join(k)
-            out = atom + l
-            output.append(out)
-        output = "\n".join(output)
-
-        reactant_geo = str(reac_mol.toNode()).splitlines()
-        reac_geo = []
-        for idx, i in enumerate(reactant_geo):
-            i_list = i.split()
-            atom = i_list[0] + " "
-            k = i_list[1:] + [""]
-            if idx in self.constraint:
-                l = " 0 ".join(k)
-            else:
-                l = " 1 ".join(k)
-            out = atom + l
-            reac_geo.append(out)
-        reac_geo = "\n".join(reac_geo)
-
-        reac_mol.setCoordsFromMol(reac_mol_copy)
-        #self.finalize(start_time, 'arrange')
         
-        return reac_geo, output
+        # Check reactant expected forming bond length must smaller than 4 angstrom after arrange. Default = 4
+        dist = self.check_bond_length(reac_mol, self.form_bonds) # return the maximum value in array
+
+        if dist >= threshold:
+            print(1111111111111111111111111)
+            return False, False
+        else:
+            #self.logger.info('\nStructure:\n{}\n'.format(str(prod_obj.toNode())))
+            geometry = str(prod_obj.toNode()).splitlines()
+            output = []
+            for idx, i in enumerate(geometry):
+                i_list = i.split()
+                atom = i_list[0] + " "
+                k = i_list[1:] + [""]
+
+                l = " 0 ".join(k)
+                """
+                if idx in self.constraint:
+                    l = " 0 ".join(k)
+                else:
+                    l = " 1 ".join(k)
+                """
+
+                out = atom + l
+                output.append(out)
+            output = "\n".join(output)
+
+            reactant_geo = str(reac_mol.toNode()).splitlines()
+            reac_geo = []
+            for idx, i in enumerate(reactant_geo):
+                i_list = i.split()
+                atom = i_list[0] + " "
+                k = i_list[1:] + [""]
+
+                l = " 0 ".join(k)
+                """
+                if idx in self.constraint:
+                    l = " 0 ".join(k)
+                else:
+                    l = " 1 ".join(k)
+                """
+
+                out = atom + l
+                reac_geo.append(out)
+            reac_geo = "\n".join(reac_geo)
+
+            reac_mol.setCoordsFromMol(reac_mol_copy)
+            #self.finalize(start_time, 'arrange')
+            
+            return reac_geo, output
     
         
     def finalize(self, start_time, jobname):
@@ -152,9 +175,30 @@ class Mopac(object):
             HeatofFormation = string[5]
         else:
             HeatofFormation = False
+
         return HeatofFormation
 
     def runMopac(self, tmpdir, target = 'reactant.mop'):
         input_path = os.path.join(tmpdir, target)
         p = Popen(['mopac', input_path])
         p.wait()
+
+    def check_bond_length(self, product, add_bonds):
+        """
+        Use reactant coordinate to check if the add bonds's bond length is too long.
+        Return a 'list of distance'.
+        """
+        coords = [atom.coords for atom in product]
+        atoms = tuple(atom.atomicnum for atom in product)
+        coords = [np.array(coords).reshape(len(atoms), 3)]
+
+        dist = []
+        for bond in add_bonds:
+            coord_vect_1 = coords[0][bond[0]]
+            coord_vect_2 = coords[0][bond[1]]
+            diff = coord_vect_1 - coord_vect_2
+            dist.append(np.linalg.norm(diff))
+            
+        if dist == []:
+            dist = [0]
+        return float(max(dist))

@@ -11,6 +11,7 @@ from rmgpy import settings
 from rmgpy.data.thermo import ThermoDatabase
 from rmgpy.molecule import Molecule
 from subprocess import Popen, PIPE
+import numpy as np
 
 # local application imports
 import constants
@@ -39,7 +40,6 @@ class Network(object):
         self.bond_dissociation_cutoff = kwargs['bond_dissociation_cutoff']
         self.output_dir = kwargs['output_dir']
         self.reactions = {}
-        self.network_prod_mols = []
         self.ard_path = kwargs['ard_path']
         self.generations = kwargs['generations']
         self.method = kwargs["dh_cutoff_method"]
@@ -50,73 +50,52 @@ class Network(object):
         """
         Execute the automatic reaction discovery procedure.
         """
+        # Database
         qm_collection = db['qm_calculate_center']
         pool_collection = db['pool']
         statistics_collection = db['statistics']
         targets = list(pool_collection.find({}))
-        #Add all reactant to a list for pgen filter isomorphic
+
+        # Add all reactant to a list for pgen filter isomorphic
         inchi_key_list = [i['reactant_inchi_key'] for i in targets]
+
+        # Generate all possible products
         gen = Generate(mol_object, inchi_key_list, self.reactant_graph, self.bond_dissociation_cutoff)
         gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
         prod_mols = gen.prod_mols
-        print(len(prod_mols))
-        raise
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
-        # Load thermo database and choose which libraries to search
-        thermo_db = ThermoDatabase()
-        thermo_db.load(os.path.join(settings['database.directory'], 'thermo'))
-        thermo_db.libraryOrder = ['primaryThermoLibrary', 'NISTThermoLibrary', 'thermo_DFT_CCSDTF12_BAC',
-                                    'CBS_QB3_1dHR', 'DFT_QCI_thermo', 'BurkeH2O2', 'GRI-Mech3.0-N', ]
-        # Filter reactions based on standard heat of reaction
+
+        # Reactant information
+        reactant_key = mol_object.write('inchiKey').strip()  # inchikey
+        reactant_smi = mol_object.write('can').split()[0]    # smiles
+
+        # Filter reactions based on standard heat of reaction  delta H
         if self.method == "mopac":
-            """
-            if self.generations == 1:
-                H298_reac = self.mopac_reac_H298(self.reactant_path)
-                update_field = {'reactant_energy':H298_reac}
-                pool_collection.update_one(targets[0], {"$set": update_field}, True)
-            elif self.generations > 1:
-                H298_reac = targets[0]['reactant_energy']
-            """
-            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, mol)]
+            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, mol, add_bonds[prod_mols.index(mol)])]
         else:
+            # Load thermo database and choose which libraries to search
+            thermo_db = ThermoDatabase()
+            thermo_db.load(os.path.join(settings['database.directory'], 'thermo'))
+            thermo_db.libraryOrder = ['primaryThermoLibrary', 'NISTThermoLibrary', 'thermo_DFT_CCSDTF12_BAC',
+                                        'CBS_QB3_1dHR', 'DFT_QCI_thermo', 'BurkeH2O2', 'GRI-Mech3.0-N', ]
             if self.generations == 1:
                 H298_reac = self.reac_mol.getH298(thermo_db)
                 update_field = {'reactant_energy':H298_reac}
                 pool_collection.update_one(targets[0], {"$set": update_field}, True)
             elif self.generations > 1:
                 H298_reac = targets[0]['reactant_energy']
-            prod_mols_filtered = [mol for mol in prod_mols if self.filterThreshold(H298_reac, mol, thermo_db)]
-        #check product isomorphic and filter them
-        if self.nbreak == 3 and self.nform == 3:
-            gen_2.generateProducts(nbreak=2, nform=2)
-            prod_mols_2 = gen_2.prod_mols
-            #prod_mols_filtered_2 after filter by delta H
-            if self.method == "mopac":
-                prod_mols_filtered_2 = [mol for mol in prod_mols if self.filter_dh_mopac(H298_reac, mol)]
-            else:
-                prod_mols_filtered_2 = [mol for mol in prod_mols_2 if self.filterThreshold(H298_reac, mol, thermo_db)]
-            #prod_mols_filtered_2 after filter by isomorphic
-            prod_mols_filtered_2 = self.unique_key_filterIsomorphic_itself(prod_mols_filtered_2)
-            prod_mols_filtered = self.unique_key_filterIsomorphic(prod_mols_filtered, prod_mols_filtered_2)
-            prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
-            prod_mols_filtered += prod_mols_filtered_2 
-        #else:
-            #prod_mols_filtered = self.unique_key_filterIsomorphic_itself(prod_mols_filtered)
+            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_rmg(H298_reac, mol, thermo_db)]
 
-        # initial round add all prod to self.network
         reactant_key = mol_object.write('inchiKey').strip()
-        #reactant_key = mol_object.toRMGMolecule().to_inchi_key()
         reactant_smi = mol_object.write('can').split()[0]
         prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_key, reactant_smi, prod_mols_filtered, add_bonds, break_bonds)
         statistics_collection.insert_one({'Reactant SMILES':mol_object.write('can').split()[0], 'reactant_inchi_key':reactant_key, 'add how many products':len(prod_mols_filtered)})
         for mol in prod_mols_filtered:
             index = prod_mols.index(mol)
-            self.network_prod_mols.append(mol)
-            # gen geo return path
+            # Generate geometry and return path
             dir_path = self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
             product_name = mol.write('inchiKey').strip()
-            #product_name = mol.toRMGMolecule().to_inchi_key()
             qm_collection.insert_one({
                                    'reaction': [reactant_key, product_name], 
                                    'Reactant SMILES':mol_object.write('can').split()[0], 
@@ -129,49 +108,7 @@ class Network(object):
                                    }
                                   )
 
-
-    def mopac_reac_H298(self, path, charge = 0, multiplicity = 'SINGLET', method = 'PM7'):
-
-        with open(self.reactant_path, 'r') as f:
-            lines = f.readlines()
-        output = []
-        for line in lines[2:]:
-            line = line.split()
-            atom = line[0] + " "
-            k = line[1:] + [""]
-            l = " 1 ".join(k)
-            out = atom + l
-            output.append(out)
-        output = "\n".join(output)
-
-        tmpdir = os.path.join(os.path.dirname(os.path.dirname(self.reactant_path)), 'tmp')
-        if os.path.exists(tmpdir):
-            shutil.rmtree(tmpdir)
-        os.mkdir(tmpdir)
-        input_path = os.path.join(tmpdir, 'input.mop')
-        
-        with open(input_path, 'w') as f:
-            f.write("LARGE CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
-            f.write("\n{}".format(output))
-
-        p = Popen(['mopac', input_path])
-        p.wait()
-
-        input_path = os.path.join(tmpdir, "input.out")
-        with open(input_path, 'r') as f:
-            lines = f.readlines()
-        for idx, line in enumerate(lines):
-            if line.strip().startswith('FINAL HEAT OF FORMATION'):
-                break
-        string = lines[idx].split()
-        if string[0] == 'FINAL':
-            HeatofFormation = string[5]
-        else:
-            HeatofFormation = False
-        return float(HeatofFormation)
-        
-        
-    def filterThreshold(self, H298_reac, prod_mol, thermo_db):
+    def filter_dh_rmg(self, H298_reac, prod_mol, thermo_db):
         """
         Filter threshold based on standard enthalpies of formation of reactants
         and products. Returns `True` if the heat of reaction is less than
@@ -183,8 +120,8 @@ class Network(object):
             return 1
         return 0
     
-    def filter_dh_mopac(self, reac_obj, prod_mol):
-        H298_product = Mopac(self.forcefield)
+    def filter_dh_mopac(self, reac_obj, prod_mol, form_bonds):
+        H298_product = Mopac(self.forcefield, form_bonds)
         H298_reac, H298_prod = H298_product.mopac_get_H298(reac_obj, prod_mol)
 
         dH = H298_prod - H298_reac
@@ -193,6 +130,18 @@ class Network(object):
             return 1
         return 0
 
+    def check_bond_length(self, coords, add_bonds):
+        """
+        Use reactant coordinate to check if the add bonds's bond length is too long.
+        Return a 'list of distance'.
+        """
+        dist = []
+        for bond in add_bonds:
+            coord_vect_1 = coords[0][bond[0]]
+            coord_vect_2 = coords[0][bond[1]]
+            diff = coord_vect_1 - coord_vect_2
+            dist.append(np.linalg.norm(diff))
+        return dist
 
     def unique_key_filterIsomorphic(self, reactant_key, reactant_smi, compare, add_bonds, break_bonds):
         """
@@ -203,7 +152,6 @@ class Network(object):
         targets = list(qm_collection.find({'ts_status':'job_success'}))
         base_unique = [i['product_inchi_key'] for i in targets]
         compare_unique = [mol.write('inchiKey').strip() for mol in compare]
-        #compare_unique = [mol.toRMGMolecule().to_inchi_key() for mol in compare]
         isomorphic_idx =[]
         same = {}
         for idx, i in enumerate(compare_unique):
@@ -278,8 +226,9 @@ class Network(object):
 
 
     def gen_geometry(self, reactant_mol, network_prod_mol, add_bonds, break_bonds, **kwargs):
-        # database
+        # Database
         qm_collection = db['qm_calculate_center']
+
         # These two lines are required so that new coordinates are
         # generated for each new product. Otherwise, Open Babel tries to
         # use the coordinates of the previous molecule if it is isomorphic
@@ -287,38 +236,61 @@ class Network(object):
         # participating in the bonds. a hydrogen atom is chosen
         # arbitrarily, since it will never be the same as any of the
         # product structures.
+
         Hatom = gen3D.readstring('smi', '[H]')
         ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
 
         reactant_mol.separateMol()
         if len(reactant_mol.mols) > 1:
             reactant_mol.mergeMols()
-        network_prod_mol.separateMol()
-        if len(network_prod_mol.mols) > 1:
-            network_prod_mol.mergeMols()
+        
+        """
+        The following is to prevent product arrange again
+        """
+        if self.method != "mopac":
+            network_prod_mol.separateMol()
+            if len(network_prod_mol.mols) > 1:
+                network_prod_mol.mergeMols()
 
-        reac_mol_copy = reactant_mol.copy()
-        arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
-        msg = arrange3D.arrangeIn3D()
-        if msg != '':
-            print(msg)
+            reac_mol_copy = reactant_mol.copy()
+            arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
+            msg = arrange3D.arrangeIn3D()
+            if msg != '':
+                print(msg)
 
-        ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
-        reactant_mol.gen3D(make3D=False)
-        ff.Setup(Hatom.OBMol)
-        network_prod_mol.gen3D(make3D=False)
-        ff.Setup(Hatom.OBMol)
+            ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
+            gen3D.make3DandOpt(reactant_mol, self.forcefield, make3D = False)
+            ff.Setup(Hatom.OBMol)
+            gen3D.make3DandOpt(network_prod_mol, self.forcefield, make3D = False)
+            ff.Setup(Hatom.OBMol)
 
-        reactant = reactant_mol.toNode()
-        product = network_prod_mol.toNode()
+            reactant = reactant_mol.toNode()
+            product = network_prod_mol.toNode()
+        else:
+            product = network_prod_mol.toNode()
+
+            network_prod_mol.separateMol()
+            if len(network_prod_mol.mols) > 1:
+                network_prod_mol.mergeMols()
+
+            reac_mol_copy = reactant_mol.copy()
+            arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
+            msg = arrange3D.arrangeIn3D()
+            if msg != '':
+                print(msg)
+
+            ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
+            reactant_mol.gen3D(make3D=False)
+            ff.Setup(Hatom.OBMol)
+            reactant = reactant_mol.toNode()
+
         subdir = os.path.join(os.path.dirname(self.ard_path), 'reactions')
         if not os.path.exists(subdir):
             os.mkdir(subdir)
         b_dirname = network_prod_mol.write('inchiKey').strip()
-        #b_dirname = network_prod_mol.toRMGMolecule().to_inchi_key()
         targets = list(qm_collection.find({'product_inchi_key':b_dirname}))
         dirname = self.dir_check(subdir, b_dirname, len(targets) + 1)
-            
+
         output_dir = util.makeOutputSubdirectory(subdir, dirname)
         kwargs['output_dir'] = output_dir
         self.makeInputFile(reactant, product, **kwargs)
@@ -326,7 +298,6 @@ class Network(object):
         self.makeDrawFile(reactant, 'reactant.xyz', **kwargs)
         self.makeDrawFile(product, 'product.xyz', **kwargs)
         self.makeisomerFile(add_bonds, break_bonds, **kwargs)
-
         reactant_mol.setCoordsFromMol(reac_mol_copy)
         return output_dir
 

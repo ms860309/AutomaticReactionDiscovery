@@ -219,8 +219,6 @@ class Generate(object):
                         if i[2] == 2:
                             break_bonds.remove(i)
 
-                    #dist = self.check_bond_length(self.reactant_coords, form_bonds)
-
                     self.add_bonds.append(form_bonds)
                     self.break_bonds.append(break_bonds)
                     mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
@@ -280,19 +278,6 @@ class Generate(object):
             return False
         else:
             return True
-
-    def check_bond_length(self, coords, add_bonds):
-        """
-        Use reactant coordinate to check if the add bonds's bond length is too long.
-        Return a 'list of distance'.
-        """
-        dist = []
-        for bond in add_bonds:
-            coord_vect_1 = coords[0][bond[0]]
-            coord_vect_2 = coords[0][bond[1]]
-            diff = coord_vect_1 - coord_vect_2
-            dist.append(np.linalg.norm(diff))
-        return dist
         
     def _generateProductsHelper(self, nbreak, nform, products, bonds, valences, bonds_form_all, bonds_broken=None):
         """
