@@ -66,13 +66,9 @@ class Network(object):
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
 
-        # Reactant information
-        reactant_key = mol_object.write('inchiKey').strip()  # inchikey
-        reactant_smi = mol_object.write('can').split()[0]    # smiles
-
         # Filter reactions based on standard heat of reaction  delta H
         if self.method == "mopac":
-            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, mol, add_bonds[prod_mols.index(mol)])]
+            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, mol, add_bonds[prod_mols.index(mol)], break_bonds[prod_mols.index(mol)])]  #debug, later will delete the break bond args
         else:
             # Load thermo database and choose which libraries to search
             thermo_db = ThermoDatabase()
@@ -87,9 +83,14 @@ class Network(object):
                 H298_reac = targets[0]['reactant_energy']
             prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_rmg(H298_reac, mol, thermo_db)]
 
-        reactant_key = mol_object.write('inchiKey').strip()
-        reactant_smi = mol_object.write('can').split()[0]
+        # Reactant information
+        reactant_key = mol_object.write('inchiKey').strip()  # inchikey
+        reactant_smi = mol_object.write('can').split()[0]    # smiles
+
+        # Check isomorphic with products in database
         prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_key, reactant_smi, prod_mols_filtered, add_bonds, break_bonds)
+
+        # Generate geometry and insert to database
         statistics_collection.insert_one({'Reactant SMILES':mol_object.write('can').split()[0], 'reactant_inchi_key':reactant_key, 'add how many products':len(prod_mols_filtered)})
         for mol in prod_mols_filtered:
             index = prod_mols.index(mol)
@@ -120,9 +121,11 @@ class Network(object):
             return 1
         return 0
     
-    def filter_dh_mopac(self, reac_obj, prod_mol, form_bonds):
-        H298_product = Mopac(self.forcefield, form_bonds)
-        H298_reac, H298_prod = H298_product.mopac_get_H298(reac_obj, prod_mol)
+    def filter_dh_mopac(self, reac_obj, prod_mol, form_bonds, break_bonds):
+        print(form_bonds) #debug
+        print(break_bonds) #debug
+        mopac_object = Mopac(self.forcefield, form_bonds)
+        H298_reac, H298_prod = mopac_object.mopac_get_H298(reac_obj, prod_mol)
 
         dH = H298_prod - H298_reac
 

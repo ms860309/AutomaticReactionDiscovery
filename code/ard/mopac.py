@@ -49,6 +49,7 @@ class Mopac(object):
         os.mkdir(tmpdir)
         reactant_path = os.path.join(tmpdir, 'reactant.mop')
         product_path = os.path.join(tmpdir, 'product.mop')
+
         reac_geo, prod_geo = self.genInput(reac_obj, prod_obj)
         
         if reac_geo == False and prod_geo == False:
@@ -83,6 +84,9 @@ class Mopac(object):
         Hatom = gen3D.readstring('smi', '[H]')
         ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
 
+        gen3D.make3DandOpt(reac_mol, self.forcefield, make3D = False)
+        gen3D.make3DandOpt(prod_obj, self.forcefield, make3D = False)
+
         reac_mol.separateMol()
         if len(reac_mol.mols) > 1:
             reac_mol.mergeMols()
@@ -90,6 +94,12 @@ class Mopac(object):
         if len(prod_obj.mols) > 1:
             prod_obj.mergeMols()
 
+        reactant_bonds = tuple(sorted(
+            [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
+             for bond in pybel.ob.OBMolBondIter(prod_obj.OBMol)]
+        ))
+        print(reactant_bonds)  #debug
+        raise                  #debug
         reac_mol_copy = reac_mol.copy()
         arrange3D = gen3D.Arrange3D(reac_mol, prod_obj)
         msg = arrange3D.arrangeIn3D()

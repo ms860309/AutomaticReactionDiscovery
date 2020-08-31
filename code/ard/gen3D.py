@@ -446,6 +446,7 @@ class Molecule(pybel.Molecule):
                     molecules.append([atom])
 
             # Sort molecules and store result
+            print(molecules)  #debug
             self.mols_indices = tuple(sorted(molecule) for molecule in molecules)
         else:
             self.mols_indices = tuple([atom] for atom in range(len(self.atoms)))
@@ -475,6 +476,7 @@ class Molecule(pybel.Molecule):
                                     atom_in_rotor[ref_3], atom_in_rotor[ref_4] = True, True
                                     new_atom = True
                     self.atom_in_rotor.append(atom_in_rotor)
+        print(self.rotors) #debug
 
     def detCloseAtoms(self, d):
         """

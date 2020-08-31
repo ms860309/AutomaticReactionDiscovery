@@ -73,79 +73,6 @@ class Generate(object):
         #self.reac_smi = self.reac_mol.write('can').split()[0]
         self.atoms = tuple(atom.atomicnum for atom in self.reac_mol)
 
-    def DoU(self, products_bonds):
-        """
-        Degrees of Unsaturation, DoU is also known as Double Bond Equivalent
-        DoU = (2*C+2+N-X-H)/2
-        C is the number of carbons
-        N is the number of nitrogens
-        X is the number of halogens (F,Cl,Br,I)
-        H is the number of hydrogens
-        Oxygen and Sulfer are not included in the formula because saturatuin is unaffected by these elements.
-        So if Oxygen or Sulfer in atoms, pass DoU filtration.
-        Now only consider double bonds and triple bonds, ignoring rings.
-        """
-        if 8 not in self.atoms and 16 not in self.atoms:
-            count_atoms = dict((a,self.atoms.count(a)) for a in self.atoms)
-            try:
-                nH_atoms = int(count_atoms[1])
-            except:
-                nH_atoms = 0
-            try:
-                nC_atoms = int(count_atoms[6]) 
-            except:
-                nC_atoms = 0
-            try:
-                nN_atoms = int(count_atoms[7])
-            except:
-                nN_atoms = 0
-            try:
-                nF_atoms = int(count_atoms[9])
-            except:
-                nF_atoms = 0
-            try:
-                nCl_atoms = int(count_atoms[17])
-            except:
-                nCl_atoms = 0
-            try:
-                nBr_atoms = int(count_atoms[35])
-            except:
-                nBr_atoms = 0
-
-            DoU = (nC_atoms*2 + 2 + nN_atoms -nF_atoms - nCl_atoms - nBr_atoms - nH_atoms)/2
-            bond_order =[]
-            for i in products_bonds:
-                double = [j[2] for j in i]
-                bond_order.append(double)
-            nDouble_bonds = []
-            for order in bond_order:
-                nDouble = dict((o,order.count(o)) for o in order)
-                nDouble_bonds.append(nDouble)
-
-            products_bonds = list(products_bonds)
-            del_idx = []
-            for idx,order in enumerate(nDouble_bonds):
-                try:
-                    if order[3] != 0:
-                        order[2] += 2*order[3]
-                        if order[2] > DoU:
-                            del_idx.append(idx)
-                except:
-                    pass
-                try:
-                    if order[2] > DoU:
-                        del_idx.append(idx)
-                except:
-                    pass
-            del_idx = set(del_idx)
-            products_bonds_idx = [i for i in range(len(products_bonds))]
-            products_bonds_idx = set(products_bonds_idx)
-            index = list(products_bonds_idx - del_idx)
-            products_bonds = set([products_bonds[i] for i in index])
-        else:
-            products_bonds = products_bonds
-        return products_bonds
-
     def generateProducts(self, nbreak=2, nform=2):
         """
         Generate all possible products from the reactant under the constraints
@@ -183,10 +110,9 @@ class Generate(object):
                     reactant_valences,
                     bonds_form_all
                 )
-
+        
         if products_bonds:
             #Filter the products_bonds which doesn't follow DoU rule
-            #products_bonds = self.DoU(products_bonds)
             for bonds in products_bonds:
                 #for SSM calculation
                 break_bonds = []
@@ -212,6 +138,10 @@ class Generate(object):
                                 form_bonds.remove(j)
 
                 if self.check_bond_type(bonds):
+                    
+                    # Remove the double bond in forming or breaking bond.
+                    # Because in SSM or GSM double bond is only a little distance change.
+                    # That is the double bond can't be a driving coordinate, ssm will automatically deal with this little distance change.
                     for i in form_bonds:
                         if i[2] == 2:
                             form_bonds.remove(i)
@@ -219,12 +149,12 @@ class Generate(object):
                         if i[2] == 2:
                             break_bonds.remove(i)
 
-                    self.add_bonds.append(form_bonds)
-                    self.break_bonds.append(break_bonds)
                     mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
                     mol.setCoordsFromMol(self.reac_mol)
                     if mol.write('inchiKey').strip() not in self.reactant_inchikey:
                         if self.check_bond_dissociation_energy(bonds, break_bonds):
+                            self.add_bonds.append(form_bonds)
+                            self.break_bonds.append(break_bonds)
                             self.prod_mols.append(mol)
 
     def check_bond_type(self, bonds):
@@ -302,6 +232,7 @@ class Generate(object):
                             products.add((tuple(sorted(bonds))))
             else:
                 products.add((tuple(sorted(bonds))))
+
         if nbreak > 0:
             # Break bond
             for bond_break_idx, bond_break in enumerate(bonds):
