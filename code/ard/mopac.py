@@ -84,9 +84,6 @@ class Mopac(object):
         Hatom = gen3D.readstring('smi', '[H]')
         ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
 
-        gen3D.make3DandOpt(reac_mol, self.forcefield, make3D = False)
-        gen3D.make3DandOpt(prod_obj, self.forcefield, make3D = False)
-
         reac_mol.separateMol()
         if len(reac_mol.mols) > 1:
             reac_mol.mergeMols()
@@ -94,12 +91,6 @@ class Mopac(object):
         if len(prod_obj.mols) > 1:
             prod_obj.mergeMols()
 
-        reactant_bonds = tuple(sorted(
-            [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
-             for bond in pybel.ob.OBMolBondIter(prod_obj.OBMol)]
-        ))
-        print(reactant_bonds)  #debug
-        raise                  #debug
         reac_mol_copy = reac_mol.copy()
         arrange3D = gen3D.Arrange3D(reac_mol, prod_obj)
         msg = arrange3D.arrangeIn3D()
@@ -111,7 +102,7 @@ class Mopac(object):
         ff.Setup(Hatom.OBMol)
         gen3D.make3DandOpt(prod_obj, self.forcefield, make3D = False)
         ff.Setup(Hatom.OBMol)
-        
+
         # Check reactant expected forming bond length must smaller than 4 angstrom after arrange. Default = 4
         dist = self.check_bond_length(reac_mol, self.form_bonds) # return the maximum value in array
 

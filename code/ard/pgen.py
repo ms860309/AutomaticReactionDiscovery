@@ -151,8 +151,8 @@ class Generate(object):
 
                     mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
                     mol.setCoordsFromMol(self.reac_mol)
-                    if mol.write('inchiKey').strip() not in self.reactant_inchikey:
-                        if self.check_bond_dissociation_energy(bonds, break_bonds):
+                    if self.check_bond_dissociation_energy_and_isomorphic(bonds, break_bonds):
+                        if mol.write('inchiKey').strip() not in self.reactant_inchikey:
                             self.add_bonds.append(form_bonds)
                             self.break_bonds.append(break_bonds)
                             self.prod_mols.append(mol)
@@ -167,17 +167,16 @@ class Generate(object):
                 if j[0] == i or j[1] == i:
                     num += j[2]
             bond_type[i] = num
-        tmp = []
-        for idx, i in enumerate(self.atoms):
-            if i == 6:
-                if bond_type[idx] > 4:   # use !=  or  >   need test
-                    tmp.append(idx)
-        if len(tmp) == 0:
-            return 1
+
+        if 0 in bond_type.values():
+            return False
         else:
-            return 0
+            for idx, i in enumerate(self.atoms):
+                if i == 6 and bond_type[idx] > 4: # use !=  or  >   need test
+                    return False
+            return True
     
-    def check_bond_dissociation_energy(self, bond_list, bbond_list):
+    def check_bond_dissociation_energy_and_isomorphic(self, bond_list, bbond_list):
         energy = 0.0
 
         reactant_graph = self.reac_mol_graph
@@ -195,19 +194,22 @@ class Generate(object):
             [graph.add_edge(bond[0], bond[1], pi=False, active=False) for bond in bond_list]
             product.graph = graph
 
-        for break_bond in bbond_list:
-            first_atom = reactant_graph.atoms[break_bond[0]].label
-            second_atom = reactant_graph.atoms[break_bond[1]].label
-            
-            try:
-                energy += props.bond_dissociation_energy[first_atom + second_atom]
-            except:
-                energy += props.bond_dissociation_energy[second_atom + first_atom]
-        
-        if energy/constants.cal_to_J >= self.bond_dissociation_cutoff:
+        if is_isomorphic(reactant_graph.graph, product.graph):
             return False
         else:
-            return True
+            for break_bond in bbond_list:
+                first_atom = reactant_graph.atoms[break_bond[0]].label
+                second_atom = reactant_graph.atoms[break_bond[1]].label
+                
+                try:
+                    energy += props.bond_dissociation_energy[first_atom + second_atom]
+                except:
+                    energy += props.bond_dissociation_energy[second_atom + first_atom]
+            
+            if energy/constants.cal_to_J >= self.bond_dissociation_cutoff:
+                return False
+            else:
+                return True
         
     def _generateProductsHelper(self, nbreak, nform, products, bonds, valences, bonds_form_all, bonds_broken=None):
         """

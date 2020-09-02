@@ -68,7 +68,7 @@ class Network(object):
 
         # Filter reactions based on standard heat of reaction  delta H
         if self.method == "mopac":
-            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, mol, add_bonds[prod_mols.index(mol)], break_bonds[prod_mols.index(mol)])]  #debug, later will delete the break bond args
+            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, mol, add_bonds[prod_mols.index(mol)])]
         else:
             # Load thermo database and choose which libraries to search
             thermo_db = ThermoDatabase()
@@ -121,9 +121,7 @@ class Network(object):
             return 1
         return 0
     
-    def filter_dh_mopac(self, reac_obj, prod_mol, form_bonds, break_bonds):
-        print(form_bonds) #debug
-        print(break_bonds) #debug
+    def filter_dh_mopac(self, reac_obj, prod_mol, form_bonds):
         mopac_object = Mopac(self.forcefield, form_bonds)
         H298_reac, H298_prod = mopac_object.mopac_get_H298(reac_obj, prod_mol)
 

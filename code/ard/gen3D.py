@@ -446,7 +446,6 @@ class Molecule(pybel.Molecule):
                     molecules.append([atom])
 
             # Sort molecules and store result
-            print(molecules)  #debug
             self.mols_indices = tuple(sorted(molecule) for molecule in molecules)
         else:
             self.mols_indices = tuple([atom] for atom in range(len(self.atoms)))
@@ -476,7 +475,6 @@ class Molecule(pybel.Molecule):
                                     atom_in_rotor[ref_3], atom_in_rotor[ref_4] = True, True
                                     new_atom = True
                     self.atom_in_rotor.append(atom_in_rotor)
-        print(self.rotors) #debug
 
     def detCloseAtoms(self, d):
         """
@@ -618,7 +616,10 @@ class Arrange3D(object):
         for mol in mol_2.mols:
             mol.detRotors()
             mol.detCloseAtoms(d_intramol)
-            self.def_2 += len(mol.rotors)
+            if mol.rotors == []:
+                pass
+            else:
+                self.def_2 += len(mol.rotors)
 
         # Convert mols to nodes and center molecules
         self.nodes_1 = [mol.toNode() for mol in self.mol_1.mols]
