@@ -59,10 +59,8 @@ class ARD(object):
         self.forcefield = forcefield
 
     def executeXYZ(self, **kwargs):
-        
         reac_mol = self.reactant
         reactant_graph = self.reactant_graph
-        #reac_mol.gen3D(forcefield=self.forcefield)
         network = Network(reac_mol, reactant_graph, forcefield = self.forcefield, **kwargs)
         network.genNetwork(reac_mol)
     
@@ -70,7 +68,8 @@ class ARD(object):
 
 def readInput(input_file):
     # Allowed keywords
-    keys = ('reactant', 'imaginarybond', 'nbreak', 'nform', 'dh_cutoff', 'dh_cutoff_method', 'manual_bonds', 'graph', 'bond_dissociation_cutoff', 'constraint')
+    keys = ('reactant', 'imaginarybond', 'nbreak', 'nform', 'dh_cutoff', 'dh_cutoff_method', 
+            'manual_bonds', 'graph', 'bond_dissociation_cutoff', 'constraint')
     # Read all data from file
     with open(input_file, 'r') as f:
         input_data = f.read().splitlines()
@@ -105,7 +104,8 @@ def readXYZ(xyz, bonds = None):
     # extract molecule information from xyz
     mol = next(pb.readfile('xyz', xyz))
 
-    # Manually give bond information (Because in metal system the bond information detect by openbabel usually have some problem)
+    # Manually give bond information 
+    # (Because in metal system the bond information detect by openbabel usually have some problem)
     if bonds:
         m = Molecule(pb.ob.OBMol())
         obmol = m.OBMol

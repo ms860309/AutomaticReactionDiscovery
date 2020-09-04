@@ -9,6 +9,7 @@ import logging
 from subprocess import Popen, PIPE
 import difflib
 from openbabel import pybel
+from openbabel import openbabel as ob
 import numpy as np
 
 # local application imports
@@ -77,82 +78,83 @@ class Mopac(object):
             """
             return float(reactant), float(product)
     
-    def genInput(self, reac_mol, prod_obj, threshold = 4.0):
+    def genInput(self, reactant_mol, product_mol, threshold = 4.0):
         #start_time = time.time()
-        constraint = self.constraint
-        if constraint == None:
-            constraint = []
-        Hatom = gen3D.readstring('smi', '[H]')
-        ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
 
-        reac_mol.separateMol()
-        if len(reac_mol.mols) > 1:
-            reac_mol.mergeMols()
-        prod_obj.separateMol()
-        if len(prod_obj.mols) > 1:
-            prod_obj.mergeMols()
+        reactant_mol.separateMol()
+        if len(reactant_mol.mols) > 1:
+            reactant_mol.mergeMols()
+        product_mol.separateMol()
+        if len(product_mol.mols) > 1:
+            product_mol.mergeMols()
 
-        reac_mol_copy = reac_mol.copy()
-        arrange3D = gen3D.Arrange3D(reac_mol, prod_obj, self.constraint)
+        # Initial optimisation
+        if self.constraint == None:
+            Hatom = gen3D.readstring('smi', '[H]')
+            ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
+            ff.Setup(Hatom.OBMol)
+            reactant_mol.gen3D(make3D=False)
+            ff.Setup(Hatom.OBMol)
+            product_mol.gen3D(make3D=False)
+            ff.Setup(Hatom.OBMol)
+        else:
+            gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint)
+            gen3D.constraint_force_field(product_mol.OBMol, self.constraint)
+
+        # Arrange
+        reactant_mol_copy = reactant_mol.copy()
+        arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint)
         msg = arrange3D.arrangeIn3D()
         if msg != '':
             print(msg)
 
-        ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
-        gen3D.make3DandOpt(reac_mol, self.forcefield, make3D = False)
-        ff.Setup(Hatom.OBMol)
-        gen3D.make3DandOpt(prod_obj, self.forcefield, make3D = False)
-        ff.Setup(Hatom.OBMol)
-
         # Check reactant expected forming bond length must smaller than 4 angstrom after arrange. Default = 4
         dist = self.check_bond_length(reac_mol, self.form_bonds) # return the maximum value in array
+
+        # After arrange to prevent openbabel use the previous product coordinates if it is isomorphic
+        # to the current one, even if it has different atom indices participating in the bonds.
+        if self.constraint == None:
+            Hatom = gen3D.readstring('smi', '[H]')
+            ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
+            ff.Setup(Hatom.OBMol)
+            reactant_mol.gen3D(make3D=False)
+            ff.Setup(Hatom.OBMol)
+            product_mol.gen3D(make3D=False)
+            ff.Setup(Hatom.OBMol)
+        else:
+            gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint)
+            gen3D.constraint_force_field(product_mol.OBMol, self.constraint)
 
         if dist >= threshold:
             return False, False
         else:
-            #self.logger.info('\nStructure:\n{}\n'.format(str(prod_obj.toNode())))
-            geometry = str(prod_obj.toNode()).splitlines()
-            output = []
-            for idx, i in enumerate(geometry):
+            #self.logger.info('\nStructure:\n{}\n'.format(str(product_mol.toNode())))
+            prod_geo = str(product_mol.toNode()).splitlines()
+            product_geometry = []
+            for idx, i in enumerate(prod_geo):
                 i_list = i.split()
                 atom = i_list[0] + " "
                 k = i_list[1:] + [""]
-
                 l = " 0 ".join(k)
-                """
-                if idx in constraint:
-                    l = " 0 ".join(k)
-                else:
-                    l = " 1 ".join(k)
-                """
-
                 out = atom + l
-                output.append(out)
-            output = "\n".join(output)
+                product_geometry.append(out)
+            product_geometry = "\n".join(product_geometry)
 
-            reactant_geo = str(reac_mol.toNode()).splitlines()
-            reac_geo = []
-            for idx, i in enumerate(reactant_geo):
+            reac_geo = str(reactant_mol.toNode()).splitlines()
+            reactant_geometry = []
+            for idx, i in enumerate(reac_geo):
                 i_list = i.split()
                 atom = i_list[0] + " "
                 k = i_list[1:] + [""]
-
                 l = " 0 ".join(k)
-                """
-                if idx in constraint:
-                    l = " 0 ".join(k)
-                else:
-                    l = " 1 ".join(k)
-                """
-
                 out = atom + l
-                reac_geo.append(out)
-            reac_geo = "\n".join(reac_geo)
+                reactant_geometry.append(out)
+            reactant_geometry = "\n".join(reactant_geometry)
 
-            reac_mol.setCoordsFromMol(reac_mol_copy)
+            reactant_mol.setCoordsFromMol(reactant_mol_copy)
             #self.finalize(start_time, 'arrange')
             
-            return reac_geo, output
+            return reactant_geometry, product_geometry
     
         
     def finalize(self, start_time, jobname):

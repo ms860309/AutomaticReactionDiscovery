@@ -14,6 +14,7 @@ import os
 import numpy as np
 from scipy import optimize
 from openbabel import pybel
+from openbabel import openbabel as ob
 from rmgpy import settings
 from rmgpy.species import Species
 import rmgpy.molecule
@@ -46,6 +47,25 @@ def make3DandOpt(mol, forcefield='uff', make3D=True):
     if make3D:
         mol.make3D(forcefield=forcefield)
     mol.localopt(forcefield=forcefield)
+
+def constraint_force_field(mol, freeze_index, forcefield='uff', steps = 500):
+    """
+    An openbabel constraint force field.
+    mol is OBMol object
+    freeze_index is the list of atom you want to freeze (Start from 0)
+    """
+    # Set up constraint
+    constraint_forcefield = ob.OBFFConstraints()
+    for constraint_atom_index in freeze_index:
+        atom_index = constraint_atom_index + 1
+        constraint_forcefield.AddAtomConstraint(atom_index)
+    
+    #Set up forcefield
+    ff = ob.OBForceField.FindForceField(forcefield)
+    ff.Setup(mol, constraint_forcefield)
+    ff.SetConstraints(constraint_forcefield)
+    ff.ConjugateGradients(steps)
+    ff.GetCoordinates(mol)
 
 def makeMolFromAtomsAndBonds(atoms, bonds, spin=None):
     """
@@ -545,18 +565,6 @@ class Arrange3D(object):
                        for bond in pybel.ob.OBMolBondIter(mol_1.OBMol)]
         bonds_mol_2 = [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1)
                        for bond in pybel.ob.OBMolBondIter(mol_2.OBMol)]
-        #debug
-        break_bonds = []
-        form_bonds = []
-        for i in list(set(bonds_mol_2) ^ set(bonds_mol_1)):
-            if i not in bonds_mol_2:
-                # which is breaked
-                break_bonds.append(i)
-            else:
-                # which is formed
-                form_bonds.append(i)
-        print('break_bonds = {}'.format(str(break_bonds)))
-        print('form_bonds = {}'.format(str(form_bonds)))
 
         # atom_in_mol tells which mol the atom is in
         atom_in_mol_1 = [0] * len(mol_1.atoms)

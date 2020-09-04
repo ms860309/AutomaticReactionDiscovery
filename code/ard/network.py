@@ -92,7 +92,11 @@ class Network(object):
         prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_key, reactant_smi, prod_mols_filtered, add_bonds, break_bonds)
 
         # Generate geometry and insert to database
-        statistics_collection.insert_one({'Reactant SMILES':mol_object.write('can').split()[0], 'reactant_inchi_key':reactant_key, 'add how many products':len(prod_mols_filtered)})
+        statistics_collection.insert_one({
+            'Reactant SMILES':mol_object.write('can').split()[0], 
+            'reactant_inchi_key':reactant_key, 
+            'add how many products':len(prod_mols_filtered)})
+            
         for mol in prod_mols_filtered:
             index = prod_mols.index(mol)
             # Generate geometry and return path
@@ -227,69 +231,58 @@ class Network(object):
         return result
 
 
-    def gen_geometry(self, reactant_mol, network_prod_mol, add_bonds, break_bonds, **kwargs):
+    def gen_geometry(self, reactant_mol, product_mol, add_bonds, break_bonds, **kwargs):
         # Database
         qm_collection = db['qm_calculate_center']
-
-        # These two lines are required so that new coordinates are
-        # generated for each new product. Otherwise, Open Babel tries to
-        # use the coordinates of the previous molecule if it is isomorphic
-        # to the current one, even if it has different atom indices
-        # participating in the bonds. a hydrogen atom is chosen
-        # arbitrarily, since it will never be the same as any of the
-        # product structures.
-
-        Hatom = gen3D.readstring('smi', '[H]')
-        ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
 
         reactant_mol.separateMol()
         if len(reactant_mol.mols) > 1:
             reactant_mol.mergeMols()
-        
-        """
-        The following is to prevent product arrange again
-        """
-        if self.method != "mopac":
-            network_prod_mol.separateMol()
-            if len(network_prod_mol.mols) > 1:
-                network_prod_mol.mergeMols()
+        product_mol.separateMol()
+        if len(product_mol.mols) > 1:
+            product_mol.mergeMols()
 
-            reac_mol_copy = reactant_mol.copy()
-            arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol, self.constraint)
-            msg = arrange3D.arrangeIn3D()
-            if msg != '':
-                print(msg)
-
-            ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
-            gen3D.make3DandOpt(reactant_mol, self.forcefield, make3D = False)
+        # Initial optimisation
+        if self.constraint == None:
+            Hatom = gen3D.readstring('smi', '[H]')
+            ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
             ff.Setup(Hatom.OBMol)
-            gen3D.make3DandOpt(network_prod_mol, self.forcefield, make3D = False)
-            ff.Setup(Hatom.OBMol)
-
-            reactant = reactant_mol.toNode()
-            product = network_prod_mol.toNode()
-        else:
-            product = network_prod_mol.toNode()
-
-            network_prod_mol.separateMol()
-            if len(network_prod_mol.mols) > 1:
-                network_prod_mol.mergeMols()
-
-            reac_mol_copy = reactant_mol.copy()
-            arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol, self.constraint)
-            msg = arrange3D.arrangeIn3D()
-            if msg != '':
-                print(msg)
-
-            ff.Setup(Hatom.OBMol)  # Ensures that new coordinates are generated for next molecule (see above)
             reactant_mol.gen3D(make3D=False)
             ff.Setup(Hatom.OBMol)
-            reactant = reactant_mol.toNode()
+            product_mol.gen3D(make3D=False)
+            ff.Setup(Hatom.OBMol)
+        else:
+            gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint)
+            gen3D.constraint_force_field(product_mol.OBMol, self.constraint)
+
+        # Arrange
+        reactant_mol_copy = reactant_mol.copy()
+        arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint)
+        msg = arrange3D.arrangeIn3D()
+        if msg != '':
+            print(msg)
+
+        # After arrange to prevent openbabel use the previous product coordinates if it is isomorphic
+        # to the current one, even if it has different atom indices participating in the bonds.
+        if self.constraint == None:
+            Hatom = gen3D.readstring('smi', '[H]')
+            ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
+            ff.Setup(Hatom.OBMol)
+            reactant_mol.gen3D(make3D=False)
+            ff.Setup(Hatom.OBMol)
+            product_mol.gen3D(make3D=False)
+            ff.Setup(Hatom.OBMol)
+        else:
+            gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint)
+            gen3D.constraint_force_field(product_mol.OBMol, self.constraint)
+
+        reactant = reactant_mol.toNode()
+        product = product_mol.toNode()
 
         subdir = os.path.join(os.path.dirname(self.ard_path), 'reactions')
         if not os.path.exists(subdir):
             os.mkdir(subdir)
-        b_dirname = network_prod_mol.write('inchiKey').strip()
+        b_dirname = product_mol.write('inchiKey').strip()
         targets = list(qm_collection.find({'product_inchi_key':b_dirname}))
         dirname = self.dir_check(subdir, b_dirname, len(targets) + 1)
 
@@ -300,7 +293,8 @@ class Network(object):
         self.makeDrawFile(reactant, 'reactant.xyz', **kwargs)
         self.makeDrawFile(product, 'product.xyz', **kwargs)
         self.makeisomerFile(add_bonds, break_bonds, **kwargs)
-        reactant_mol.setCoordsFromMol(reac_mol_copy)
+
+        reactant_mol.setCoordsFromMol(reactant_mol_copy)
         return output_dir
 
     def dir_check(self, subdir, b_dirname, num):
