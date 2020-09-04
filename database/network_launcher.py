@@ -7,7 +7,7 @@ import sys
 sys.path.append(path.join(path.dirname( path.dirname( path.abspath(__file__))),'script'))
 import rmgpy.molecule
 from rmgpy.molecule.converter import from_ob_mol
-import pybel
+from openbabel import pybel
 
 # Manual run 0th generations
 

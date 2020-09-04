@@ -24,7 +24,7 @@ from os import path
 import sys
 import rmgpy.molecule
 from rmgpy.molecule.converter import from_ob_mol
-import pybel
+from openbabel import pybel
 from collections import Counter
 
 def select_energy_target():

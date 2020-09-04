@@ -3,7 +3,7 @@ import subprocess
 import os
 from os import path
 import sys
-import pybel
+from openbabel import pybel
 
 def select_ard_target():
     """

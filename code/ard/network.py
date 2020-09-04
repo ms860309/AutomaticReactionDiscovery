@@ -6,7 +6,7 @@ import copy
 import shutil
 
 #third party
-import pybel
+from openbabel import pybel
 from rmgpy import settings
 from rmgpy.data.thermo import ThermoDatabase
 from rmgpy.molecule import Molecule
@@ -45,6 +45,7 @@ class Network(object):
         self.method = kwargs["dh_cutoff_method"]
         self.reactant_bonds = kwargs['bonds']
         self.reactant_path = kwargs['reactant_path']
+        self.constraint = kwargs['constraint_index']
 
     def genNetwork(self, mol_object, **kwargs):
         """
@@ -60,7 +61,7 @@ class Network(object):
         inchi_key_list = [i['reactant_inchi_key'] for i in targets]
 
         # Generate all possible products
-        gen = Generate(mol_object, inchi_key_list, self.reactant_graph, self.bond_dissociation_cutoff)
+        gen = Generate(mol_object, inchi_key_list, self.reactant_graph, self.bond_dissociation_cutoff, self.constraint)
         gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
         prod_mols = gen.prod_mols
         add_bonds = gen.add_bonds
@@ -122,7 +123,7 @@ class Network(object):
         return 0
     
     def filter_dh_mopac(self, reac_obj, prod_mol, form_bonds):
-        mopac_object = Mopac(self.forcefield, form_bonds)
+        mopac_object = Mopac(self.forcefield, form_bonds, self.constraint)
         H298_reac, H298_prod = mopac_object.mopac_get_H298(reac_obj, prod_mol)
 
         dH = H298_prod - H298_reac
@@ -254,7 +255,7 @@ class Network(object):
                 network_prod_mol.mergeMols()
 
             reac_mol_copy = reactant_mol.copy()
-            arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
+            arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol, self.constraint)
             msg = arrange3D.arrangeIn3D()
             if msg != '':
                 print(msg)
@@ -275,7 +276,7 @@ class Network(object):
                 network_prod_mol.mergeMols()
 
             reac_mol_copy = reactant_mol.copy()
-            arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol)
+            arrange3D = gen3D.Arrange3D(reactant_mol, network_prod_mol, self.constraint)
             msg = arrange3D.arrangeIn3D()
             if msg != '':
                 print(msg)

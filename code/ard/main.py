@@ -12,8 +12,8 @@ import os
 import time
 
 #third party
-import pybel
-import openbabel as ob
+from openbabel import openbabel as ob
+from openbabel import pybel as pb
 import multiprocessing as mp
 
 # local application imports
@@ -41,7 +41,7 @@ class ARD(object):
     =============== ======================== ==================================
     Attribute       Type                     Description
     =============== ======================== ==================================
-    `reac_smi`      ``str``                  A valid SMILES string describing the reactant structure
+    `reactant`      ``str``                  Reactant smiles string or reactant openbabel object
     `nbreak`        ``int``                  The maximum number of bonds that may be broken
     `nform`         ``int``                  The maximum number of bonds that may be formed
     `dh_cutoff`     ``float``                Heat of reaction cutoff (kcal/mol) for reactions that are too endothermic
@@ -52,15 +52,15 @@ class ARD(object):
 
     """
 
-    def __init__(self, reac_smi, imaginarybond=0, nbreak=3, nform=3, dh_cutoff=20.0, theory_low=None,
+    def __init__(self, reactant, nbreak=2, nform=2, dh_cutoff=20.0, theory_low=None,
                  forcefield='uff', distance=3.5, output_dir='', **kwargs):
-        self.reac_smi = reac_smi
+        self.reactant = reactant
         self.reactant_graph = kwargs['graph']
         self.forcefield = forcefield
 
     def executeXYZ(self, **kwargs):
         
-        reac_mol = self.reac_smi
+        reac_mol = self.reactant
         reactant_graph = self.reactant_graph
         #reac_mol.gen3D(forcefield=self.forcefield)
         network = Network(reac_mol, reactant_graph, forcefield = self.forcefield, **kwargs)
@@ -70,7 +70,7 @@ class ARD(object):
 
 def readInput(input_file):
     # Allowed keywords
-    keys = ('reac_smi', 'imaginarybond', 'nbreak', 'nform', 'dh_cutoff', 'dh_cutoff_method', 'manual_bonds', 'graph', 'bond_dissociation_cutoff')
+    keys = ('reactant', 'imaginarybond', 'nbreak', 'nform', 'dh_cutoff', 'dh_cutoff_method', 'manual_bonds', 'graph', 'bond_dissociation_cutoff', 'constraint')
     # Read all data from file
     with open(input_file, 'r') as f:
         input_data = f.read().splitlines()
@@ -94,20 +94,42 @@ def extract_bonds(bonds):
         lines = f.read()
     lines = eval(lines)
     return lines
-    
+
+def extract_constraint_index(constraint):
+    with open(constraint, 'r') as f:
+        lines = f.read()
+    lines = eval(lines)
+    return lines
+
 def readXYZ(xyz, bonds = None):
-    mol = next(pybel.readfile('xyz', xyz))
+    # extract molecule information from xyz
+    mol = next(pb.readfile('xyz', xyz))
+
+    # Manually give bond information (Because in metal system the bond information detect by openbabel usually have some problem)
     if bonds:
-        m = Molecule(pybel.ob.OBMol())
-        OBMol = m.OBMol
-        for i in mol:
-            a = pybel.ob.OBAtom()
-            a.SetAtomicNum(i.atomicnum)
-            a.SetVector(i.coords[0], i.coords[1], i.coords[2])
-            OBMol.AddAtom(a)
+        m = Molecule(pb.ob.OBMol())
+        obmol = m.OBMol
+
+        obmol.BeginModify()
+        for atom in mol:
+            coords = [coord for coord in atom.coords]
+            atomno = atom.atomicnum
+            obatom = ob.OBAtom()
+            obatom.thisown = 0
+            obatom.SetAtomicNum(atomno)
+            obatom.SetVector(*coords)
+            obmol.AddAtom(obatom)
+            del obatom
+
         for bond in bonds:
-            OBMol.AddBond(bond[0], bond[1], bond[2])
-        mol_obj = gen3D.Molecule(OBMol)
+            obmol.AddBond(bond[0], bond[1], bond[2])
+        #obmol.ConnectTheDots()
+        #obmol.PerceiveBondOrders()
+        #obmol.SetTotalSpinMultiplicity(1)
+        obmol.SetTotalCharge(int(mol.charge))
+        obmol.Center()
+        obmol.EndModify()
+        mol_obj = gen3D.Molecule(obmol)
     else:
         mol_obj = gen3D.Molecule(mol.OBMol)
 

@@ -6,7 +6,7 @@ Contains the :class:`Generate` for generating product structures.
 """
 
 #third party
-import pybel
+from openbabel import pybel
 import networkx as nx
 
 # local application imports
@@ -48,7 +48,7 @@ class Generate(object):
           (beginAtomIdx, endAtomIdx, bondOrder)
     """
 
-    def __init__(self, reac_mol, reactant_inchikey, reactant_graph, bond_dissociation_cutoff):
+    def __init__(self, reac_mol, reactant_inchikey, reactant_graph, bond_dissociation_cutoff, constraint = None):
         self.reac_mol = reac_mol
         self.reactant_inchikey = reactant_inchikey
         self.reac_mol_graph = reactant_graph
@@ -60,10 +60,10 @@ class Generate(object):
         self.initialize()
         coords = [atom.coords for atom in self.reac_mol]
         self.reactant_coords = [np.array(coords).reshape(len(self.atoms), 3)]
-        self.constraint = []
-        for idx, i in enumerate(self.atoms):
-            if i == 28:
-                self.constraint.append(idx)
+        if constraint == None:
+            self.constraint = []
+        else:
+            self.constraint = constraint
                 
     def initialize(self):
         """
@@ -87,8 +87,10 @@ class Generate(object):
             [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
              for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
         ))
+
         # Extract valences as a mutable sequence
-        reactant_valences = [atom.OBAtom.BOSum() for atom in self.reac_mol]
+        reactant_valences = [atom.OBAtom.GetExplicitValence() for atom in self.reac_mol]
+
         # Initialize set for storing bonds of products
         # A set is used to ensure that no duplicate products are added
         products_bonds = set()

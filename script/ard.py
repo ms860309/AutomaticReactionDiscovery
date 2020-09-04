@@ -17,24 +17,24 @@ if __name__ == '__main__':
     import logging
     from rdkit import Chem
     from rdkit import RDLogger
-    import pybel
+    from openbabel import pybel
 
     # local application imports
-    from main import ARD, readInput, readXYZ, extract_bonds
+    from main import ARD, readInput, readXYZ, extract_bonds, extract_constraint_index
 
     #disable log
     RDLogger.DisableLog('rdApp.*')
     rootlogger=logging.getLogger()
     rootlogger.setLevel(logging.CRITICAL)
-    ob_log_handler = pybel.ob.OBMessageHandler()
-    ob_log_handler.SetOutputLevel(0)
+    pybel.ob.obErrorLog.SetOutputLevel(0)
 
     # Set up parser for reading the input filename from the command line
     parser = argparse.ArgumentParser(description='Automatic Reaction Discovery')
     parser.add_argument('file', type=str, metavar='infile', help='An input file describing the job options')
     parser.add_argument('reactant', type=str, metavar='infile', help='An reactant xyz input file')
-    parser.add_argument('bonds', type=str, metavar='infile', help='Manual specify bonds')
-    parser.add_argument('-generations',default=1, type=int, help='The network generation index',required=False)
+    parser.add_argument('-bonds', type=str, help='Manual specify bonds', required=False)
+    parser.add_argument('-constraint', type=str, help='Manual specify constraint atom index (start from 0)', required=False)
+    parser.add_argument('-generations',default=1, type=int, help='The network generation index', required=False)
     args = parser.parse_args()
 
     # Read input file
@@ -43,15 +43,22 @@ if __name__ == '__main__':
     reactant_file = os.path.abspath(args.reactant)
     kwargs = readInput(input_file)
     
+    # Constraint
+    if kwargs['constraint'] == '1':
+        index = extract_constraint_index(args.constraint)
+        kwargs['constraint_index'] = index
+    else:
+        kwargs['constraint_index'] = None
+
     # Manual set up bonds
     if kwargs['manual_bonds'] == '1':
         bonds = extract_bonds(args.bonds)
         kwargs['bonds'] = bonds
     else:
-        kwargs['bonds'] = []
+        kwargs['bonds'] = None
     OBMol, reactant_graph = readXYZ(reactant_file, kwargs['bonds'])
 
-    kwargs['reac_smi'] = OBMol
+    kwargs['reactant'] = OBMol
 
     if kwargs['graph'] == '1':
         kwargs['graph'] = reactant_graph

@@ -1,5 +1,6 @@
 matplotlib
 numpy
-openbabel
-rmgpy
+openbabel >3.1.1
+rmgpy >3.0.0
 scipy
+python 3

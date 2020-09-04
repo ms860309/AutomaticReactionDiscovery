@@ -12,7 +12,7 @@ import sys
 
 #third party
 import numpy as np
-import pybel
+from openbabel import pybel
 
 # local application imports
 import props
@@ -186,7 +186,7 @@ class Node(object):
         # Detect hydrogen molecules separately, since Open Babel often does not create a bond for these
         Hatoms = []
         for atom in mol:
-            if atom.atomicnum == 1 and atom.OBAtom.BOSum() == 0:
+            if atom.atomicnum == 1 and atom.OBAtom.GetExplicitValence() == 0:
                 Hatoms.append(atom)
             elif atom.spin == 3 and self.multiplicity == 1:
                 atom.OBAtom.SetSpinMultiplicity(1)

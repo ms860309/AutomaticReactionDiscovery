@@ -8,7 +8,7 @@ import psutil
 import logging
 from subprocess import Popen, PIPE
 import difflib
-import pybel
+from openbabel import pybel
 import numpy as np
 
 # local application imports
@@ -25,11 +25,10 @@ class MopacError(Exception):
 
 class Mopac(object):
 
-    def __init__(self, forcefield, form_bonds):
+    def __init__(self, forcefield, form_bonds, constraint = None):
         self.forcefield = forcefield
         self.form_bonds = form_bonds
-        self.constraint = [0,1,2,3,4,5]  # for debug
-
+        self.constraint = constraint  # for debug
 
         log_level = logging.INFO
         process = psutil.Process(os.getpid())
@@ -80,7 +79,9 @@ class Mopac(object):
     
     def genInput(self, reac_mol, prod_obj, threshold = 4.0):
         #start_time = time.time()
-
+        constraint = self.constraint
+        if constraint == None:
+            constraint = []
         Hatom = gen3D.readstring('smi', '[H]')
         ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
 
@@ -92,7 +93,7 @@ class Mopac(object):
             prod_obj.mergeMols()
 
         reac_mol_copy = reac_mol.copy()
-        arrange3D = gen3D.Arrange3D(reac_mol, prod_obj)
+        arrange3D = gen3D.Arrange3D(reac_mol, prod_obj, self.constraint)
         msg = arrange3D.arrangeIn3D()
         if msg != '':
             print(msg)
@@ -119,7 +120,7 @@ class Mopac(object):
 
                 l = " 0 ".join(k)
                 """
-                if idx in self.constraint:
+                if idx in constraint:
                     l = " 0 ".join(k)
                 else:
                     l = " 1 ".join(k)
@@ -138,7 +139,7 @@ class Mopac(object):
 
                 l = " 0 ".join(k)
                 """
-                if idx in self.constraint:
+                if idx in constraint:
                     l = " 0 ".join(k)
                 else:
                     l = " 1 ".join(k)

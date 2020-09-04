@@ -13,7 +13,7 @@ import os
 #third party
 import numpy as np
 from scipy import optimize
-import pybel
+from openbabel import pybel
 from rmgpy import settings
 from rmgpy.species import Species
 import rmgpy.molecule
@@ -66,7 +66,7 @@ def makeMolFromAtomsAndBonds(atoms, bonds, spin=None):
     mol.assignSpinMultiplicity()
     if spin is not None:
         OBMol.SetTotalSpinMultiplicity(spin)
-    OBMol.SetHydrogensAdded()
+    #OBMol.SetHydrogensAdded()
 
     return mol
 
@@ -100,11 +100,6 @@ class Molecule(pybel.Molecule):
         self.rotors = None
         self.atom_in_rotor = None
         self.close_atoms = None
-        self.constraint = []
-        for idx, obatom in enumerate(pybel.ob.OBMolAtomIter(OBMol)):
-            number = obatom.GetAtomicNum()
-            if number == 28:
-                self.constraint.append(idx)
 
     def __getitem__(self, item):
         for atom in self:
@@ -179,7 +174,7 @@ class Molecule(pybel.Molecule):
             # Only based on difference between expected and actual valence
             
             #element = ELEMENT_TABLE.from_atomic_number(atom.atomicnum)
-            nonbond_elec = props.valenceelec[atom.atomicnum] - OBAtom.BOSum()
+            nonbond_elec = props.valenceelec[atom.atomicnum] - OBAtom.GetExplicitValence()
 
             # Tries to pair all electrons that are not involved in bonds, which means that singlet states are favored
             diff = nonbond_elec % 2
@@ -248,9 +243,9 @@ class Molecule(pybel.Molecule):
         for atom in self:
             OBAtom = atom.OBAtom
 
-            if OBAtom.IsCarbon() and OBAtom.BOSum() == 2:
+            if OBAtom.GetAtomicNum() == OBElements.Carbon and OBAtom.GetExplicitValence() == 2:
                 return True
-            if OBAtom.IsNitrogen() and OBAtom.BOSum() == 1:
+            if OBAtom.GetAtomicNum() == OBElements.Nitrogen and OBAtom.GetExplicitValence() == 1:
                 return True
 
         return False
@@ -450,17 +445,18 @@ class Molecule(pybel.Molecule):
         else:
             self.mols_indices = tuple([atom] for atom in range(len(self.atoms)))
 
-    def detRotors(self):
+    def detRotors(self, constraint):
         """
         Determine the rotors and atoms in the rotors of the molecule.
         """
         self.rotors = []
         self.atom_in_rotor = []
+
         natoms = len(self.atoms)
         for bond_1 in pybel.ob.OBMolBondIter(self.OBMol):
             if bond_1.IsRotor():
                 ref_1, ref_2 = bond_1.GetBeginAtomIdx() - 1, bond_1.GetEndAtomIdx() - 1
-                if (ref_1 not in self.constraint) or (ref_2 not in self.constraint):
+                if (ref_1 not in constraint) or (ref_2 not in constraint):
                     self.rotors.append((ref_1, ref_2))
                     atom_in_rotor = [False] * natoms
                     atom_in_rotor[ref_1] = True
@@ -512,7 +508,7 @@ class Arrange3D(object):
 
     """
 
-    def __init__(self, mol_1, mol_2):
+    def __init__(self, mol_1, mol_2, constraint = None):
         if not (0 < len(mol_1.mols) <= 4 and 0 < len(mol_2.mols) <= 4):
             raise Exception('More than 4 molecules are not supported')
 
@@ -528,15 +524,12 @@ class Arrange3D(object):
         self.def_2 = None
         self.nodes_1 = None
         self.nodes_2 = None
+        if constraint == None:
+            self.constraint = []
+        else:
+            self.constraint = constraint
 
         self.initializeVars(mol_1, mol_2)
-
-        # Now consider nickel
-        self.atoms = tuple(atom.atomicnum for atom in self.mol_1)
-        self.constraint = []
-        for idx, i in enumerate(self.atoms):
-            if i == 28:
-                self.constraint.append(idx)
 
     def initializeVars(self, mol_1, mol_2, d_intermol=3.0, d_intramol=2.0):
         """
@@ -552,6 +545,18 @@ class Arrange3D(object):
                        for bond in pybel.ob.OBMolBondIter(mol_1.OBMol)]
         bonds_mol_2 = [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1)
                        for bond in pybel.ob.OBMolBondIter(mol_2.OBMol)]
+        #debug
+        break_bonds = []
+        form_bonds = []
+        for i in list(set(bonds_mol_2) ^ set(bonds_mol_1)):
+            if i not in bonds_mol_2:
+                # which is breaked
+                break_bonds.append(i)
+            else:
+                # which is formed
+                form_bonds.append(i)
+        print('break_bonds = {}'.format(str(break_bonds)))
+        print('form_bonds = {}'.format(str(form_bonds)))
 
         # atom_in_mol tells which mol the atom is in
         atom_in_mol_1 = [0] * len(mol_1.atoms)
@@ -609,12 +614,12 @@ class Arrange3D(object):
         self.dof_1, self.def_2 = 6 * (len(self.mol_1.mols) - 1), 6 * (len(self.mol_2.mols) - 1)
 
         for mol in mol_1.mols:
-            mol.detRotors()
+            mol.detRotors(self.constraint)
             mol.detCloseAtoms(d_intramol)
             self.dof_1 += len(mol.rotors)
 
         for mol in mol_2.mols:
-            mol.detRotors()
+            mol.detRotors(self.constraint)
             mol.detCloseAtoms(d_intramol)
             if mol.rotors == []:
                 pass
