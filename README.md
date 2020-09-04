@@ -81,3 +81,5 @@ Each transition state search produces several files:
 
 There are also several Gaussian input, log, and checkpoint files that are
 written and rewritten over the course of the calculation.
+
+python ard.py input.txt reactant.xyz -bonds bonds.txt -constraint constraint.txt -generations 1
