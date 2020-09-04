@@ -15,6 +15,7 @@ import time
 from openbabel import openbabel as ob
 from openbabel import pybel as pb
 import multiprocessing as mp
+import logging
 
 # local application imports
 import constants
@@ -52,23 +53,52 @@ class ARD(object):
 
     """
 
-    def __init__(self, reactant, nbreak=2, nform=2, dh_cutoff=20.0, theory_low=None,
-                 forcefield='uff', distance=3.5, output_dir='', **kwargs):
+    def __init__(self, reactant, forcefield='uff', distance=3.5, output_dir='', **kwargs):
         self.reactant = reactant
         self.reactant_graph = kwargs['graph']
         self.forcefield = forcefield
+        self.nbreak = kwargs['nbreak']
+        self.nform = kwargs['nform']
+        self.dh_cutoff = float(kwargs['dh_cutoff'])
+        self.bond_dissociation_cutoff = float(kwargs['bond_dissociation_cutoff'])
+        log_level = logging.INFO
+        self.logger = util.initializeLog(log_level, os.path.join(os.getcwd(), 'ARD.log'), logname='main')
+        self.initialize()
+
+    def initialize(self):
+        self.logger.info('######################################################################')
+        self.logger.info('#################### AUTOMATIC REACTION DISCOVERY ####################')
+        self.logger.info('######################################################################')
+        self.logger.info('Reactant Geometry: \n{}'.format(str(self.reactant.toNode())))
+        self.logger.info('Maximum number of bonds to be broken: ' + str(self.nbreak))
+        self.logger.info('Maximum number of bonds to be formed: ' + str(self.nform))
+        self.logger.info('Heat of reaction cutoff: {} kcal/mol'.format(self.dh_cutoff))
+        self.logger.info('Bond dissociation energy cutoff: {} kcal/mol'.format(self.bond_dissociation_cutoff))
+        self.logger.info('Force field for 3D structure generation: {}'.format(self.forcefield))
+        self.logger.info('######################################################################\n')
 
     def executeXYZ(self, **kwargs):
+        self.logger.info('ARD initiated on {} \n'.format(time.asctime()))
+        start_time = time.time()
+        
         reac_mol = self.reactant
         reactant_graph = self.reactant_graph
-        network = Network(reac_mol, reactant_graph, forcefield = self.forcefield, **kwargs)
-        network.genNetwork(reac_mol)
-    
+        network = Network(reac_mol, reactant_graph, forcefield = self.forcefield, logger = self.logger, **kwargs)
+        network.genNetwork(reac_mol, nbreak = kwargs['nbreak'], nform = kwargs['nform'])
+        self.finalize(start_time)
+
+    def finalize(self, start_time):
+        """
+        Finalize the job.
+        """
+        self.logger.info('\nARD terminated on ' + time.asctime())
+        self.logger.info('Total ARD run time: {:.1f} s'.format(time.time() - start_time))
+
 ###############################################################################
 
 def readInput(input_file):
     # Allowed keywords
-    keys = ('reactant', 'imaginarybond', 'nbreak', 'nform', 'dh_cutoff', 'dh_cutoff_method', 
+    keys = ('reactant', 'nbreak', 'nform', 'dh_cutoff', 'dh_cutoff_method', 
             'manual_bonds', 'graph', 'bond_dissociation_cutoff', 'constraint')
     # Read all data from file
     with open(input_file, 'r') as f:
@@ -103,7 +133,6 @@ def extract_constraint_index(constraint):
 def readXYZ(xyz, bonds = None):
     # extract molecule information from xyz
     mol = next(pb.readfile('xyz', xyz))
-
     # Manually give bond information 
     # (Because in metal system the bond information detect by openbabel usually have some problem)
     if bonds:

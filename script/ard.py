@@ -42,7 +42,7 @@ if __name__ == '__main__':
     ard_path = os.path.dirname(os.path.abspath(args.file))
     reactant_file = os.path.abspath(args.reactant)
     kwargs = readInput(input_file)
-    
+
     # Constraint
     if kwargs['constraint'] == '1':
         index = extract_constraint_index(args.constraint)

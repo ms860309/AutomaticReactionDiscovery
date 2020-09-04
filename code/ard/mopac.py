@@ -2,10 +2,8 @@
 import os
 import shutil
 import time
-import psutil
 
 #third party
-import logging
 from subprocess import Popen, PIPE
 import difflib
 from openbabel import pybel
@@ -26,16 +24,13 @@ class MopacError(Exception):
 
 class Mopac(object):
 
-    def __init__(self, forcefield, form_bonds, constraint = None):
+    def __init__(self, forcefield, form_bonds, logger, count, num, constraint = None):
         self.forcefield = forcefield
         self.form_bonds = form_bonds
-        self.constraint = constraint  # for debug
-
-        log_level = logging.INFO
-        process = psutil.Process(os.getpid())
-        #self.logger = util.initializeLog(log_level, os.path.join(os.getcwd(), 'ARD.log'), logname='main')
-        #self.logger.info('\nARD initiated on ' + time.asctime() + '\n')
-        #self.logger.info('memory usage: {}'.format(process.memory_percent()))
+        self.logger = logger
+        self.count = count
+        self.num = num
+        self.constraint = constraint
 
     def mopac_get_H298(self, reac_obj, prod_obj, charge = 0, multiplicity = 'SINGLET', method = 'PM7'):
         """
@@ -53,7 +48,7 @@ class Mopac(object):
         reac_geo, prod_geo = self.genInput(reac_obj, prod_obj)
         
         if reac_geo == False and prod_geo == False:
-            return float(0.0), float(999999.0)
+            return False, False
         else:
             with open(reactant_path, 'w') as f:
                 f.write("CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
@@ -68,18 +63,11 @@ class Mopac(object):
             self.runMopac(tmpdir, 'product.mop')
             product = self.getHeatofFormation(tmpdir, 'product.out')
             self.finalize(start_time, 'mopac')
-            
-            """
-            info = psutil.virtual_memory()
-            print("cpu numbers : {}".format(psutil.cpu_count()))
-            print("total memory : {}".format(info.total))
-            print("memory used : {}".format(psutil.Process(os.getpid()).memory_info().rss))
-            print("memory used percent : {}".format(info.percent))
-            """
+
             return float(reactant), float(product)
     
     def genInput(self, reactant_mol, product_mol, threshold = 4.0):
-        #start_time = time.time()
+        start_time = time.time()
 
         reactant_mol.separateMol()
         if len(reactant_mol.mols) > 1:
@@ -109,7 +97,7 @@ class Mopac(object):
             print(msg)
 
         # Check reactant expected forming bond length must smaller than 4 angstrom after arrange. Default = 4
-        dist = self.check_bond_length(reac_mol, self.form_bonds) # return the maximum value in array
+        dist = self.check_bond_length(reactant_mol, self.form_bonds) # return the maximum value in array
 
         # After arrange to prevent openbabel use the previous product coordinates if it is isomorphic
         # to the current one, even if it has different atom indices participating in the bonds.
@@ -126,9 +114,16 @@ class Mopac(object):
             gen3D.constraint_force_field(product_mol.OBMol, self.constraint)
 
         if dist >= threshold:
+            self.logger.info('Here is the {} product.'.format(self.num))
+            self.logger.info('Form bonds: {}\nDistance: {}'.format(self.form_bonds, dist))
+            self.logger.info('Form bond distance is greater than threshold.')
+            self.logger.info('Now finished {}/{}'.format(self.num, self.count))
+            self.finalize(start_time, 'arrange')
             return False, False
         else:
-            #self.logger.info('\nStructure:\n{}\n'.format(str(product_mol.toNode())))
+            self.logger.info('\nHere is the {} product.'.format(self.num))
+            self.logger.info('Structure:\n{}\n'.format(str(product_mol.toNode())))
+            self.logger.info('Form bonds: {}\nDistance: {}'.format(self.form_bonds, dist))    
             prod_geo = str(product_mol.toNode()).splitlines()
             product_geometry = []
             for idx, i in enumerate(prod_geo):
@@ -152,7 +147,7 @@ class Mopac(object):
             reactant_geometry = "\n".join(reactant_geometry)
 
             reactant_mol.setCoordsFromMol(reactant_mol_copy)
-            #self.finalize(start_time, 'arrange')
+            self.finalize(start_time, 'arrange')
             
             return reactant_geometry, product_geometry
     
@@ -161,7 +156,7 @@ class Mopac(object):
         """
         Finalize the job.
         """
-        #self.logger.info('Total {} run time: {:.1f} s'.format(jobname, time.time() - start_time))
+        self.logger.info('Total {} run time: {:.1f} s'.format(jobname, time.time() - start_time))
 
     def getHeatofFormation(self, tmpdir, target = 'reactant.out'):
         """

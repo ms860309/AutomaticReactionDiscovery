@@ -44,6 +44,7 @@ def initializeLog(level, logfile, logname=None):
     # Create file handler
     if os.path.exists(logfile):
         os.remove(logfile)
+
     fh = logging.FileHandler(filename=logfile)
     fh.setLevel(min(logging.DEBUG, level))
     fh.setFormatter(formatter)

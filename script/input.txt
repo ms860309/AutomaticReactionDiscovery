@@ -1,5 +1,4 @@
 reactant          0                 # Reactant
-imaginarybond     0                 # Experimental function of imaginary bond
 nbreak            2                 # Maximum number of bonds to be broken
 nform             2                 # Maximum number of bonds to be formed
 dH_cutoff         150               # Heat of reaction cutoff in kcal/mol

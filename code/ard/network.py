@@ -30,24 +30,20 @@ info = psutil.virtual_memory()
 
 class Network(object):
 
-    def __init__(self, reac_mol, reactant_graph, forcefield, **kwargs):
+    def __init__(self, reac_mol, reactant_graph, forcefield, logger, **kwargs):
         self.reac_mol = reac_mol
         self.reactant_graph = reactant_graph
-        self.nbreak = int(kwargs['nbreak'])
-        self.nform = int(kwargs['nform'])
         self.forcefield = forcefield
+        self.logger = logger
         self.dh_cutoff = float(kwargs['dh_cutoff'])
         self.bond_dissociation_cutoff = kwargs['bond_dissociation_cutoff']
-        self.output_dir = kwargs['output_dir']
-        self.reactions = {}
         self.ard_path = kwargs['ard_path']
         self.generations = kwargs['generations']
         self.method = kwargs["dh_cutoff_method"]
-        self.reactant_bonds = kwargs['bonds']
-        self.reactant_path = kwargs['reactant_path']
         self.constraint = kwargs['constraint_index']
+        self.count = 0
 
-    def genNetwork(self, mol_object, **kwargs):
+    def genNetwork(self, mol_object, nbreak, nform):
         """
         Execute the automatic reaction discovery procedure.
         """
@@ -62,15 +58,19 @@ class Network(object):
 
         # Generate all possible products
         gen = Generate(mol_object, inchi_key_list, self.reactant_graph, self.bond_dissociation_cutoff, self.constraint)
-        gen.generateProducts(nbreak=self.nbreak, nform=self.nform)
+        self.logger.info('Generating all possible products...')
+        gen.generateProducts(nbreak = int(nbreak), nform =  int(nform))
         prod_mols = gen.prod_mols
+        self.logger.info('{} possible products generated\n'.format(len(prod_mols)))
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
 
         # Filter reactions based on standard heat of reaction  delta H
         if self.method == "mopac":
-            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, mol, add_bonds[prod_mols.index(mol)])]
+            self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))
+            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, mol, add_bonds[prod_mols.index(mol)], self.logger, len(prod_mols))]
         else:
+            self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))
             # Load thermo database and choose which libraries to search
             thermo_db = ThermoDatabase()
             thermo_db.load(os.path.join(settings['database.directory'], 'thermo'))
@@ -84,6 +84,7 @@ class Network(object):
                 H298_reac = targets[0]['reactant_energy']
             prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_rmg(H298_reac, mol, thermo_db)]
 
+        self.logger.info('After delta H filter {} product remain.\n'.format(len(prod_mols)))
         # Reactant information
         reactant_key = mol_object.write('inchiKey').strip()  # inchikey
         reactant_smi = mol_object.write('can').split()[0]    # smiles
@@ -96,12 +97,14 @@ class Network(object):
             'Reactant SMILES':mol_object.write('can').split()[0], 
             'reactant_inchi_key':reactant_key, 
             'add how many products':len(prod_mols_filtered)})
-            
+
+        self.logger.info('Generate geometry........\n')
         for mol in prod_mols_filtered:
             index = prod_mols.index(mol)
             # Generate geometry and return path
             dir_path = self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
             product_name = mol.write('inchiKey').strip()
+            self.logger.info('Reactant inchi key: {}\nProduct inchi key: {}\n Directory path: {}'.format(reactant_key, product_name, dir_path))
             qm_collection.insert_one({
                                    'reaction': [reactant_key, product_name], 
                                    'Reactant SMILES':mol_object.write('can').split()[0], 
@@ -126,14 +129,23 @@ class Network(object):
             return 1
         return 0
     
-    def filter_dh_mopac(self, reac_obj, prod_mol, form_bonds):
-        mopac_object = Mopac(self.forcefield, form_bonds, self.constraint)
+    def filter_dh_mopac(self, reac_obj, prod_mol, form_bonds, logger, total_prod_num):
+        self.count += 1
+        mopac_object = Mopac(self.forcefield, form_bonds, logger, total_prod_num, self.count, self.constraint)
         H298_reac, H298_prod = mopac_object.mopac_get_H298(reac_obj, prod_mol)
 
+        if H298_prod == False and H298_reac == False:
+            return 0
+
+        self.logger.info('Product energy calculate by mopac is {} kcal/mol and reactant is {} kcal/mol'.format(H298_prod, H298_reac))
         dH = H298_prod - H298_reac
 
         if dH < self.dh_cutoff:
+            self.logger.info('Delta H is {}, smaller than threshold'.format(dH))
+            self.logger.info('Finished {}/{}'.format(self.count, total_prod_num))
             return 1
+        self.logger.info('Delta H is {}, greater than threshold'.format(dH))
+        self.logger.info('Finished {}/{}\n'.format(self.count, total_prod_num))
         return 0
 
     def check_bond_length(self, coords, add_bonds):
@@ -260,7 +272,7 @@ class Network(object):
         arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint)
         msg = arrange3D.arrangeIn3D()
         if msg != '':
-            print(msg)
+            self.logger.info(msg)
 
         # After arrange to prevent openbabel use the previous product coordinates if it is isomorphic
         # to the current one, even if it has different atom indices participating in the bonds.
@@ -278,7 +290,7 @@ class Network(object):
 
         reactant = reactant_mol.toNode()
         product = product_mol.toNode()
-
+        self.logger.info('Reactant and product geometry is :\n{}****\n{}'.format(str(reactant), str(product)))
         subdir = os.path.join(os.path.dirname(self.ard_path), 'reactions')
         if not os.path.exists(subdir):
             os.mkdir(subdir)
