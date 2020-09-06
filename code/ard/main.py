@@ -82,8 +82,7 @@ class ARD(object):
         start_time = time.time()
         
         reac_mol = self.reactant
-        reactant_graph = self.reactant_graph
-        network = Network(reac_mol, reactant_graph, forcefield = self.forcefield, logger = self.logger, **kwargs)
+        network = Network(reac_mol, self.reactant_graph, forcefield = self.forcefield, logger = self.logger, **kwargs)
         network.genNetwork(reac_mol, nbreak = kwargs['nbreak'], nform = kwargs['nform'])
         self.finalize(start_time)
 
@@ -99,7 +98,7 @@ class ARD(object):
 def readInput(input_file):
     # Allowed keywords
     keys = ('reactant', 'nbreak', 'nform', 'dh_cutoff', 'dh_cutoff_method', 
-            'manual_bonds', 'graph', 'bond_dissociation_cutoff', 'constraint')
+            'manual_bonds', 'bond_dissociation_cutoff', 'constraint')
     # Read all data from file
     with open(input_file, 'r') as f:
         input_data = f.read().splitlines()
@@ -159,11 +158,17 @@ def readXYZ(xyz, bonds = None):
         obmol.Center()
         obmol.EndModify()
         mol_obj = gen3D.Molecule(obmol)
+
+        reactant_graph = Species(xyz_file_to_atoms(xyz))
+        reactant_bonds = [(i[0]-1, i[1]-1) for i in bonds]
+        make_graph(reactant_graph, bond_list= reactant_bonds)
     else:
         mol_obj = gen3D.Molecule(mol.OBMol)
-
-    reactant_graph = Species(xyz_file_to_atoms(xyz))
-    reactant_bonds = [(i[0]-1, i[1]-1) for i in bonds]
-    make_graph(reactant_graph, bond_list= reactant_bonds)
-
+        reactant_graph = Species(xyz_file_to_atoms(xyz))
+        reactant_bonds = tuple(sorted(
+            [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1)
+             for bond in pb.ob.OBMolBondIter(mol.OBMol)]
+        ))
+        make_graph(reactant_graph, bond_list= reactant_bonds)
+        
     return mol_obj, reactant_graph
