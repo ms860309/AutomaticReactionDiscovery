@@ -90,7 +90,7 @@ class Network(object):
         reactant_smi = mol_object.write('can').split()[0]    # smiles
 
         # Check isomorphic with products in database
-        prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_key, reactant_smi, prod_mols_filtered, add_bonds, break_bonds)
+        #prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_key, reactant_smi, prod_mols_filtered, add_bonds, break_bonds)
 
         # Generate geometry and insert to database
         statistics_collection.insert_one({
@@ -300,7 +300,7 @@ class Network(object):
 
         output_dir = util.makeOutputSubdirectory(subdir, dirname)
         kwargs['output_dir'] = output_dir
-        self.makeInputFile(reactant, product, **kwargs)
+        #self.makeInputFile(reactant, product, **kwargs)
         self.makeCalEnergyFile(product, **kwargs)
         self.makeDrawFile(reactant, 'reactant.xyz', **kwargs)
         self.makeDrawFile(product, 'product.xyz', **kwargs)
@@ -323,8 +323,7 @@ class Network(object):
                 check = True
         
         return new_name
-            
-        
+
     @staticmethod
     def makeInputFile(reactant, product, **kwargs):
         """
@@ -338,44 +337,6 @@ class Network(object):
             f.write('{}\n\n{}\n{}\n\n{}\n'.format(nreac_atoms, reactant, nproduct_atoms, product))
 
         return path
-
-    @staticmethod
-    def makeCalEnergyFile(_input, spin = 0, multiplicity = 1, **kwargs):
-        """
-        Create input file for energy calculation.
-        """
-        path = os.path.join(kwargs['output_dir'], 'reactant_energy.in')
-        with open(path, 'w') as f:
-            f.write('$molecule\n{} {}\n{}\n$end\n'.format(spin, multiplicity, _input))
-            f.write('$rem\n')
-            f.write('JOBTYPE OPT\n')
-            f.write('METHOD B97-D3\n')
-            f.write('DFT_D D3_BJ\n')
-            f.write('BASIS def2-mSVP\n')
-            f.write('SCF_ALGORITHM DIIS\n')
-            f.write('MAX_SCF_CYCLES 150\n')
-            f.write('SCF_CONVERGENCE 8\n')
-            f.write('SYM_IGNORE TRUE\n')
-            f.write('SYMMETRY FALSE\n')
-            f.write('GEOM_OPT_MAX_CYCLES 150\n')
-            f.write('GEOM_OPT_TOL_GRADIENT 100\n')
-            f.write('GEOM_OPT_TOL_DISPLACEMENT 400\n')
-            f.write('GEOM_OPT_TOL_ENERGY 33\n')
-            f.write('WAVEFUNCTION_ANALYSIS FALSE\n')
-            f.write('$end\n@@@\n')
-            f.write('$molecule\nread\n$end\n')
-            f.write('JOBTYPE FREQ\n')
-            f.write('METHOD B97-D3\n')
-            f.write('DFT_D D3_BJ\n')
-            f.write('BASIS def2-mSVP\n')
-            f.write('SCF_GUESS READ\n')
-            f.write('SCF_ALGORITHM DIIS\n')
-            f.write('MAX_SCF_CYCLES 150\n')
-            f.write('SCF_CONVERGENCE 8\n')
-            f.write('SYM_IGNORE TRUE\n')
-            f.write('SYMMETRY FALSE\n')
-            f.write('WAVEFUNCTION_ANALYSIS FALSE\n')
-            f.write('$end')
 
     @staticmethod
     def makeDrawFile(_input, filename = 'draw.xyz', **kwargs):

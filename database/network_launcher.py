@@ -5,8 +5,6 @@ from os import path
 import shutil
 import sys
 sys.path.append(path.join(path.dirname( path.dirname( path.abspath(__file__))),'script'))
-import rmgpy.molecule
-from rmgpy.molecule.converter import from_ob_mol
 from openbabel import pybel
 
 # Manual run 0th generations
@@ -20,36 +18,7 @@ def select_ard_target():
                     }
                 }
     targets = list(qm_collection.find(reg_query))
-    query_1 =   {'$or': 
-                    [
-                    { "ts_status":
-                        {"$in":
-                        ['job_launched','job_running', "job_queueing"]
-                        }
-                        },
-                    {'ssm_status':
-                        {'$in':
-                            ['job_launched','job_running', "job_queueing"]
-                        }
-                        }
-                    ]
-                }
-    if not list(qm_collection.find(query_1)):
-        selected_targets = []
-        gens = []
-        equal = []
-        for target in targets:
-            dir_path = target['path']
-            selected_targets.append(dir_path)
-            gen = target['next_gen_num']
-            gens.append(gen)
-            ard_ssm_equal = target['ard_ssm_equal']
-            equal.append(ard_ssm_equal)
-        zipped = zip(selected_targets, gens, equal)
-        return zipped
-    else:
-        zipped = zip([],[],[])
-        return zipped
+    return targets
 
 def launch_ard_jobs():
     
@@ -65,8 +34,6 @@ def launch_ard_jobs():
             os.chdir(script_path)
         subfile = create_ard_sub_file(script_path, script_path, 1, 'reactant.xyz')
         # first reactant need to add to pool
-        #initial_reactant_OBMol = next(pybel.readfile('xyz', path.join(script_path, 'reactant.xyz'))).OBMol
-        #initial_reactant_inchi_key = from_ob_mol(rmgpy.molecule.molecule.Molecule(), initial_reactant_OBMol).to_inchi_key()
         initial_reactant = next(pybel.readfile('xyz', path.join(script_path, 'reactant.xyz')))
         initial_reactant_inchi_key = initial_reactant.write('inchiKey').strip()
         pool_collection.insert_one({'reactant_inchi_key':initial_reactant_inchi_key})
@@ -83,31 +50,25 @@ def launch_ard_jobs():
         status_collection.insert_one({'status':'ARD had launched'})
     else:
         targets = select_ard_target()
-        if targets:
-            for target in list(targets):
-                dir_path, gen_num, ard_ssm_equal = target[0], target[1], target[2]
-                script_path = path.join(path.dirname(path.dirname(dir_path)), 'script')
-                if os.path.exists(dir_path):
-                    os.chdir(dir_path)
-                
-                if ard_ssm_equal == 'not_equal':
-                    next_reactant = 'ssm_product.xyz'
-                    subfile = create_ard_sub_file(dir_path, script_path, gen_num, next_reactant)
-                else:
-                    next_reactant = 'product.xyz'
-                    subfile = create_ard_sub_file(dir_path, script_path, gen_num, next_reactant)
-                    
-                if os.path.exists(subfile):
-                    cmd = 'qsub {}'.format(subfile)
-                    process = subprocess.Popen([cmd],
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE, shell = True)
-                    stdout, stderr = process.communicate()
-                    # get job id from stdout, e.g., "106849.h81"
-                    job_id = stdout.decode().replace("\n", "")
-                    # update status job_launched
-                    update_ard_status(target[0], job_id)
-                    os.remove(subfile)
+        for target in targets:
+            dir_path, gen_num, ard_ssm_equal = target['path'], target['generations'], target['ard_ssm_equal']
+            script_path = path.join(path.dirname(path.dirname(dir_path)), 'script')
+            os.chdir(dir_path)
+            if ard_ssm_equal == 'not_equal':
+                next_reactant = 'ssm_product.xyz'
+                subfile = create_ard_sub_file(dir_path, script_path, gen_num + 1, next_reactant)
+            else:
+                next_reactant = 'product.xyz'
+                subfile = create_ard_sub_file(dir_path, script_path, gen_num + 1, next_reactant)
+            cmd = 'qsub {}'.format(subfile)
+            process = subprocess.Popen([cmd],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, shell = True)
+            stdout, stderr = process.communicate()
+            # get job id from stdout, e.g., "106849.h81"
+            job_id = stdout.decode().replace("\n", "")
+            # update status job_launched
+            update_ard_status(target[0], job_id)
 
 def create_ard_sub_file(dir_path, script_path, gen_num, next_reactant, ncpus = 8, mpiprocs = 1, ompthreads = 8):
     subfile = path.join(dir_path, 'ard.job')

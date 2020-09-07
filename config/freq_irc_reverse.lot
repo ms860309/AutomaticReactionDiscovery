@@ -1,0 +1,43 @@
+$molecule
+$end
+
+$rem
+  JOBTYPE FREQ
+  METHOD B97-D3
+  DFT_D D3_BJ
+  BASIS def2-mSVP
+  SCF_ALGORITHM DIIS
+  MAX_SCF_CYCLES 150
+  SCF_CONVERGENCE 8
+  SYM_IGNORE TRUE
+  SYMMETRY FALSE
+  WAVEFUNCTION_ANALYSIS FALSE
+$end
+
+@@@
+
+$molecule
+read
+$end
+
+$rem
+  JOBTYPE RPATH
+  METHOD B97-D3
+  DFT_D D3_BJ
+  BASIS def2-mSVP
+  SCF_GUESS READ
+  rpath_direction -1
+  rpath_coords 1
+  rpath_max_cycles 2500
+  rpath_max_stepsize 100
+  rpath_tol_displacement 800
+  rpath_print 1
+  geom_opt_coords   0
+  max_scf_cycles   250
+  geom_opt_max_cycles   1500
+  geom_opt_hessian   read
+  symmetry   FALSE
+  sym_ignore   TRUE
+  print_input   TRUE
+  geom_opt_dmax   80
+$end

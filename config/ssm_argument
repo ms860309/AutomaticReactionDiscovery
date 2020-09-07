@@ -1,0 +1,7 @@
+-coordinate_type  DLC
+-max_gsm_iters 100
+-CONV_TOL  0.005
+-ADD_NODE_TOL 0.02
+-DMAX  0.2
+-num_nodes 30
+-max_opt_steps 50
