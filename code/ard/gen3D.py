@@ -650,12 +650,13 @@ class Arrange3D(object):
         ret = ''
         dof = self.dof_1 + self.def_2
         if dof != 0:
+            def callbackF(Xi):
+                print(self.objectiveFunction(Xi[:dof]))
             disps_guess = np.array([0.0]*dof)
             result = optimize.minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
-                                       options={'maxiter': 5000, 'disp': False})
-
+                                       options={'maxiter': 5000, 'disp': True},callback = callbackF, tol=1e-3)
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
                            str(result.status) + ':\n' + result.message + '\n')
@@ -676,7 +677,6 @@ class Arrange3D(object):
                 self.mol_1.mergeMols()
             if len(self.mol_2.mols) > 1:
                 self.mol_2.mergeMols()
-
         return ret
 
     @staticmethod
