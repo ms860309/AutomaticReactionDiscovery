@@ -46,7 +46,7 @@ def launch_energy_jobs():
         # update status job_launched
         update_energy_status(target, job_id)
 
-def create_energy_sub_file(dir_path, Energy_dir_path, ncpus = 1, mpiprocs = 1, ompthreads = 1):
+def create_energy_sub_file(dir_path, Energy_dir_path, ncpus = 8, mpiprocs = 1, ompthreads = 8):
     subfile = path.join(path, 'cal_E.job')
     energy_input_file = path.join(Energy_dir_path, 'energy.in')
     energy_output_file = path.join(Energy_dir_path, 'energy.out')
@@ -120,12 +120,12 @@ def launch_ssm_jobs():
         # update status job_launched
         update_ssm_status(target, job_id)
         
-def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 1, mpiprocs = 1, ompthreads = 1):
+def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 8, mpiprocs = 1, ompthreads = 8):
     subfile = path.join(SSM_dir_path, 'cal_ssm.job')
     xyz_file = path.join(dir_path, 'reactant.xyz')
     isomers = path.join(dir_path, 'add_bonds.txt')
     lot_inp_file = path.join(path.join(path.dirname(path.dirname(dir_path)), 'config'), 'qstart')
-    ssm_args = lot_inp_file = path.join(path.join(path.dirname(path.dirname(dir_path)), 'config'), 'ssm_argument')
+    ssm_args = path.join(path.join(path.dirname(path.dirname(dir_path)), 'config'), 'ssm_argument')
 
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
@@ -135,7 +135,7 @@ def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 1, mpiprocs = 1, ompthre
     nes2 = 'source ~/.bashrc\nconda activate rmg3'
     scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
     command = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -lot_inp_file {} '.format(xyz_file, isomers, lot_inp_file)    
-    with open('ssm_argument', 'r') as f:
+    with open(ssm_args, 'r') as f:
         lines = f.read().splitlines()
     command = command + ' '.join(lines) + ' > status.log 2>&1 '
     clean_scratch = 'rm -r $QCSCRATCH'
@@ -184,7 +184,7 @@ def launch_ts_jobs():
         # update status job_launched
         update_ts_status(target, job_id)
         
-def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 1, mpiprocs = 1, ompthreads = 1):
+def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 8, mpiprocs = 1, ompthreads = 8):
     tsnode_path = path.join(SSM_dir_path, 'TSnode.xyz')
     ts_input_file = path.join(TS_dir_path, 'ts.in')
     ts_output_file = path.join(TS_dir_path, 'ts.out')
@@ -270,7 +270,7 @@ def launch_irc_jobs():
         # update status job_launched
         update_irc_status(target, job_id, direction = 'reverse')
         
-def create_irc_sub_file(TS_dir_path, IRC_dir_path, ncpus = 1, mpiprocs = 1, ompthreads = 1):
+def create_irc_sub_file(TS_dir_path, IRC_dir_path, ncpus = 8, mpiprocs = 1, ompthreads = 8):
     ts_geo_path = path.join(TS_dir_path, 'ts_geo.xyz')
     
     irc_forward_input_file = path.join(IRC_dir_path, 'irc_forward.in')
@@ -395,7 +395,7 @@ def update_irc_opt_status(target, job_id, direction):
     qm_collection.update_one(reg_query, {"$set": update_field}, True)
     
 
-def create_irc_opt_sub_file(irc_path, direction = 'forward', ncpus = 1, mpiprocs = 1, ompthreads = 1):
+def create_irc_opt_sub_file(irc_path, direction = 'forward', ncpus = 8, mpiprocs = 1, ompthreads = 8):
     job_name = 'irc_{}_opt.job'.format(direction)
     subfile = path.join(irc_path, job_name)
     shell = '#!/usr/bin/bash'

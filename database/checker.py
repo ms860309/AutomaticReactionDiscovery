@@ -939,8 +939,8 @@ def insert_reaction():
         if len(checker1) == 0:
             reactions_collection.insert_one({
                                 'reaction':[reactant_inchi_key, product_inchi_key],
-                                'reactant_inchi_key': reactant_inchi_key
-                                'product_inchi_key':product_inchi_key
+                                'reactant_inchi_key': reactant_inchi_key,
+                                'product_inchi_key':product_inchi_key,
                                 'reactant_smi':reactant_smi,
                                 'product_smi':product_smi,
                                 'path':path,
@@ -951,8 +951,8 @@ def insert_reaction():
         else:
             reactions_collection.insert_one({
                                 'reaction':[reactant_inchi_key, product_inchi_key],
-                                'reactant_inchi_key': reactant_inchi_key
-                                'product_inchi_key':product_inchi_key
+                                'reactant_inchi_key': reactant_inchi_key,
+                                'product_inchi_key':product_inchi_key,
                                 'reactant_smi':reactant_smi,
                                 'product_smi':product_smi,
                                 'path':path,

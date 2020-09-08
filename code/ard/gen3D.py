@@ -323,8 +323,8 @@ class Molecule(pybel.Molecule):
         # Generate 3D geometries separately
         if len(self.mols) > 1:
             for mol in self.mols:
-                is_hydrogen_mol = len(mol.atoms) == 2 and all(a.OBAtom.IsHydrogen() for a in mol)
-                is_oxygen_mol = len(mol.atoms) == 2 and all(a.OBAtom.IsOxygen() for a in mol)
+                is_hydrogen_mol = len(mol.atoms) == 2 and all(a.OBAtom.GetAtomicNum() == 1 for a in mol)
+                is_oxygen_mol = len(mol.atoms) == 2 and all(a.OBAtom.GetAtomicNum() == 8 for a in mol)
 
                 if make3D and len(mol.atoms) == 1:  # Atoms
                     mol.atoms[0].OBAtom.SetVector(0.0, 0.0, 0.0)

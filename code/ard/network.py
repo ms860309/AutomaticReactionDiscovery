@@ -301,7 +301,6 @@ class Network(object):
         output_dir = util.makeOutputSubdirectory(subdir, dirname)
         kwargs['output_dir'] = output_dir
         #self.makeInputFile(reactant, product, **kwargs)
-        self.makeCalEnergyFile(product, **kwargs)
         self.makeDrawFile(reactant, 'reactant.xyz', **kwargs)
         self.makeDrawFile(product, 'product.xyz', **kwargs)
         self.makeisomerFile(add_bonds, break_bonds, **kwargs)
