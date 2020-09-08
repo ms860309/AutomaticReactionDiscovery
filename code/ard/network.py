@@ -87,7 +87,7 @@ class Network(object):
         self.logger.info('After delta H filter {} product remain.\n'.format(len(prod_mols)))
         # Reactant information
         reactant_key = mol_object.write('inchiKey').strip()  # inchikey
-        reactant_smi = mol_object.write('can').split()[0]    # smiles
+        #reactant_smi = mol_object.write('can').split()[0]    # smiles
 
         # Check isomorphic with products in database
         #prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_key, reactant_smi, prod_mols_filtered, add_bonds, break_bonds)

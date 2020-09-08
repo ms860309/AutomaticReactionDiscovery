@@ -933,6 +933,7 @@ def insert_reaction():
         product_smi = target['product_smi']
         path = target['path']
         generations = target['generations']
+        barrier = target['barrier']
         check1 = {'reaction':[reactant_inchi_key, product_inchi_key]}
         checker1 = list(reactions_collection.find(check1))
         if len(checker1) == 0:
