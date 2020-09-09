@@ -12,7 +12,7 @@ import os
 
 #third party
 import numpy as np
-from scipy import optimize
+from scipy.optimize import minimize, basinhopping
 from openbabel import pybel
 from openbabel import openbabel as ob
 from rmgpy import settings
@@ -650,19 +650,16 @@ class Arrange3D(object):
         ret = ''
         dof = self.dof_1 + self.def_2
         if dof != 0:
-            def callbackF(Xi):
-                print(self.objectiveFunction(Xi[:dof]))
-            disps_guess = np.array([0.0]*dof)
-            result = optimize.minimize(self.objectiveFunction, disps_guess,
-                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
-                                        options={'maxiter': 1000, 'disp': False},
-                                       method='COBYLA')
-            """
-            result = optimize.minimize(self.objectiveFunction, result.x,
+            #def callbackF(Xi):
+                #print(self.objectiveFunction(Xi[:dof]))
+            #disps_guess = np.array([0.0]*dof)
+            a, b = -1, 1
+            disps_guess = (b - a)*np.random.rand(dof) + a
+            result = minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
-                                       options={'maxiter': 5000, 'disp': True}, callback = callbackF)
-            """
+                                       options={'maxiter': 5000, 'disp': True, 'ftol': 1e-4, 'eps':1e-10}) #, callback = callbackF
+
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
                            str(result.status) + ':\n' + result.message + '\n')
