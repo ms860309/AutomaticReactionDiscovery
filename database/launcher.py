@@ -347,8 +347,8 @@ Submmit opt job which is from irc
 def select_irc_opt_target(direction = 'forward'):
     
     qm_collection = db['qm_calculate_center']
-    irc_status = 'irc_{}_status'.format(direction)
-    reg_query = {irc_status:"need opt"}
+    irc_opt_status = 'opt_{}_status'.format(direction)
+    reg_query = {irc_opt_status:"need opt"}
     targets = list(qm_collection.find(reg_query))
     selected_targets = [target['path'] for target in targets]
     return selected_targets
@@ -389,9 +389,9 @@ def launch_irc_opt_jobs():
 def update_irc_opt_status(target, job_id, direction):
     qm_collection = db['qm_calculate_center']
     reg_query = {"path":target}
-    irc_status = 'irc_{}_status'.format(str(direction))
+    irc_opt_status = 'opt_{}_status'.format(direction)
     irc_opt_jobid = 'irc_{}_opt_jobid'.format(str(direction))
-    update_field = {irc_status:"opt_job_launched", irc_opt_jobid:job_id}
+    update_field = {irc_opt_status:"opt_job_launched", irc_opt_jobid:job_id}
     qm_collection.update_one(reg_query, {"$set": update_field}, True)
     
 

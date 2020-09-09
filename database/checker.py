@@ -539,8 +539,8 @@ def check_irc_content_status(target_path, direction = 'forward'):
         return 'unknown fail information'
 
 def generate_irc_product_xyz(target, direction='forward'):
-    irc_path = path.join(target, 'IRC')
-    reactant_path = path.join(target, 'reactant.xyz')
+    irc_path = path.join(target['path'], 'IRC')
+    reactant_path = path.join(target['path'], 'reactant.xyz')
     output_name = 'irc_{}.out'.format(direction)
     output = path.join(irc_path, output_name)
 
@@ -561,7 +561,7 @@ def generate_irc_product_xyz(target, direction='forward'):
     for i in lines[num[-2] + 3 : num[-2] + 3 + atom_number]:
         atom = i.split()[1:]
         geo.append('  '.join(atom))
-    name = '{}.xyz'.format(direction)
+    name = path.join(irc_path, '{}.xyz'.format(direction))
     with open(name, 'w') as f:
         f.write(str(atom_number))
         f.write('\n\n')
@@ -666,10 +666,10 @@ def select_irc_equal_target():
                     [
                     { "irc_forward_status":
                         {"$in":
-                        ['job_success']}},
+                        ['job_success', 'opt_success']}},
                     {'irc_reverse_status':
                         {'$in':
-                            ['job_success']}},
+                            ['job_success', 'opt_success']}},
                     {'irc_equal':
                         {'$in':
                             ['waiting for check']}}
@@ -701,9 +701,9 @@ def check_irc_equal():
 
 def check_irc_equal_status(target):
 
-    irc_path = os.path.join(target, 'IRC/')
-    reactant_path = os.path.join(target, 'reactant.xyz')
-    product_path = os.path.join(target, 'ssm_product.xyz')
+    irc_path = os.path.join(target['path'], 'IRC/')
+    reactant_path = os.path.join(target['path'], 'reactant.xyz')
+    product_path = os.path.join(target['path'], 'ssm_product.xyz')
     forward_output = os.path.join(irc_path, 'forward.xyz')
     reverse_output = os.path.join(irc_path, 'reverse.xyz')
     
@@ -722,6 +722,14 @@ def check_irc_equal_status(target):
         return 'forward equal to reactant and reverse equal to product'
     elif pyMol_1.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip() and pyMol_2.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip():
         return 'reverse equal to reactant and forward equal to product'
+    elif pyMol_1.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip() and pyMol_2.write('inchiKey').strip() != pyMol_3.write('inchiKey').strip():
+        return 'reverse equal to reactant but forward does not equal to product'
+    elif pyMol_1.write('inchiKey').strip() != pyMol_4.write('inchiKey').strip() and pyMol_2.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip():
+        return 'reverse does not equal to reactant but forward equal to product'
+    elif pyMol_1.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip() and pyMol_2.write('inchiKey').strip() != pyMol_4.write('inchiKey').strip():
+        return 'forward equal to reactant but reverse does not equal to product'
+    elif pyMol_1.write('inchiKey').strip() != pyMol_3.write('inchiKey').strip() and pyMol_2.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip():
+        return 'forward does not equal to reactant but reverse equal to product'
     else:
         return 'unknown'
 
@@ -737,8 +745,8 @@ def select_irc_opt_target(direction = 'forward'):
     """
 
     qm_collection = db['qm_calculate_center']
-    irc_status = 'irc_{}_status'.format(str(direction))
-    reg_query = {irc_status:
+    irc_opt_status = 'opt_{}_status'.format(direction)
+    reg_query = {irc_opt_status:
                     {"$in":
                         ["opt_job_launched", "opt_job_running", "opt_job_queueing"]
                     }
@@ -747,7 +755,7 @@ def select_irc_opt_target(direction = 'forward'):
 
     return targets
 
-def check_irc_opt_status(job_id):
+def check_irc_opt_job_status(job_id):
     """
     This method checks pbs status of a job given job_id
     Returns off_queue or job_launched or job_running
@@ -772,7 +780,7 @@ def check_irc_opt_status(job_id):
     else:
         return "opt_job_launched"
     
-def check_irc_opt_content_status(dir_path, direction = 'forward'):
+def check_irc_opt_content(dir_path, direction = 'forward'):
     reactant_path = os.path.join(dir_path, 'reactant.xyz')
     irc_path = path.join(dir_path, "IRC")
     
@@ -783,7 +791,7 @@ def check_irc_opt_content_status(dir_path, direction = 'forward'):
         lines = f1.readlines()
     atom_number = int(lines[0])
     
-    outputname = '{}_opt.out'.format(direction)
+    outputname = path.join(irc_path, '{}_opt.out'.format(direction))
     
     with open(outputname, 'r') as f:
         f.seek(0, 2)
@@ -823,49 +831,62 @@ def check_irc_opt_job():
     targets = select_irc_opt_target(direction = 'forward')
     irc_opt_jobid = 'irc_{}_opt_jobid'.format(str('forward'))
     qm_collection = db['qm_calculate_center']
-    
+
     # 2. check the job pbs_status
     for target in targets:
         job_id = target[irc_opt_jobid]
-        new_status = check_irc_opt_status(job_id)
+        new_status = check_irc_opt_job_status(job_id)
         if new_status == "off_queue":
                 # 3. check job content
-                new_status = check_irc_opt_content_status(target['path'])
+                new_status = check_irc_opt_content(target['path'], direction = 'forward')
 
                 # 4. check with original status which
                 # should be job_launched or job_running
                 # if any difference update status
                 irc_status = 'irc_{}_status'.format(str('forward'))
-                orig_status = target[irc_status]
+                irc_opt_status = 'opt_{}_status'.format(str('forward'))
+                orig_status = target[irc_opt_status]
                 if orig_status != new_status:
-                    update_field = {
-                                    irc_status: new_status
-                                }
-                    qm_collection.update_one(target, {"$set": update_field}, True)
+                    if new_status == 'job_success':
+                        update_field = {
+                                        irc_status: 'opt_success', irc_opt_status: new_status, 'irc_equal':'waiting for check'
+                                    }
+                        qm_collection.update_one(target, {"$set": update_field}, True)
+                    else:
+                        update_field = {
+                                        irc_status: 'opt_fail', irc_opt_status: new_status
+                                    }
+                        qm_collection.update_one(target, {"$set": update_field}, True)
                                
     # 1. select jobs to check
     targets = select_irc_opt_target(direction = 'reverse')
     irc_opt_jobid = 'irc_{}_opt_jobid'.format(str('reverse'))
-    qm_collection = db['qm_calculate_center']
     
     # 2. check the job pbs_status
     for target in targets:
         job_id = target[irc_opt_jobid]
-        new_status = check_irc_opt_status(job_id)
+        new_status = check_irc_opt_job_status(job_id)
         if new_status == "off_queue":
                 # 3. check job content
-                new_status = check_irc_opt_content_status(target['path'])
+                new_status = check_irc_opt_content(target['path'], direction = 'reverse')
 
                 # 4. check with original status which
                 # should be job_launched or job_running
                 # if any difference update status
                 irc_status = 'irc_{}_status'.format(str('reverse'))
-                orig_status = target[irc_status]
+                irc_opt_status = 'opt_{}_status'.format(str('reverse'))
+                orig_status = target[irc_opt_status]
                 if orig_status != new_status:
-                    update_field = {
-                                    irc_status: new_status
-                                }
-                    qm_collection.update_one(target, {"$set": update_field}, True)
+                    if new_status == 'job_success':
+                        update_field = {
+                                        irc_status: 'opt_success', irc_opt_status: new_status, 'irc_equal':'waiting for check'
+                                    }
+                        qm_collection.update_one(target, {"$set": update_field}, True)
+                    else:
+                        update_field = {
+                                        irc_status: 'opt_fail', irc_opt_status: new_status
+                                    }
+                        qm_collection.update_one(target, {"$set": update_field}, True)
 
 """
 Barrier check.
