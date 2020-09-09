@@ -487,17 +487,14 @@ def check_irc_status(job_id):
     else:
         return "job_launched"
     
-def check_irc_content_status(target_path, direction = 'forward'):
+def check_irc_content(target_path, direction = 'forward'):
     reactant_path = path.join(target_path, 'reactant.xyz')
     irc_path = path.join(target_path, 'IRC/')
     base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(irc_path)))), 'config')
     opt_lot = path.join(base_dir_path, 'opt.lot')
     opt_name = '{}_opt.in'.format(direction)
     opt_in = path.join(irc_path, opt_name)
-    if direction == 'forward':
-        irc_output = path.join(irc_path, 'irc_forward.out')
-    else:
-        irc_output = path.join(irc_path, 'irc_reverse.out')
+    irc_output = path.join(irc_path, 'irc_{}.out'.format(direction))
 
     with open(opt_lot) as f:
         config = [line.strip() for line in f]
@@ -511,21 +508,48 @@ def check_irc_content_status(target_path, direction = 'forward'):
         lines = f.readlines()
 
     if lines[-2] == ' IRC backup failure\n' or lines[-2] == ' IRC failed final bisector step\n':
-    
-        for idx, i in enumerate(lines):
-            if i.startswith('             Standard Nuclear Orientation (Angstroms)\n'):
-                break
-        geo = []
-        for i in lines[idx + 3 : idx + 3 + atom_number]:
-            atom = i.split()[1:]
-            geo.append('  '.join(atom))
-            
-        with open(opt_in, 'w') as f:
-            f.write('$molecule\n{} {}\n'.format(0, 1))
-            f.write('\n'.join(geo))
-            f.write('\n$end\n\n')
-            for line in config:
-                f.write(line + '\n')
+
+        with open(irc_output, 'r') as f:
+            full_lines = f.readlines()
+
+        # Sometimes irc success in forward(reverse) but fail in reverse(forward).
+        # We wan't to catch the final structure to optimize. 
+        # But if "convergence criterion reached" in first direction fail in second that will cause reactant equal to product.
+
+        if '  IRC -- convergence criterion reached.\n' in full_lines:
+            for idx, i in enumerate(full_lines):
+                if i.startswith('  IRC -- convergence criterion reached.\n'):
+                    break
+            full_lines = full_lines[:idx]
+            for idx2, j in enumerate(reversed(full_lines)):
+                if j.startswith('             Standard Nuclear Orientation (Angstroms)\n'):
+                    break
+            geo = []
+            for i in full_lines[-idx2 + 3 : -idx2 + 3 + atom_number]:
+                atom = i.split()[1:]
+                geo.append('  '.join(atom))
+            with open(opt_in, 'w') as f:
+                f.write('$molecule\n{} {}\n'.format(0, 1))
+                f.write('\n'.join(geo))
+                f.write('\n$end\n\n')
+                for line in config:
+                    f.write(line + '\n')
+        else:
+            for idx, i in enumerate(lines):
+                if i.startswith('             Standard Nuclear Orientation (Angstroms)\n'):
+                    break
+            geo = []
+            for i in lines[idx + 3 : idx + 3 + atom_number]:
+                atom = i.split()[1:]
+                geo.append('  '.join(atom))
+                
+            with open(opt_in, 'w') as f:
+                f.write('$molecule\n{} {}\n'.format(0, 1))
+                f.write('\n'.join(geo))
+                f.write('\n$end\n\n')
+                for line in config:
+                    f.write(line + '\n')
+
         return 'need opt'
     elif lines[-5] == '        *  Thank you very much for using Q-Chem.  Have a nice day.  *\n':
         return 'job_success'
@@ -543,25 +567,28 @@ def generate_irc_product_xyz(target, direction='forward'):
     reactant_path = path.join(target['path'], 'reactant.xyz')
     output_name = 'irc_{}.out'.format(direction)
     output = path.join(irc_path, output_name)
+    name = path.join(irc_path, '{}.xyz'.format(direction))
 
     with open(reactant_path, 'r') as f1:
         lines = f1.readlines()
     atom_number = int(lines[0])
 
     with open(output, 'r') as f:
-        f.seek(0, 2)
-        fsize = f.tell()
-        f.seek(max(fsize - 20480, 0), 0)  # Read last  20kB of file
-        lines = f.readlines()
-    num = []
-    for idx, i in enumerate(lines):
-        if i.startswith('             Standard Nuclear Orientation (Angstroms)\n'):
-            num.append(idx)
+        full_lines = f.readlines()
+    count = 1
+    for idx, i in enumerate(full_lines):
+        if i.startswith('  IRC -- convergence criterion reached.\n'):
+            count += 1
+            if count == 2:
+                break
+    full_lines = full_lines[:idx]
+    for idx2, j in enumerate(reversed(full_lines)):
+        if j.startswith('             Standard Nuclear Orientation (Angstroms)\n'):
+            break
     geo = []
-    for i in lines[num[-2] + 3 : num[-2] + 3 + atom_number]:
+    for i in full_lines[-idx2 + 2 : -idx2 + 2 + atom_number]:
         atom = i.split()[1:]
         geo.append('  '.join(atom))
-    name = path.join(irc_path, '{}.xyz'.format(direction))
     with open(name, 'w') as f:
         f.write(str(atom_number))
         f.write('\n\n')
@@ -586,7 +613,7 @@ def check_irc_jobs():
         new_status = check_irc_status(job_id)
         if new_status == "off_queue":
             # 3. check job content
-            new_status = check_irc_content_status(target['path'], direction='forward')
+            new_status = check_irc_content(target['path'], direction='forward')
 
         # 4. check with original status which
         # should be job_launched or job_running
@@ -623,7 +650,7 @@ def check_irc_jobs():
         new_status = check_irc_status(job_id)
         if new_status == "off_queue":
             # 3. check job content
-            new_status = check_irc_content_status(target['path'], direction='reverse')
+            new_status = check_irc_content(target['path'], direction='reverse')
 
         # 4. check with original status which
         # should be job_launched or job_running

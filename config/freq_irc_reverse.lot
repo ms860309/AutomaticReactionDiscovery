@@ -31,7 +31,6 @@ $rem
   rpath_max_cycles 2500
   rpath_max_stepsize 100
   rpath_tol_displacement 800
-  rpath_print 1
   geom_opt_coords   0
   max_scf_cycles   250
   geom_opt_max_cycles   1500
