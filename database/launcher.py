@@ -47,11 +47,11 @@ def launch_energy_jobs():
         update_energy_status(target, job_id)
 
 def create_energy_sub_file(dir_path, Energy_dir_path, ncpus = 8, mpiprocs = 1, ompthreads = 8):
-    subfile = path.join(path, 'cal_E.job')
+    subfile = path.join(Energy_dir_path, 'cal_E.job')
     energy_input_file = path.join(Energy_dir_path, 'energy.in')
     energy_output_file = path.join(Energy_dir_path, 'energy.out')
     reactant_xyz_path = path.join(dir_path, 'reactant.xyz')
-    base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(Energy_dir_path)))), 'config')
+    base_dir_path = path.join(path.dirname(path.dirname(path.dirname(Energy_dir_path))), 'config')
     energy_lot = path.join(base_dir_path, 'opt_sp.lot')
 
     with open(energy_lot) as f:
@@ -348,7 +348,7 @@ def select_irc_opt_target(direction = 'forward'):
     
     qm_collection = db['qm_calculate_center']
     irc_opt_status = 'opt_{}_status'.format(direction)
-    reg_query = {irc_opt_status:"need opt"}
+    reg_query = {irc_opt_status:"job_unrun"}
     targets = list(qm_collection.find(reg_query))
     selected_targets = [target['path'] for target in targets]
     return selected_targets

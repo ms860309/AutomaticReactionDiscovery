@@ -531,7 +531,7 @@ def check_irc_content(target_path, direction = 'forward'):
             with open(opt_in, 'w') as f:
                 f.write('$molecule\n{} {}\n'.format(0, 1))
                 f.write('\n'.join(geo))
-                f.write('\n$end\n\n')
+                f.write('$end\n\n')
                 for line in config:
                     f.write(line + '\n')
         else:
@@ -935,6 +935,7 @@ def select_barrier_target():
     return targets
 
 def update_barrier_information():
+    qm_collection = db['qm_calculate_center']
     targets = select_barrier_target()
     for target in targets:
         reactant_energy = float(target['reactant_scf_energy'])
@@ -977,8 +978,8 @@ def insert_reaction():
     for target in targets:
         reactant_inchi_key = target['reactant_inchi_key']
         product_inchi_key = target['product_inchi_key']
-        reactant_smi = target['reactant_smi']
-        product_smi = target['product_smi']
+        reactant_smi = target['Reactant SMILES']
+        product_smi = target['Product SMILES']
         path = target['path']
         generations = target['generations']
         barrier = target['barrier']
