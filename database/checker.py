@@ -525,7 +525,7 @@ def check_irc_content(target_path, direction = 'forward'):
                 if j.startswith('             Standard Nuclear Orientation (Angstroms)\n'):
                     break
             geo = []
-            for i in full_lines[-idx2 + 3 : -idx2 + 3 + atom_number]:
+            for i in full_lines[-idx2 + 2 : -idx2 + 2 + atom_number]:
                 atom = i.split()[1:]
                 geo.append('  '.join(atom))
             with open(opt_in, 'w') as f:
@@ -712,12 +712,7 @@ def check_irc_equal():
     qm_collection = db['qm_calculate_center']
     
     for target in targets:
-        if target['opt_reverse_status'] == 'job_fail' or target['opt_forward_status'] == 'job_fail':
-            update_field = {
-                                'irc_equal': 'opt fail'
-                            }
-            qm_collection.update_one(target, {"$set": update_field}, True)
-        else:
+        if target['irc_forward_status'] in ['job_success', 'opt_success'] and target['irc_reverse_status'] in ['job_success', 'opt_success']:
             new_status = check_irc_equal_status(target)
             orig_status = target['irc_equal']
             if orig_status != new_status:
@@ -731,6 +726,11 @@ def check_irc_equal():
                                         'irc_equal': new_status
                                     }
                     qm_collection.update_one(target, {"$set": update_field}, True)
+        elif target['opt_reverse_status'] == 'job_fail' or target['opt_forward_status'] == 'job_fail':
+            update_field = {
+                                'irc_equal': 'opt fail'
+                            }
+            qm_collection.update_one(target, {"$set": update_field}, True)
 
 def check_irc_equal_status(target):
 

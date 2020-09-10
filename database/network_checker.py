@@ -183,6 +183,7 @@ def print_information(generations):
 def update_network_status():
     status_collection = db['status']
     qm_collection = db['qm_calculate_center']
+    statistics_collection = db['statistics']
     ard_had_add_number = qm_collection.count_documents({})
     ard_should_add_number = sum(statistics_collection.distinct("add how many products"))
         
