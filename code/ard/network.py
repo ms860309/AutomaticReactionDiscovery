@@ -87,16 +87,13 @@ class Network(object):
         self.logger.info('After delta H filter {} product remain.\n'.format(len(prod_mols)))
         # Reactant information
         reactant_key = mol_object.write('inchiKey').strip()  # inchikey
-        #reactant_smi = mol_object.write('can').split()[0]    # smiles
-
-        # Check isomorphic with products in database
-        #prod_mols_filtered = self.unique_key_filterIsomorphic(reactant_key, reactant_smi, prod_mols_filtered, add_bonds, break_bonds)
 
         # Generate geometry and insert to database
         statistics_collection.insert_one({
             'Reactant SMILES':mol_object.write('can').split()[0], 
             'reactant_inchi_key':reactant_key, 
-            'add how many products':len(prod_mols_filtered)})
+            'add how many products':len(prod_mols_filtered),
+            'generations': self.generations})
 
         self.logger.info('Generate geometry........\n')
         for mol in prod_mols_filtered:
@@ -160,77 +157,6 @@ class Network(object):
             diff = coord_vect_1 - coord_vect_2
             dist.append(np.linalg.norm(diff))
         return dist
-
-    def unique_key_filterIsomorphic(self, reactant_key, reactant_smi, compare, add_bonds, break_bonds):
-        """
-        Convert rmg molecule into inchi key(unique key) and check isomorphic
-        """
-        qm_collection = db['qm_calculate_center']
-        reactions_collection = db['reactions']
-        targets = list(qm_collection.find({'ts_status':'job_success'}))
-        base_unique = [i['product_inchi_key'] for i in targets]
-        compare_unique = [mol.write('inchiKey').strip() for mol in compare]
-        isomorphic_idx =[]
-        same = {}
-        for idx, i in enumerate(compare_unique):
-            if i not in base_unique:
-                isomorphic_idx.append(idx)
-            else:
-                if i not in same.keys():
-                    same[i] = [idx]
-                else:
-                    same[i] += [idx]
-
-        result = [compare[i] for i in isomorphic_idx]
-        
-        same_unique_key = list(set(compare_unique) & set(base_unique))
-        for idx, i in enumerate(same_unique_key):
-            for j in same[i]:
-                dc = ''
-                for k in add_bonds[j]:
-                    dc += 'ADD {} {}\n'.format(k[0]+1,k[1]+1)
-                for l in break_bonds[j]:
-                    dc += 'BREAK {} {}\n'.format(l[0]+1,l[1]+1)
-        
-                path_target = list(qm_collection.find({'product_inchi_key':i}))
-                check_1 = [reactant_key, i]
-                check_duplicate_1 = list(reactions_collection.find({'reaction':check_1}))
-                
-                if len(check_duplicate_1) == 0 and reactant_key != i:
-                    reactions_collection.insert_one({
-                                        'reaction':[reactant_key, i],
-                                        'reactant_smi':reactant_smi,
-                                        'product_smi':path_target[0]['Product SMILES'],
-                                        'path':path_target[0]['path'],
-                                        'generations':self.generations,
-                                        'for_debug':'from same',
-                                        'unique': 'waiting for check',
-                                        'driving_coordinate':dc,
-                                        'ssm':'job_unrun'})
-                elif len(check_duplicate_1) > 0 and reactant_key != i:
-                    # aleady have
-                    reactions_collection.insert_one({
-                                        'reaction':[reactant_key, i],
-                                        'reactant_smi':reactant_smi,
-                                        'product_smi':path_target[0]['Product SMILES'],
-                                        'path':path_target[0]['path'],
-                                        'generations':self.generations,
-                                        'for_debug':'from same',
-                                        'unique': 'waiting for check',
-                                        'driving_coordinate':dc,
-                                        'ssm':'job_unrun'})
-                else:
-                    # aleady have
-                    reactions_collection.insert_one({
-                                        'reaction':[reactant_key, i],
-                                        'reactant_smi':reactant_smi,
-                                        'product_smi':path_target[0]['Product SMILES'],
-                                        'path':path_target[0]['path'],
-                                        'generations':self.generations,
-                                        'for_debug':'from same',
-                                        'unique': 'reactant equal to product'})
-
-        return result
 
     def unique_key_filterIsomorphic_itself(self, base):
         """

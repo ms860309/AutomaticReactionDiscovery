@@ -712,27 +712,33 @@ def check_irc_equal():
     qm_collection = db['qm_calculate_center']
     
     for target in targets:
-        new_status = check_irc_equal_status(target)
-        orig_status = target['irc_equal']
-        if orig_status != new_status:
-            if new_status == 'forward equal to reactant and reverse equal to product' or new_status == 'reverse equal to reactant and forward equal to product':
-                update_field = {
-                                    'irc_equal': new_status, 'energy_status': 'job_unrun'
-                                }
-                qm_collection.update_one(target, {"$set": update_field}, True)
-            else:
-                update_field = {
-                                    'irc_equal': new_status
-                                }
-                qm_collection.update_one(target, {"$set": update_field}, True)
+        if target['opt_reverse_status'] == 'job_fail' or target['opt_forward_status'] == 'job_fail':
+            update_field = {
+                                'irc_equal': 'opt fail'
+                            }
+            qm_collection.update_one(target, {"$set": update_field}, True)
+        else:
+            new_status = check_irc_equal_status(target)
+            orig_status = target['irc_equal']
+            if orig_status != new_status:
+                if new_status == 'forward equal to reactant and reverse equal to product' or new_status == 'reverse equal to reactant and forward equal to product' or new_status == 'reverse equal to reactant but forward does not equal to product' or new_status == 'forward equal to reactant but reverse does not equal to product':
+                    update_field = {
+                                        'irc_equal': new_status, 'energy_status': 'job_unrun'
+                                    }
+                    qm_collection.update_one(target, {"$set": update_field}, True)
+                else:
+                    update_field = {
+                                        'irc_equal': new_status
+                                    }
+                    qm_collection.update_one(target, {"$set": update_field}, True)
 
 def check_irc_equal_status(target):
 
-    irc_path = os.path.join(target['path'], 'IRC/')
-    reactant_path = os.path.join(target['path'], 'reactant.xyz')
-    product_path = os.path.join(target['path'], 'ssm_product.xyz')
-    forward_output = os.path.join(irc_path, 'forward.xyz')
-    reverse_output = os.path.join(irc_path, 'reverse.xyz')
+    irc_path = path.join(target['path'], 'IRC/')
+    reactant_path = path.join(target['path'], 'reactant.xyz')
+    product_path = path.join(target['path'], 'ssm_product.xyz')
+    forward_output = path.join(irc_path, 'forward.xyz')
+    reverse_output = path.join(irc_path, 'reverse.xyz')
     
     pyMol_1 = xyz_to_pyMol(reactant_path)
     pyMol_2 = xyz_to_pyMol(product_path)
@@ -810,7 +816,6 @@ def check_irc_opt_job_status(job_id):
 def check_irc_opt_content(dir_path, direction = 'forward'):
     reactant_path = os.path.join(dir_path, 'reactant.xyz')
     irc_path = path.join(dir_path, "IRC")
-    
     xyzname = '{}.xyz'.format(direction)
     output = path.join(irc_path, xyzname)
     
@@ -1010,7 +1015,62 @@ def insert_reaction():
                                 'barrier_energy':barrier})
             qm_collection.update_one(target, {"$set": {'insert reaction':"Already insert"}}, True)
 
+"""
+ARD check unrun
+"""
+def insert_ard():
+    qm_collection = db['qm_calculate_center']
+    statistics_collection = db['statistics']
+    reactions_collection = db['reactions']
+    energy_query = {"energy_status":
+                    {"$in":
+                        ["job_launched", "job_running", "job_queueing"]
+                    }
+                }
+    ssm_query = {"ssm_status":
+                    {"$in":
+                        ["job_launched", "job_running", "job_queueing"]
+                    }
+                }
+    ts_query = {"ts_status":
+                    {"$in":
+                        ["job_launched", "job_running", "job_queueing"]
+                    }
+                }
+    irc_query_1 = {"irc_forward_status":
+                    {"$in":
+                        ["job_launched", "job_running", "job_queueing", "need opt"]
+                    }
+                }
+    irc_query_2 = {"irc_reverse_status":
+                    {"$in":
+                        ["job_launched", "job_running", "job_queueing", "need opt"]
+                    }
+                }
+    opt_query_1 = {"opt_forward_status":
+                    {"$in":
+                        ["opt_job_launched", "opt_job_running", "opt_job_queueing"]
+                    }
+                }
+    opt_query_2 = {"opt_reverse_status":
+                    {"$in":
+                        ["opt_job_launched", "opt_job_running", "opt_job_queueing"]
+                    }
+                }
+    not_finished_number = len(list(qm_collection.find(energy_query))) + len(list(qm_collection.find(ssm_query))) + len(list(qm_collection.find(ts_query))) + len(list(qm_collection.find(irc_query_1))) + len(list(qm_collection.find(irc_query_2))) + len(list(qm_collection.find(opt_query_1))) + len(list(qm_collection.find(opt_query_2)))
+    ard_had_add_number = qm_collection.count_documents({})
+    ard_should_add_number = sum(statistics_collection.distinct("add how many products"))
+    make_sure_not_check_again = reactions_collection.distinct("ard_status")
 
+    if int(not_finished_number) == 0 and int(ard_had_add_number) == int(ard_should_add_number) and make_sure_not_check_again == []:
+        targets = list(reactions_collection.find({'unique':'new one'}))
+        for target in targets:
+            dirpath = target['path']
+            ard_qm_target = list(qm_collection.find({'path':dirpath}))[0]
+            update_field_for_qm_target = {'ard_status':'job_unrun'}
+            update_field_for_reaction_target = {'ard_status':'aleady insert to qm'}
+            qm_collection.update_one(ard_qm_target, {"$set": update_field_for_qm_target}, True)
+            reactions_collection.update_one(target, {"$set": update_field_for_reaction_target}, True)
 
 #check_energy_jobs()
 #check_ssm_jobs()
@@ -1020,3 +1080,4 @@ def insert_reaction():
 #check_irc_opt_job()
 #update_barrier_information()
 #insert_reaction()
+#insert_ard()

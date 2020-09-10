@@ -51,15 +51,26 @@ def launch_ard_jobs():
     else:
         targets = select_ard_target()
         for target in targets:
-            dir_path, gen_num, ard_ssm_equal = target['path'], target['generations'], target['ard_ssm_equal']
+            dir_path, gen_num, ard_ssm_equal, irc_equal = target['path'], target['generations'], target['ard_ssm_equal'], target['irc_equal']
             script_path = path.join(path.dirname(path.dirname(dir_path)), 'script')
             os.chdir(dir_path)
-            if ard_ssm_equal == 'not_equal':
-                next_reactant = 'ssm_product.xyz'
+
+            if irc_equal == 'forward equal to reactant but reverse does not equal to product':
+                irc_path = path.join(dir_path, 'IRC/')
+                next_reactant = path.join(irc_path, 'reverse.xyz')
+                subfile = create_ard_sub_file(dir_path, script_path, gen_num + 1, next_reactant)
+            elif irc_equal == 'reverse equal to reactant but forward does not equal to product':
+                irc_path = path.join(dir_path, 'IRC/')
+                next_reactant = path.join(irc_path, 'forward.xyz')
                 subfile = create_ard_sub_file(dir_path, script_path, gen_num + 1, next_reactant)
             else:
-                next_reactant = 'product.xyz'
-                subfile = create_ard_sub_file(dir_path, script_path, gen_num + 1, next_reactant)
+                if ard_ssm_equal == 'not_equal':
+                    next_reactant = 'ssm_product.xyz'
+                    subfile = create_ard_sub_file(dir_path, script_path, gen_num + 1, next_reactant)
+                else:
+                    next_reactant = 'product.xyz'
+                    subfile = create_ard_sub_file(dir_path, script_path, gen_num + 1, next_reactant)
+
             cmd = 'qsub {}'.format(subfile)
             process = subprocess.Popen([cmd],
                                 stdout=subprocess.PIPE,
