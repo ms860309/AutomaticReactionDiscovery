@@ -86,6 +86,7 @@ def check_ard_jobs():
 
             qm_collection.update_one(target, {"$set": update_field}, True)
 
+
 def print_information(generations):
     """
     For a given generations (int) print the information in database
@@ -180,41 +181,57 @@ def print_information(generations):
 
 
 def update_network_status():
-    
     status_collection = db['status']
     qm_collection = db['qm_calculate_center']
-    statistics_collection = db['statistics']
-    total_nodes = list(statistics_collection.find({}, {'add how many products':1}))
-    
-    count = 0
-    
-    for i in total_nodes:
-        count += i['add how many products']
+    ard_had_add_number = qm_collection.count_documents({})
+    ard_should_add_number = sum(statistics_collection.distinct("add how many products"))
         
     running_query = {"ard_status":
                     {"$in": 
                         ["job_unrun", "job_launched", "job_running", "job_queueing"] 
                     }
                 }
-    
-    qm_nodes = list(qm_collection.find(running_query))
-    
-    query = {'$or': 
-                    [
-                    {'ts_status':
-                        {'$in':
-                        ['job_fail', 'job_success']}
-                        },
-                    {'ssm_status':
-                        {'$in':
-                            ['Exiting early', 'total dissociation', 'job_fail']
-                        }}
-                    ]
+    ard_nodes = list(qm_collection.find(running_query))
+
+    energy_query = {"energy_status":
+                    {"$in":
+                        ["job_launched", "job_running", "job_queueing", 'job_unrun']
+                    }
                 }
-    
-    targets = list(qm_collection.find(query))
-    statistics = list(statistics_collection.find({}))
-    if len(targets) == count and len(qm_nodes) == 0 and len(statistics) > 1:
+    ssm_query = {"ssm_status":
+                    {"$in":
+                        ["job_launched", "job_running", "job_queueing", 'job_unrun']
+                    }
+                }
+    ts_query = {"ts_status":
+                    {"$in":
+                        ["job_launched", "job_running", "job_queueing", 'job_unrun']
+                    }
+                }
+    irc_query_1 = {"irc_forward_status":
+                    {"$in":
+                        ["job_launched", "job_running", "job_queueing", "need opt", 'job_unrun']
+                    }
+                }
+    irc_query_2 = {"irc_reverse_status":
+                    {"$in":
+                        ["job_launched", "job_running", "job_queueing", "need opt", 'job_unrun']
+                    }
+                }
+    opt_query_1 = {"opt_forward_status":
+                    {"$in":
+                        ["opt_job_launched", "opt_job_running", "opt_job_queueing", 'job_unrun']
+                    }
+                }
+    opt_query_2 = {"opt_reverse_status":
+                    {"$in":
+                        ["opt_job_launched", "opt_job_running", "opt_job_queueing", 'job_unrun']
+                    }
+                }
+    not_finished_number = len(list(qm_collection.find(energy_query))) + len(list(qm_collection.find(ssm_query))) + len(list(qm_collection.find(ts_query))) + len(list(qm_collection.find(irc_query_1))) + len(list(qm_collection.find(irc_query_2))) + len(list(qm_collection.find(opt_query_1))) + len(list(qm_collection.find(opt_query_2)))
+
+
+    if ard_had_add_number == ard_should_add_number and len(ard_nodes) == 0 and not_finished_number == 0:
         print('Network converged')
         
         target = list(status_collection.find({}))
