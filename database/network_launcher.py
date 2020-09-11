@@ -79,7 +79,7 @@ def launch_ard_jobs():
             # get job id from stdout, e.g., "106849.h81"
             job_id = stdout.decode().replace("\n", "")
             # update status job_launched
-            update_ard_status(target[0], job_id)
+            update_ard_status(target, job_id)
 
 def create_ard_sub_file(dir_path, script_path, gen_num, next_reactant, ncpus = 8, mpiprocs = 1, ompthreads = 8):
     subfile = path.join(dir_path, 'ard.job')
@@ -103,8 +103,7 @@ def create_ard_sub_file(dir_path, script_path, gen_num, next_reactant, ncpus = 8
 
 def update_ard_status(target, job_id):
     qm_collection = db['qm_calculate_center']
-    reg_query = {"path":target}
     update_field = {"ard_status":"job_launched", "ard_jobid":job_id}
-    qm_collection.update_one(reg_query, {"$set": update_field}, True)
+    qm_collection.update_one(target, {"$set": update_field}, True)
     
 launch_ard_jobs()
