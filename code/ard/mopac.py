@@ -39,9 +39,6 @@ class Mopac(object):
         """
 
         tmpdir = os.path.join(os.path.dirname(os.getcwd()), 'tmp')
-        if os.path.exists(tmpdir):
-            shutil.rmtree(tmpdir)
-        os.mkdir(tmpdir)
         reactant_path = os.path.join(tmpdir, 'reactant.mop')
         product_path = os.path.join(tmpdir, 'product.mop')
 
@@ -50,6 +47,9 @@ class Mopac(object):
         if reac_geo == False and prod_geo == False:
             return False, False
         else:
+            if os.path.exists(tmpdir):
+                shutil.rmtree(tmpdir)
+            os.mkdir(tmpdir)
             with open(reactant_path, 'w') as f:
                 f.write("CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
                 f.write("\n{}".format(reac_geo))
@@ -126,7 +126,7 @@ class Mopac(object):
             self.logger.info('Form bonds: {}\nDistance: {}'.format(self.form_bonds, dist))    
             prod_geo = str(product_mol.toNode()).splitlines()
             product_geometry = []
-            for idx, i in enumerate(prod_geo):
+            for i in prod_geo:
                 i_list = i.split()
                 atom = i_list[0] + " "
                 k = i_list[1:] + [""]
@@ -137,7 +137,7 @@ class Mopac(object):
 
             reac_geo = str(reactant_mol.toNode()).splitlines()
             reactant_geometry = []
-            for idx, i in enumerate(reac_geo):
+            for i in reac_geo:
                 i_list = i.split()
                 atom = i_list[0] + " "
                 k = i_list[1:] + [""]

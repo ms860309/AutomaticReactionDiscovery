@@ -9,28 +9,16 @@ from connect import db
 def extract_data():
     
     reaction_collection = db['reactions']
-    #query = {"unique":'new one'}
-    query = {'$and':
-                    [{"unique":
-                    {"$in":
-                        ['new one']
-                    }
-                }, {'for_debug':
-                    {'$nin':
-                        ['from same']}
-                }]}
-
+    query = {"unique":
+                {"$in":
+                    ['new one']
+                }}
     targets = list(reaction_collection.find(query))
     reactant_smi = [target['reactant_smi'].split()[0] for target in targets]
     product_smi = [target['product_smi'].split()[0] for target in targets]
     barrier_energy = []
     for i in targets:
-        try:
-            barrier = round(i['barrier_energy'],2)
-        except:
-            barrier = 0
-        print(barrier)
-        barrier_energy.append(barrier)
+        barrier_energy.append(round(i['barrier_energy'], 2))
         
     generations = [target['generations'] for target in targets]
     zipped = zip(reactant_smi, product_smi, barrier_energy, generations)
@@ -58,8 +46,8 @@ def draw():
     colors = nx.get_edge_attributes(G,'color').values()
     weights = nx.get_edge_attributes(G,'weight').values()
 
-    #pos = nx.circular_layout(G)
-    pos = nx.spring_layout(G)  # positions for all nodes
+    pos = nx.circular_layout(G)
+    #pos = nx.spring_layout(G)  # positions for all nodes
     nx.draw_networkx_edge_labels(G, pos, edge_labels=_dict, font_size=8)
     nx.draw(G, pos, 
             edge_color=colors, 

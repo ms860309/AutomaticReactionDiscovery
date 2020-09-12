@@ -658,7 +658,7 @@ class Arrange3D(object):
             result = minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
-                                       options={'maxiter': 5000, 'disp': True, 'ftol': 1e-4, 'eps':1e-10}) #, callback = callbackF
+                                       options={'maxiter': 5000, 'disp': False, 'ftol': 1e-4, 'eps':1e-10}) #, callback = callbackF
 
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +

@@ -21,7 +21,36 @@ valenceelec = {1: 1, 2: 2, 6: 4, 7: 5, 8: 6, 9: 7, 10: 8, 14: 4, 15: 5, 16: 6, 1
 
 # data from http://staff.ustc.edu.cn/~luo971/2010-91-CRC-BDEs-Tables.pdf
 # unit is kj/mol
-bond_dissociation_energy = {'HH':435.7799, 'CH':338.4, 'OH':429.91, 'NiH':240, 'CC':618.3, 'CO':1076.38, 'NiC':337.0, 'OO':498.36, 'NiO':366, 'NiNi':204}
+# bond_dissociation_energy = {'HH':435.7799, 'CH':338.4, 'OH':429.91, 'NiH':240, 'CC':618.3, 'CO':1076.38, 'NiC':337.0, 'OO':498.36, 'NiO':366, 'NiNi':204}
+# Currently switch to rmg's data because some data may have problem, eg. CO = 1076.38 kj/mol, but in rmg it's CO (type=3)
+# Bond Dissociation Energies
+# References:
+# Huheey, pps. A-21 to A-34; T.L. Cottrell, "The Strengths of Chemical Bonds," 2nd ed., Butterworths, London, 1958
+# B. deB. Darwent, "National Standard Reference Data Series," National Bureau of Standards, No. 31, Washington, DC, 1970
+# S.W. Benson, J. Chem. Educ., 42, 502 (1965)
+# (C,C,1.5) was taken from an unsourced table that had similar values to those used below, should be replaced
+# if a sourced value becomes available
+# (C,C,2.5) is C#C - (CbenzeneC - C-C)
+bond_dissociation_energy =     {('H', 'H', 1.0): 432.0, ('H', 'C', 1): 411.0,
+                                ('H', 'N', 1): 386.0, ('H', 'O', 1.0): 459.0,
+                                ('H', 'S', 1): 363.0, ('H', 'Cl', 1): 428.0,
+                                ('C', 'C', 1): 346.0, ('C', 'C', 2): 602.0,
+                                ('C', 'C', 3): 835.0, ('C', 'Si', 1): 318.0,
+                                ('C', 'N', 1): 305.0, ('C', 'N', 2): 615.0,
+                                ('C', 'N', 3): 887.0, ('C', 'O', 1): 358.0,
+                                ('C', 'O', 2): 799.0, ('C', 'O', 3): 1072.0,
+                                ('C', 'S', 1): 272.0, ('C', 'S', 2): 573.0,
+                                ('C', 'Cl', 1): 327.0, ('Si', 'Si', 1): 222.,
+                                ('Si', 'N', 1): 355.0, ('Si', 'O', 1): 452.0,
+                                ('Si', 'S', 1): 293.0, ('Si', 'Cl', 1): 381.0,
+                                ('N', 'N', 1): 167.0, ('N', 'N', 2): 418.0,
+                                ('N', 'N', 3): 942.0, ('N', 'O', 1): 201.0,
+                                ('N', 'O', 2): 607.0, ('N', 'Cl', 1): 313.0,
+                                ('O', 'O', 1): 142.0, ('O', 'O', 2): 494.0,
+                                ('S', 'O', 2): 522.0, ('S', 'S', 1): 226.0,
+                                ('S', 'S', 2): 425.0, ('S', 'Cl', 1): 255.0,
+                                ('Cl', 'Cl', 1): 240.0, ('C', 'C', 1.5): 518.0,
+                                ('O', 'S', 1): 265.0, ('C', 'C', 2.5): 663.0}
 
 class ElementData(object):
     """Contains full periodic table element data and methods to access them

@@ -100,6 +100,7 @@ class Generate(object):
         bonds_form_all = [(atom1_idx, atom2_idx, 1)
                           for atom1_idx in range(natoms - 1)
                           for atom2_idx in range(atom1_idx + 1, natoms)]
+
         # Generate products
         bf_combinations = ((0, 1), (1, 0), (1, 1), (1, 2), (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3))
         for bf in bf_combinations:
@@ -112,7 +113,7 @@ class Generate(object):
                     reactant_valences,
                     bonds_form_all
                 )
-        
+
         if products_bonds:
             #Filter the products_bonds which doesn't follow DoU rule
             for bonds in products_bonds:
@@ -140,21 +141,19 @@ class Generate(object):
                                 form_bonds.remove(j)
 
                 if self.check_bond_type(bonds):
-                    
-                    # Remove the double bond in forming or breaking bond.
-                    # Because in SSM or GSM double bond is only a little distance change.
-                    # That is the double bond can't be a driving coordinate, ssm will automatically deal with this little distance change.
-                    for i in form_bonds:
-                        if i[2] == 2:
-                            form_bonds.remove(i)
-                    for i in break_bonds:
-                        if i[2] == 2:
-                            break_bonds.remove(i)
-
                     mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
                     mol.setCoordsFromMol(self.reac_mol)
                     if self.check_bond_dissociation_energy_and_isomorphic(bonds, break_bonds):
                         if mol.write('inchiKey').strip() not in self.reactant_inchikey:
+                            # Remove the double bond in forming or breaking bond.
+                            # Because in SSM or GSM double bond is only a little distance change.
+                            # That is the double bond can't be a driving coordinate, ssm will automatically deal with this little distance change.
+                            for i in form_bonds:
+                                if i[2] == 2:
+                                    form_bonds.remove(i)
+                            for i in break_bonds:
+                                if i[2] == 2:
+                                    break_bonds.remove(i)
                             self.add_bonds.append(form_bonds)
                             self.break_bonds.append(break_bonds)
                             self.prod_mols.append(mol)
@@ -202,12 +201,16 @@ class Generate(object):
             for break_bond in bbond_list:
                 first_atom = reactant_graph.atoms[break_bond[0]].label
                 second_atom = reactant_graph.atoms[break_bond[1]].label
-                
-                try:
-                    energy += props.bond_dissociation_energy[first_atom + second_atom]
-                except:
-                    energy += props.bond_dissociation_energy[second_atom + first_atom]
-            
+                bond_type = break_bond[2]
+                supported_element = ['C', 'N', 'H', 'O', 'S', 'Cl', 'Si']
+                if first_atom not in supported_element or second_atom not in supported_element:
+                    # use 0 instead
+                    energy += 0
+                else:
+                    try:
+                        energy += props.bond_dissociation_energy[first_atom, second_atom, bond_type]
+                    except:
+                        energy += props.bond_dissociation_energy[second_atom, first_atom, bond_type]
             if energy/constants.cal_to_J >= self.bond_dissociation_cutoff:
                 return False
             else:
