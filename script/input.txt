@@ -4,5 +4,5 @@ nform             2                 # Maximum number of bonds to be formed
 dH_cutoff         40               # Heat of reaction cutoff in kcal/mol
 dH_cutoff_method  mopac             # method
 manual_bonds      1                 # Manully specify bonds function
-bond_dissociation_cutoff 9999        # Bond dissociation energy cutoff in kcal/mol
+bond_dissociation_cutoff 165        # Bond dissociation energy cutoff in kcal/mol
 constraint        1                 # The index of constraint atom index (start from 0). eg. constraint forcefield or break-form bond etc.

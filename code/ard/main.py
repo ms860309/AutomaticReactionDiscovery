@@ -16,6 +16,7 @@ from openbabel import openbabel as ob
 from openbabel import pybel as pb
 import multiprocessing as mp
 import logging
+import networkx as nx
 
 # local application imports
 import constants
@@ -170,5 +171,8 @@ def readXYZ(xyz, bonds = None):
              for bond in pb.ob.OBMolBondIter(mol.OBMol)]
         ))
         make_graph(reactant_graph, bond_list= reactant_bonds)
-        
+    
+    rings = nx.cycle_basis(reactant_graph.graph)
+    print(rings)
+    raise
     return mol_obj, reactant_graph

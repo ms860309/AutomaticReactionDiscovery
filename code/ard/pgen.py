@@ -99,8 +99,8 @@ class Generate(object):
         natoms = len(self.atoms)
         bonds_form_all = [(atom1_idx, atom2_idx, 1)
                           for atom1_idx in range(natoms - 1)
-                          for atom2_idx in range(atom1_idx + 1, natoms)]
-
+                          for atom2_idx in range(atom1_idx + 1, natoms)
+                          if atom1_idx and atom2_idx not in self.constraint]
         # Generate products
         bf_combinations = ((0, 1), (1, 0), (1, 1), (1, 2), (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3))
         for bf in bf_combinations:
@@ -237,8 +237,6 @@ class Generate(object):
                     if not (bonds_broken[1][0] in self.constraint and bonds_broken[1][1] in self.constraint):
                         if not (bonds_broken[2][0] in self.constraint and bonds_broken[2][1] in self.constraint):
                             products.add((tuple(sorted(bonds))))
-            else:
-                products.add((tuple(sorted(bonds))))
 
         if nbreak > 0:
             # Break bond
@@ -270,8 +268,6 @@ class Generate(object):
             for bond_form in bonds_form_all:
                 # Do not add bond if it has previously been broken
                 if bond_form[:2] in [bond[:2] for bond in bonds_broken]:
-                    continue
-                if bond_form[0] in self.constraint and bond_form[1] in self.constraint:
                     continue
                 # Form new bond and catch exception if it violates constraints
                 try:
