@@ -64,6 +64,8 @@ class Generate(object):
             self.constraint = []
         else:
             self.constraint = constraint
+
+        self.carbond_list = [idx for idx, atom in enumerate(self.atoms) if atom == 6] # use for check 3&4 membered ring
                 
     def initialize(self):
         """
@@ -143,7 +145,7 @@ class Generate(object):
                 if self.check_bond_type(bonds):
                     mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
                     mol.setCoordsFromMol(self.reac_mol)
-                    if self.check_bond_dissociation_energy_and_isomorphic(bonds, break_bonds):
+                    if self.check_bond_dissociation_energy_and_isomorphic_and_rings(bonds, break_bonds):
                         if mol.write('inchiKey').strip() not in self.reactant_inchikey:
                             # Remove the double bond in forming or breaking bond.
                             # Because in SSM or GSM double bond is only a little distance change.
@@ -177,7 +179,7 @@ class Generate(object):
                     return False
             return True
     
-    def check_bond_dissociation_energy_and_isomorphic(self, bond_list, bbond_list):
+    def check_bond_dissociation_energy_and_isomorphic_and_rings(self, bond_list, bbond_list):
         energy = 0.0
 
         reactant_graph = self.reac_mol_graph
@@ -195,17 +197,21 @@ class Generate(object):
             [graph.add_edge(bond[0], bond[1], pi=False, active=False) for bond in bond_list]
             product.graph = graph
 
+        # Filter the isomorphic
         if is_isomorphic(reactant_graph.graph, product.graph):
             return False
+        elif self.check_four_and_three_membered_rings(product.graph):
+            return False
         else:
+            # Filter the bond dissociation energy
             for break_bond in bbond_list:
                 first_atom = reactant_graph.atoms[break_bond[0]].label
                 second_atom = reactant_graph.atoms[break_bond[1]].label
                 bond_type = break_bond[2]
                 supported_element = ['C', 'N', 'H', 'O', 'S', 'Cl', 'Si']
                 if first_atom not in supported_element or second_atom not in supported_element:
-                    # use 0 instead
-                    energy += 0
+                    # use 100 instead
+                    energy += 100
                 else:
                     try:
                         energy += props.bond_dissociation_energy[first_atom, second_atom, bond_type]
@@ -215,7 +221,15 @@ class Generate(object):
                 return False
             else:
                 return True
-        
+    
+    def check_four_and_three_membered_rings(self, product):
+        # Filter the 3&4 membered ring
+        rings = nx.cycle_basis(product)
+        for ring in rings:
+            if len(ring) < 5 and set(self.carbond_list) >= set(ring):
+                return True
+        return False
+
     def _generateProductsHelper(self, nbreak, nform, products, bonds, valences, bonds_form_all, bonds_broken=None):
         """
         Generate products recursively given the number of bonds that should be

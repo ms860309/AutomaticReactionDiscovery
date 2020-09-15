@@ -64,7 +64,6 @@ class Network(object):
         self.logger.info('{} possible products generated\n'.format(len(prod_mols)))
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
-        print(len(prod_mols))
         # Filter reactions based on standard heat of reaction  delta H
         if self.method == "mopac":
             self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))
@@ -109,7 +108,7 @@ class Network(object):
                                    'product_inchi_key':product_name, 
                                    'Product SMILES':mol.write('can').split()[0], 
                                    'path':dir_path, 
-                                   'ssm_status':'job_unrun', 
+                                   'ssm_status':'job_unrun',
                                    'generations':self.generations
                                    }
                                   )
