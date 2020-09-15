@@ -171,8 +171,9 @@ def readXYZ(xyz, bonds = None):
              for bond in pb.ob.OBMolBondIter(mol.OBMol)]
         ))
         make_graph(reactant_graph, bond_list= reactant_bonds)
-    
+
     rings = nx.cycle_basis(reactant_graph.graph)
     print(rings)
     raise
+
     return mol_obj, reactant_graph

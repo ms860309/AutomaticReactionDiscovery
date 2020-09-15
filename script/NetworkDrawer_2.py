@@ -46,8 +46,8 @@ def draw():
     colors = nx.get_edge_attributes(G,'color').values()
     weights = nx.get_edge_attributes(G,'weight').values()
 
-    pos = nx.circular_layout(G)
-    #pos = nx.spring_layout(G)  # positions for all nodes
+    #pos = nx.circular_layout(G)
+    pos = nx.spring_layout(G)  # positions for all nodes
     nx.draw_networkx_edge_labels(G, pos, edge_labels=_dict, font_size=8)
     nx.draw(G, pos, 
             edge_color=colors, 
@@ -55,7 +55,7 @@ def draw():
             node_color='lightgreen',
             font_size = 8)
     
-    plt.savefig("simple_path.png") # save as png
+    plt.savefig("simple_path_2.png") # save as png
     plt.show()
 
 
