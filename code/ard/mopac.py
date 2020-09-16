@@ -96,9 +96,6 @@ class Mopac(object):
         if msg != '':
             print(msg)
 
-        # Check reactant expected forming bond length must smaller than 4 angstrom after arrange. Default = 4
-        dist = self.check_bond_length(reactant_mol, self.form_bonds) # return the maximum value in array
-
         # After arrange to prevent openbabel use the previous product coordinates if it is isomorphic
         # to the current one, even if it has different atom indices participating in the bonds.
         if self.constraint == None:
@@ -113,6 +110,9 @@ class Mopac(object):
             gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint)
             gen3D.constraint_force_field(product_mol.OBMol, self.constraint)
 
+        # Check reactant expected forming bond length must smaller than 4 angstrom after arrange. Default = 4
+        dist = self.check_bond_length(reactant_mol, self.form_bonds) # return the maximum value in array
+        
         if dist >= threshold:
             self.logger.info('Here is the {} product.'.format(self.num))
             self.logger.info('Form bonds: {}\nDistance: {}'.format(self.form_bonds, dist))
