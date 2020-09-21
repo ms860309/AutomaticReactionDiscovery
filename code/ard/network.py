@@ -100,7 +100,7 @@ class Network(object):
             # Generate geometry and return path
             dir_path = self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
             product_name = mol.write('inchiKey').strip()
-            self.logger.info('Reactant inchi key: {}\nProduct inchi key: {}\n Directory path: {}'.format(reactant_key, product_name, dir_path))
+            self.logger.info('\nReactant inchi key: {}\nProduct inchi key: {}\nDirectory path: {}\n'.format(reactant_key, product_name, dir_path))
             qm_collection.insert_one({
                                    'reaction': [reactant_key, product_name], 
                                    'Reactant SMILES':mol_object.write('can').split()[0], 
@@ -215,7 +215,7 @@ class Network(object):
 
         reactant = reactant_mol.toNode()
         product = product_mol.toNode()
-        self.logger.info('Reactant and product geometry is :\n{}****\n{}'.format(str(reactant), str(product)))
+        self.logger.info('Reactant and product geometry is :\n{}\n****\n{}'.format(str(reactant), str(product)))
         subdir = os.path.join(os.path.dirname(self.ard_path), 'reactions')
         if not os.path.exists(subdir):
             os.mkdir(subdir)
