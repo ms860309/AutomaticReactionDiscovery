@@ -102,7 +102,8 @@ class Generate(object):
         bonds_form_all = [(atom1_idx, atom2_idx, 1)
                           for atom1_idx in range(natoms - 1)
                           for atom2_idx in range(atom1_idx + 1, natoms)
-                          if atom1_idx or atom2_idx not in self.constraint]
+                          if atom1_idx not in self.constraint or atom2_idx not in self.constraint]
+
         # Generate products
         bf_combinations = ((0, 1), (1, 0), (1, 1), (1, 2), (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3))
         for bf in bf_combinations:
