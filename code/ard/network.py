@@ -43,7 +43,7 @@ class Network(object):
         self.constraint = kwargs['constraint_index']
         self.count = 0
 
-    def genNetwork(self, mol_object, nbreak, nform):
+    def genNetwork(self, mol_object, use_inchi_key, nbreak, nform):
         """
         Execute the automatic reaction discovery procedure.
         """
@@ -57,13 +57,15 @@ class Network(object):
         inchi_key_list = [i['reactant_inchi_key'] for i in targets]
 
         # Generate all possible products
-        gen = Generate(mol_object, inchi_key_list, self.reactant_graph, self.bond_dissociation_cutoff, self.constraint)
+        gen = Generate(mol_object, inchi_key_list, self.reactant_graph, self.bond_dissociation_cutoff, use_inchi_key, self.constraint)
         self.logger.info('Generating all possible products...')
         gen.generateProducts(nbreak = int(nbreak), nform =  int(nform))
         prod_mols = gen.prod_mols
         self.logger.info('{} possible products generated\n'.format(len(prod_mols)))
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
+        print(len(prod_mols))
+        raise
         # Filter reactions based on standard heat of reaction  delta H
         if self.method == "mopac":
             self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))

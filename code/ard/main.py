@@ -62,6 +62,10 @@ class ARD(object):
         self.nform = kwargs['nform']
         self.dh_cutoff = float(kwargs['dh_cutoff'])
         self.bond_dissociation_cutoff = float(kwargs['bond_dissociation_cutoff'])
+        if kwargs['use_inchi_key'] == '1':
+            self.use_inchi_key = True
+        else:
+            self.use_inchi_key = False
         log_level = logging.INFO
         self.logger = util.initializeLog(log_level, os.path.join(os.getcwd(), 'ARD.log'), logname='main')
         self.initialize()
@@ -84,7 +88,7 @@ class ARD(object):
         
         reac_mol = self.reactant
         network = Network(reac_mol, self.reactant_graph, forcefield = self.forcefield, logger = self.logger, **kwargs)
-        network.genNetwork(reac_mol, nbreak = kwargs['nbreak'], nform = kwargs['nform'])
+        network.genNetwork(reac_mol, self.use_inchi_key, nbreak = kwargs['nbreak'], nform = kwargs['nform'])
         self.finalize(start_time)
 
     def finalize(self, start_time):
@@ -99,7 +103,7 @@ class ARD(object):
 def readInput(input_file):
     # Allowed keywords
     keys = ('reactant', 'nbreak', 'nform', 'dh_cutoff', 'dh_cutoff_method', 
-            'manual_bonds', 'bond_dissociation_cutoff', 'constraint')
+            'manual_bonds', 'bond_dissociation_cutoff', 'constraint', 'use_inchi_key')
     # Read all data from file
     with open(input_file, 'r') as f:
         input_data = f.read().splitlines()

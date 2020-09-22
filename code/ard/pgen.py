@@ -48,7 +48,7 @@ class Generate(object):
           (beginAtomIdx, endAtomIdx, bondOrder)
     """
 
-    def __init__(self, reac_mol, reactant_inchikey, reactant_graph, bond_dissociation_cutoff, constraint = None):
+    def __init__(self, reac_mol, reactant_inchikey, reactant_graph, bond_dissociation_cutoff, use_inchi_key, constraint = None):
         self.reac_mol = reac_mol
         self.reactant_inchikey = reactant_inchikey
         self.reac_mol_graph = reactant_graph
@@ -57,6 +57,7 @@ class Generate(object):
         self.prod_mols = []
         self.add_bonds = []
         self.break_bonds = []
+        self.use_inchi_key = use_inchi_key
         self.initialize()
         coords = [atom.coords for atom in self.reac_mol]
         self.reactant_coords = [np.array(coords).reshape(len(self.atoms), 3)]
@@ -142,24 +143,24 @@ class Generate(object):
                         for j in form_bonds:
                             if i[0] == j[0] and i[1] == j[1]:
                                 form_bonds.remove(j)
-
-                if self.check_bond_type(bonds):
-                    mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
-                    mol.setCoordsFromMol(self.reac_mol)
-                    if self.check_bond_dissociation_energy_and_isomorphic_and_rings(bonds, break_bonds):
-                        if mol.write('inchiKey').strip() not in self.reactant_inchikey:
-                            # Remove the double bond in forming or breaking bond.
-                            # Because in SSM or GSM double bond is only a little distance change.
-                            # That is the double bond can't be a driving coordinate, ssm will automatically deal with this little distance change.
-                            for i in form_bonds:
-                                if i[2] == 2:
-                                    form_bonds.remove(i)
-                            for i in break_bonds:
-                                if i[2] == 2:
-                                    break_bonds.remove(i)
-                            self.add_bonds.append(form_bonds)
-                            self.break_bonds.append(break_bonds)
-                            self.prod_mols.append(mol)
+                if len(form_bonds) == nform:  # need check
+                    if self.check_bond_type(bonds):
+                        mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
+                        mol.setCoordsFromMol(self.reac_mol)
+                        if self.check_bond_dissociation_energy_and_isomorphic_and_rings(bonds, break_bonds):
+                            if self.use_inchi_key and mol.write('inchiKey').strip() not in self.reactant_inchikey:
+                                # Remove the double bond in forming or breaking bond.
+                                # Because in SSM or GSM double bond is only a little distance change.
+                                # That is the double bond can't be a driving coordinate, ssm will automatically deal with this little distance change.
+                                for i in form_bonds:
+                                    if i[2] == 2:
+                                        form_bonds.remove(i)
+                                for i in break_bonds:
+                                    if i[2] == 2:
+                                        break_bonds.remove(i)
+                                self.add_bonds.append(form_bonds)
+                                self.break_bonds.append(break_bonds)
+                                self.prod_mols.append(mol)
 
     def check_bond_type(self, bonds):
         bond_type = {}
@@ -250,7 +251,6 @@ class Generate(object):
                     if not (bonds_broken[1][0] in self.constraint and bonds_broken[1][1] in self.constraint):
                         if not (bonds_broken[2][0] in self.constraint and bonds_broken[2][1] in self.constraint):
                             products.add((tuple(sorted(bonds))))
-
         if nbreak > 0:
             # Break bond
             for bond_break_idx, bond_break in enumerate(bonds):
