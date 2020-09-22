@@ -91,6 +91,11 @@ class Generate(object):
              for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
         ))
 
+        # Reactant bond information without bond type for some ssm driving coordinate case
+        reac_connectivity = tuple(sorted(
+            [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1)
+             for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
+        ))
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.GetExplicitValence() for atom in self.reac_mol]
 
@@ -104,7 +109,6 @@ class Generate(object):
                           for atom1_idx in range(natoms - 1)
                           for atom2_idx in range(atom1_idx + 1, natoms)
                           if atom1_idx not in self.constraint or atom2_idx not in self.constraint]
-
         # Generate products
         bf_combinations = ((0, 1), (1, 0), (1, 1), (1, 2), (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3))
         for bf in bf_combinations:
@@ -143,24 +147,24 @@ class Generate(object):
                         for j in form_bonds:
                             if i[0] == j[0] and i[1] == j[1]:
                                 form_bonds.remove(j)
-                if len(form_bonds) == nform:  # need check
-                    if self.check_bond_type(bonds):
-                        mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
-                        mol.setCoordsFromMol(self.reac_mol)
-                        if self.check_bond_dissociation_energy_and_isomorphic_and_rings(bonds, break_bonds):
-                            if self.use_inchi_key and mol.write('inchiKey').strip() not in self.reactant_inchikey:
-                                # Remove the double bond in forming or breaking bond.
-                                # Because in SSM or GSM double bond is only a little distance change.
-                                # That is the double bond can't be a driving coordinate, ssm will automatically deal with this little distance change.
-                                for i in form_bonds:
-                                    if i[2] == 2:
+
+                if self.check_bond_type(bonds):
+                    mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
+                    mol.setCoordsFromMol(self.reac_mol)
+                    if self.check_bond_dissociation_energy_and_isomorphic_and_rings(bonds, break_bonds):
+                        if self.use_inchi_key and mol.write('inchiKey').strip() not in self.reactant_inchikey:
+                            # Remove the double bond in forming or breaking bond.
+                            # Because in SSM or GSM double bond is only a little distance change.
+                            # That is the double bond can't be a driving coordinate, ssm will automatically deal with this little distance change.
+                            for i in break_bonds:
+                                if i[2] >= 2 and len(break_bonds) >= 2:
+                                    break_bonds.remove(i)
+                            for i in form_bonds:
+                                if i[2] >= 2 and len(form_bonds) >= 2:
                                         form_bonds.remove(i)
-                                for i in break_bonds:
-                                    if i[2] == 2:
-                                        break_bonds.remove(i)
-                                self.add_bonds.append(form_bonds)
-                                self.break_bonds.append(break_bonds)
-                                self.prod_mols.append(mol)
+                            self.add_bonds.append(form_bonds)
+                            self.break_bonds.append(break_bonds)
+                            self.prod_mols.append(mol)
 
     def check_bond_type(self, bonds):
         bond_type = {}
@@ -175,7 +179,10 @@ class Generate(object):
             return False
         else:
             for idx, i in enumerate(self.atoms):
-                if i == 6 and bond_type[idx] > 4: # use !=  or  >   need test
+                if i == 6 and bond_type[idx] != 4: # use !=  or  >   need test
+                    return False
+            for idx, i in enumerate(self.atoms):
+                if i == 8 and bond_type[idx] != 2: # use !=  or  >   need test
                     return False
             return True
     

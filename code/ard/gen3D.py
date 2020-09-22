@@ -652,13 +652,11 @@ class Arrange3D(object):
         if dof != 0:
             #def callbackF(Xi):
                 #print(self.objectiveFunction(Xi[:dof]))
-            #disps_guess = np.array([0.0]*dof)
-            a, b = -1, 1
-            disps_guess = (b - a)*np.random.rand(dof) + a
+            disps_guess = np.array([0.0]*dof)
             result = minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
-                                       options={'maxiter': 5000, 'disp': False, 'ftol': 1e-4, 'eps':1e-10}) #, callback = callbackF
+                                       options={'maxiter': 5000, 'disp': False, 'ftol': 0.00015}) #, callback = callbackF, 'eps':1e-10
 
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +

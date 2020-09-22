@@ -64,12 +64,10 @@ class Network(object):
         self.logger.info('{} possible products generated\n'.format(len(prod_mols)))
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
-        print(len(prod_mols))
-        raise
         # Filter reactions based on standard heat of reaction  delta H
         if self.method == "mopac":
             self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))
-            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, mol, add_bonds[prod_mols.index(mol)], self.logger, len(prod_mols))]
+            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, mol, add_bonds[prod_mols.index(mol)], self.logger, len(prod_mols), break_bonds[prod_mols.index(mol)])]
         else:
             self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))
             # Load thermo database and choose which libraries to search
@@ -127,8 +125,11 @@ class Network(object):
             return 1
         return 0
     
-    def filter_dh_mopac(self, reac_obj, prod_mol, form_bonds, logger, total_prod_num):
+    def filter_dh_mopac(self, reac_obj, prod_mol, form_bonds, logger, total_prod_num, break_bonds):
         self.count += 1
+        #print(form_bonds)
+        #print(break_bonds)
+        #print('-----')
         mopac_object = Mopac(self.forcefield, form_bonds, logger, total_prod_num, self.count, self.constraint)
         H298_reac, H298_prod = mopac_object.mopac_get_H298(reac_obj, prod_mol)
 
@@ -166,9 +167,7 @@ class Network(object):
         base_unique = [mol.write('inchiKey').strip() for mol in base]
         #base_unique = [mol.toRMGMolecule().to_inchi_key() for mol in base]
         result = [base[base_unique.index(i)] for i in set(base_unique)]
-        
         return result
-
 
     def gen_geometry(self, reactant_mol, product_mol, add_bonds, break_bonds, **kwargs):
         # Database
