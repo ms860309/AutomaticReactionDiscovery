@@ -131,19 +131,26 @@ class Molecule(pybel.Molecule):
     def copy(self):
         """
         Create copy of `self`. The copy is somewhat reduced in that it only
-        contains atoms and bonds.
+        contains atoms, coords and bonds.
         """
         # Create new empty instance
         m = Molecule(pybel.ob.OBMol())
-        OBMol = m.OBMol
-
+        obmol = m.OBMol
+        obmol.BeginModify()
         for atom in self:
-            OBMol.AddAtom(atom.OBAtom)
+            coords = [coord for coord in atom.coords]
+            atomno = atom.atomicnum
+            obatom = ob.OBAtom()
+            obatom.thisown = 0
+            obatom.SetAtomicNum(atomno)
+            obatom.SetVector(*coords)
+            obmol.AddAtom(obatom)
+            del obatom
         for bond in pybel.ob.OBMolBondIter(self.OBMol):
-            OBMol.AddBond(bond)
-
-        OBMol.SetTotalSpinMultiplicity(self.spin)
-        OBMol.SetHydrogensAdded()
+            obmol.AddBond(bond)
+        obmol.SetTotalSpinMultiplicity(self.spin)
+        obmol.Center()
+        obmol.EndModify()
 
         m.mols_indices = self.mols_indices
         m.mols = self.mols
@@ -375,7 +382,7 @@ class Molecule(pybel.Molecule):
                         mol.OBMol.DeleteAtom(atom)
 
                     mol.assignSpinMultiplicity()  # Has to be set again because
-                    mol.OBMol.SetHydrogensAdded()
+                    #mol.OBMol.SetHydrogensAdded()
                     self.mols.append(mol)
             else:
                 self.mols = [self]
@@ -411,7 +418,7 @@ class Molecule(pybel.Molecule):
                 neworder[atom_idx] = i + 1
             self.OBMol.RenumberAtoms(neworder)
 
-            self.OBMol.SetHydrogensAdded()
+            #self.OBMol.SetHydrogensAdded()
             self.OBMol.SetTotalSpinMultiplicity(spin)
 
     def connectivityAnalysis(self):
@@ -491,6 +498,7 @@ class Molecule(pybel.Molecule):
                                     atom_in_rotor[ref_3], atom_in_rotor[ref_4] = True, True
                                     new_atom = True
                     self.atom_in_rotor.append(atom_in_rotor)
+        print('rotor: {}'.format(self.rotors))
 
     def detCloseAtoms(self, d):
         """
@@ -551,7 +559,7 @@ class Arrange3D(object):
 
         self.initializeVars(mol_1, mol_2)
 
-    def initializeVars(self, mol_1, mol_2, d_intermol=3.0, d_intramol=2.0):
+    def initializeVars(self, mol_1, mol_2, d_intermol=2.5, d_intramol=0.74):
         """
         Set up class variables and determine the bonds and torsions to be
         matched between reactant and product.
@@ -650,13 +658,26 @@ class Arrange3D(object):
         ret = ''
         dof = self.dof_1 + self.def_2
         if dof != 0:
-            #def callbackF(Xi):
-                #print(self.objectiveFunction(Xi[:dof]))
+            def callbackF(Xi):
+                """
+                coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, Xi[:self.dof_1])
+                coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, Xi[self.dof_1:])
+                for i in range(0, len(self.mol_1.mols)):
+                    self.nodes_1[i].coords = coords_1[i]
+                    self.mol_1.mols[i].setCoordsFromMol(self.nodes_1[i].toPybelMol())
+                with open('visual.txt', 'a') as f:
+                    f.write(str(21))
+                    f.write('\n\n')
+                    f.write(str(self.mol_1.toNode()))
+                    f.write('\n')
+                """
+                print(self.objectiveFunction(Xi[:dof]))
+
             disps_guess = np.array([0.0]*dof)
             result = minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
-                                       options={'maxiter': 5000, 'disp': False, 'ftol': 0.00015}) #, callback = callbackF, 'eps':1e-10
+                                       options={'maxiter': 5000, 'disp': False, 'ftol': 0.001, 'eps':1e-6}) #, callback = callbackF, 'eps':1e-10
 
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
@@ -678,6 +699,10 @@ class Arrange3D(object):
                 self.mol_1.mergeMols()
             if len(self.mol_2.mols) > 1:
                 self.mol_2.mergeMols()
+        """
+        with open('visual.txt', 'a') as f:
+            f.write('------------------------------\n')
+        """
         return ret
 
     @staticmethod

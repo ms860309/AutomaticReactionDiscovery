@@ -67,7 +67,8 @@ class Network(object):
         # Filter reactions based on standard heat of reaction  delta H
         if self.method == "mopac":
             self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))
-            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, mol, add_bonds[prod_mols.index(mol)], self.logger, len(prod_mols), break_bonds[prod_mols.index(mol)])]
+            reac_mol_copy = mol_object.copy()
+            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, reac_mol_copy, mol, add_bonds[prod_mols.index(mol)], self.logger, len(prod_mols), break_bonds[prod_mols.index(mol)])]
         else:
             self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))
             # Load thermo database and choose which libraries to search
@@ -125,20 +126,19 @@ class Network(object):
             return 1
         return 0
     
-    def filter_dh_mopac(self, reac_obj, prod_mol, form_bonds, logger, total_prod_num, break_bonds):
+    def filter_dh_mopac(self, reac_obj, reac_mol_copy, prod_mol, form_bonds, logger, total_prod_num, break_bonds):
         self.count += 1
-        #print(form_bonds)
-        #print(break_bonds)
-        #print('-----')
-        mopac_object = Mopac(self.forcefield, form_bonds, logger, total_prod_num, self.count, self.constraint)
-        H298_reac, H298_prod = mopac_object.mopac_get_H298(reac_obj, prod_mol)
+        print(form_bonds)
+        print(break_bonds)
+        print('-----')
 
+        mopac_object = Mopac(reac_obj, prod_mol, self.forcefield, form_bonds, logger, total_prod_num, self.count, self.constraint)
+        H298_reac, H298_prod = mopac_object.mopac_get_H298(reac_mol_copy)
+        
         if H298_prod == False and H298_reac == False:
             return 0
-
         self.logger.info('Product energy calculate by mopac is {} kcal/mol and reactant is {} kcal/mol'.format(H298_prod, H298_reac))
         dH = H298_prod - H298_reac
-
         if dH < self.dh_cutoff:
             self.logger.info('Delta H is {}, smaller than threshold'.format(dH))
             self.logger.info('Finished {}/{}'.format(self.count, total_prod_num))
@@ -260,7 +260,6 @@ class Network(object):
 
         with open(path, 'w') as f:
             f.write('{}\n\n{}\n{}\n\n{}\n'.format(nreac_atoms, reactant, nproduct_atoms, product))
-
         return path
 
     @staticmethod
@@ -280,14 +279,13 @@ class Network(object):
         Create input file(add which bonds) for Single ended String Method (SSM) calculation.
         only for break 2 form 2 if more then need modify
         """
-        try:
-            path = os.path.join(kwargs['output_dir'], 'add_bonds.txt')
+        path = os.path.join(kwargs['output_dir'], 'add_bonds.txt')
 
-            with open(path, 'w') as f:
+        with open(path, 'w') as f:
+            if len(add_bonds) != 0:
                 for i in add_bonds:
                     f.write('ADD {} {}\n'.format(i[0]+1,i[1]+1))
+            if len(break_bonds) != 0:
                 for i in break_bonds:
                     f.write('BREAK {} {}\n'.format(i[0]+1,i[1]+1))
-        except:
-            print("maybe list out of range, check add bond")
 

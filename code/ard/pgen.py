@@ -91,11 +91,6 @@ class Generate(object):
              for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
         ))
 
-        # Reactant bond information without bond type for some ssm driving coordinate case
-        reac_connectivity = tuple(sorted(
-            [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1)
-             for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
-        ))
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.GetExplicitValence() for atom in self.reac_mol]
 
@@ -110,7 +105,7 @@ class Generate(object):
                           for atom2_idx in range(atom1_idx + 1, natoms)
                           if atom1_idx not in self.constraint or atom2_idx not in self.constraint]
         # Generate products
-        bf_combinations = ((0, 1), (1, 0), (1, 1), (1, 2), (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3))
+        bf_combinations = ((0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2))
         for bf in bf_combinations:
             if bf[0] <= nbreak and bf[1] <= nform:
                 self._generateProductsHelper(
@@ -123,7 +118,6 @@ class Generate(object):
                 )
 
         if products_bonds:
-            #Filter the products_bonds which doesn't follow DoU rule
             for bonds in products_bonds:
                 #for SSM calculation
                 break_bonds = []
@@ -237,7 +231,7 @@ class Generate(object):
                 return True
         return False
 
-    def _generateProductsHelper(self, nbreak, nform, products, bonds, valences, bonds_form_all, bonds_broken=None):
+    def _generateProductsHelper(self, nbreak, nform, products, bonds, valences, bonds_form_all, bonds_broken = None):
         """
         Generate products recursively given the number of bonds that should be
         broken and formed, a set for storing the products, a sequence of atoms,
@@ -247,17 +241,11 @@ class Generate(object):
         """
         if bonds_broken is None:
             bonds_broken = []
+
         if nbreak == 0 and nform == 0:
-            # If no more bonds are to be changed, then add product (base case)
-            if len(bonds_broken) == 2:
-                if not (bonds_broken[0][0] in self.constraint and bonds_broken[0][1] in self.constraint):
-                    if not (bonds_broken[1][0] in self.constraint and bonds_broken[1][1] in self.constraint):
-                        products.add((tuple(sorted(bonds))))
-            elif len(bonds_broken) == 3:
-                if not (bonds_broken[0][0] in self.constraint and bonds_broken[0][1] in self.constraint):
-                    if not (bonds_broken[1][0] in self.constraint and bonds_broken[1][1] in self.constraint):
-                        if not (bonds_broken[2][0] in self.constraint and bonds_broken[2][1] in self.constraint):
-                            products.add((tuple(sorted(bonds))))
+            if all(bonds_broken[num][0] not in self.constraint or bonds_broken[num][1] not in self.constraint for num in range(len(bonds_broken))):
+                products.add((tuple(sorted(bonds))))
+
         if nbreak > 0:
             # Break bond
             for bond_break_idx, bond_break in enumerate(bonds):
@@ -278,9 +266,8 @@ class Generate(object):
                     bonds_break,
                     valences_break,
                     bonds_form_all,
-                    bonds_broken
+                    bonds_broken,
                 )
-
             # Remove last bond that has been broken after loop terminates
             del bonds_broken[-1]
         elif nform > 0:
@@ -304,7 +291,7 @@ class Generate(object):
                     bonds_form,
                     valences_form,
                     bonds_form_all,
-                    bonds_broken
+                    bonds_broken,
                 )
 
     @staticmethod

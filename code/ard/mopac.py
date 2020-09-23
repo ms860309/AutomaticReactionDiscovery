@@ -2,6 +2,7 @@
 import os
 import shutil
 import time
+import copy
 
 #third party
 from subprocess import Popen, PIPE
@@ -24,7 +25,9 @@ class MopacError(Exception):
 
 class Mopac(object):
 
-    def __init__(self, forcefield, form_bonds, logger, count, num, constraint = None):
+    def __init__(self, reactant_mol, product_mol, forcefield, form_bonds, logger, count, num, constraint = None):
+        self.reactant_mol = reactant_mol
+        self.product_mol = product_mol
         self.forcefield = forcefield
         self.form_bonds = form_bonds
         self.logger = logger
@@ -32,7 +35,7 @@ class Mopac(object):
         self.num = num
         self.constraint = constraint
 
-    def mopac_get_H298(self, reac_obj, prod_obj, charge = 0, multiplicity = 'SINGLET', method = 'PM7'):
+    def mopac_get_H298(self, reac_mol_copy, charge = 0, multiplicity = 'SINGLET', method = 'PM7'):
         """
         Create a directory folder called "tmp" for mopac calculation
         Create a input file called "input.mop" for mopac calculation
@@ -42,7 +45,7 @@ class Mopac(object):
         reactant_path = os.path.join(tmpdir, 'reactant.mop')
         product_path = os.path.join(tmpdir, 'product.mop')
 
-        reac_geo, prod_geo = self.genInput(reac_obj, prod_obj)
+        reac_geo, prod_geo = self.genInput(self.reactant_mol, self.product_mol, reac_mol_copy)
         
         if reac_geo == False and prod_geo == False:
             return False, False
@@ -66,7 +69,7 @@ class Mopac(object):
 
             return float(reactant), float(product)
     
-    def genInput(self, reactant_mol, product_mol, threshold = 4.0):
+    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 4.0):
         start_time = time.time()
 
         reactant_mol.separateMol()
@@ -86,11 +89,10 @@ class Mopac(object):
             product_mol.gen3D(make3D=False)
             ff.Setup(Hatom.OBMol)
         else:
-            gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint)
+            #gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint)
             gen3D.constraint_force_field(product_mol.OBMol, self.constraint)
 
         # Arrange
-        reactant_mol_copy = reactant_mol.copy()
         arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint)
         msg = arrange3D.arrangeIn3D()
         if msg != '':
@@ -122,6 +124,7 @@ class Mopac(object):
             return False, False
         else:
             self.logger.info('\nHere is the {} product.'.format(self.num))
+            self.logger.info('Structure:\n{}\n'.format(str(reactant_mol.toNode())))
             self.logger.info('Structure:\n{}\n'.format(str(product_mol.toNode())))
             self.logger.info('Form bonds: {}\nDistance: {}'.format(self.form_bonds, dist))    
             prod_geo = str(product_mol.toNode()).splitlines()
@@ -146,9 +149,8 @@ class Mopac(object):
                 reactant_geometry.append(out)
             reactant_geometry = "\n".join(reactant_geometry)
 
-            reactant_mol.setCoordsFromMol(reactant_mol_copy)
+            reactant_mol.setCoordsFromMol(reac_mol_copy)
             self.finalize(start_time, 'arrange')
-            
             return reactant_geometry, product_geometry
     
         
