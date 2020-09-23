@@ -68,7 +68,7 @@ class Network(object):
         if self.method == "mopac":
             self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))
             reac_mol_copy = mol_object.copy()
-            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, reac_mol_copy, mol, add_bonds[prod_mols.index(mol)], self.logger, len(prod_mols), break_bonds[prod_mols.index(mol)])]
+            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, reac_mol_copy, mol, add_bonds[prod_mols.index(mol)], self.logger, len(prod_mols))]
         else:
             self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))
             # Load thermo database and choose which libraries to search
@@ -126,12 +126,8 @@ class Network(object):
             return 1
         return 0
     
-    def filter_dh_mopac(self, reac_obj, reac_mol_copy, prod_mol, form_bonds, logger, total_prod_num, break_bonds):
+    def filter_dh_mopac(self, reac_obj, reac_mol_copy, prod_mol, form_bonds, logger, total_prod_num):
         self.count += 1
-        print(form_bonds)
-        print(break_bonds)
-        print('-----')
-
         mopac_object = Mopac(reac_obj, prod_mol, self.forcefield, form_bonds, logger, total_prod_num, self.count, self.constraint)
         H298_reac, H298_prod = mopac_object.mopac_get_H298(reac_mol_copy)
 
@@ -180,7 +176,8 @@ class Network(object):
         if len(product_mol.mols) > 1:
             product_mol.mergeMols()
 
-        # Initial optimisation
+        reactant_mol_copy = reactant_mol.copy()
+        # Initial optimization
         if self.constraint == None:
             Hatom = gen3D.readstring('smi', '[H]')
             ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
@@ -190,11 +187,10 @@ class Network(object):
             product_mol.gen3D(make3D=False)
             ff.Setup(Hatom.OBMol)
         else:
-            gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint)
+            #gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint)
             gen3D.constraint_force_field(product_mol.OBMol, self.constraint)
 
         # Arrange
-        reactant_mol_copy = reactant_mol.copy()
         arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint)
         msg = arrange3D.arrangeIn3D()
         if msg != '':

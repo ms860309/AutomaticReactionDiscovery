@@ -79,7 +79,7 @@ class Mopac(object):
         if len(product_mol.mols) > 1:
             product_mol.mergeMols()
 
-        # Initial optimisation
+        # Initial optimization
         if self.constraint == None:
             Hatom = gen3D.readstring('smi', '[H]')
             ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
@@ -98,6 +98,9 @@ class Mopac(object):
         if msg != '':
             print(msg)
 
+        # Check reactant expected forming bond length must smaller than 4 angstrom after arrange. Default = 4
+        dist = self.check_bond_length(reactant_mol, self.form_bonds) # return the maximum value in array
+        
         # After arrange to prevent openbabel use the previous product coordinates if it is isomorphic
         # to the current one, even if it has different atom indices participating in the bonds.
         if self.constraint == None:
@@ -111,9 +114,6 @@ class Mopac(object):
         else:
             gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint)
             gen3D.constraint_force_field(product_mol.OBMol, self.constraint)
-
-        # Check reactant expected forming bond length must smaller than 4 angstrom after arrange. Default = 4
-        dist = self.check_bond_length(reactant_mol, self.form_bonds) # return the maximum value in array
         
         if dist >= threshold:
             self.logger.info('Here is the {} product.'.format(self.num))
@@ -124,7 +124,7 @@ class Mopac(object):
             return False, False
         else:
             self.logger.info('\nHere is the {} product.'.format(self.num))
-            self.logger.info('Structure:\n{}\n'.format(str(reactant_mol.toNode())))
+            self.logger.info('Structure:\n{}'.format(str(reactant_mol.toNode())))
             self.logger.info('Structure:\n{}\n'.format(str(product_mol.toNode())))
             self.logger.info('Form bonds: {}\nDistance: {}'.format(self.form_bonds, dist))    
             prod_geo = str(product_mol.toNode()).splitlines()
@@ -152,15 +152,15 @@ class Mopac(object):
             reactant_mol.setCoordsFromMol(reac_mol_copy)
             self.finalize(start_time, 'arrange')
             return reactant_geometry, product_geometry
-    
-        
+     
     def finalize(self, start_time, jobname):
         """
         Finalize the job.
         """
         self.logger.info('Total {} run time: {:.1f} s'.format(jobname, time.time() - start_time))
 
-    def getHeatofFormation(self, tmpdir, target = 'reactant.out'):
+    @staticmethod
+    def getHeatofFormation(tmpdir, target = 'reactant.out'):
         """
         if Error return False, which HF may be 0.0
         """
@@ -175,15 +175,16 @@ class Mopac(object):
             HeatofFormation = string[5]
         else:
             HeatofFormation = False
-
         return HeatofFormation
 
-    def runMopac(self, tmpdir, target = 'reactant.mop'):
+    @staticmethod
+    def runMopac(tmpdir, target = 'reactant.mop'):
         input_path = os.path.join(tmpdir, target)
         p = Popen(['mopac', input_path])
         p.wait()
 
-    def check_bond_length(self, product, add_bonds):
+    @staticmethod
+    def check_bond_length(product, add_bonds):
         """
         Use reactant coordinate to check if the add bonds's bond length is too long.
         Return a 'list of distance'.

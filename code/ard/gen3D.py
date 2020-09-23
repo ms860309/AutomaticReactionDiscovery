@@ -559,7 +559,7 @@ class Arrange3D(object):
 
         self.initializeVars(mol_1, mol_2)
 
-    def initializeVars(self, mol_1, mol_2, d_intermol=2.5, d_intramol=0.74):
+    def initializeVars(self, mol_1, mol_2, d_intermol=2.5, d_intramol=0.8):
         """
         Set up class variables and determine the bonds and torsions to be
         matched between reactant and product.
@@ -671,10 +671,15 @@ class Arrange3D(object):
                 print(self.objectiveFunction(Xi[:dof]))
 
             disps_guess = np.array([0.0]*dof)
+            """
             result = minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
-                                       options={'maxiter': 5000, 'disp': False, 'ftol': 0.001}, callback = callbackF) #, callback = callbackF, 'eps':1e-10
+                                       options={'maxiter': 5000, 'disp': False, 'ftol': 0.001}) #, callback = callbackF, 'eps':1e-10
+            """
+            result = minimize(self.objectiveFunction, disps_guess,
+                                       constraints={'type': 'ineq', 'fun': self.constraintFunction},
+                                       method='COBYLA')
 
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
@@ -847,16 +852,27 @@ class Arrange3D(object):
         coords = (rot_mat.dot(coords.T)).T
         return coords
 
+    @staticmethod
+    def get_idx(target, array):
+        for i, mol_fragment in enumerate(array):
+            try:
+                j = mol_fragment.index(target)
+            except ValueError:
+                continue
+            yield i, j
+
     def rotateRotor(self, coords, angle, rotor, atom_in_rotor):
         """
         Rotate internal rotor. Note that global rotation is inevitable.
         """
         n = len(coords)
         centroid = coords.sum(axis=0) / n
+        """
         if rotor[0] in self.constraint:
             rotor = (rotor[1], rotor[0])
         else:
             rotor = (rotor[0], rotor[1])
+        """
         coords = self.translate(coords, -coords[rotor[0]])
         axis = coords[rotor[0]] - coords[rotor[1]]
         rot_mat = util.rotationMatrix(angle, axis)
@@ -911,11 +927,10 @@ class Arrange3D(object):
         coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, disps[:self.dof_1])
         coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, disps[self.dof_1:])
         b1 = self.calcBondLens(coords_1, self.bonds_1)
-        print(self.bonds_1)
         b2 = self.calcBondLens(coords_2, self.bonds_2)
         d1 = self.calcDihedralAngs(coords_1, self.torsions_1)
         d2 = self.calcDihedralAngs(coords_2, self.torsions_2)
-        val_b, val_d = 0.0, 0.0
+        val_b, val_d, val_dist = 0.0, 0.0, 0.0
 
         for i in range(len(b1)):
             val_b += np.abs(b1[i]-b2[i])
@@ -928,9 +943,29 @@ class Arrange3D(object):
             else:
                 val_d += np.abs(d)
 
-        # The weight 5 for val_b is chosen arbitrarily
-        val = 5 * val_b + val_d
-        return val
+        if self.constraint != []:
+            mol_1_matches = []
+            mol_2_matches = []
+            combs = combinations(self.constraint, 2)
+            for comb in list(combs):
+                matches_1 = [match for match in self.get_idx(comb[0], self.mol_1.mols_indices)]
+                matches_2 = [match for match in self.get_idx(comb[1], self.mol_1.mols_indices)]
+                matches_1.extend(matches_2)
+                matches_3 = [match for match in self.get_idx(comb[0], self.mol_2.mols_indices)]
+                matches_4 = [match for match in self.get_idx(comb[1], self.mol_2.mols_indices)]
+                matches_3.extend(matches_4)
+                mol_2_matches.append(matches_3)
+
+            dis1 = self.calcBondLens(coords_1, mol_1_matches)
+            dis2 = self.calcBondLens(coords_2, mol_2_matches)
+            for i in range(len(dis1)):
+                val_dist += np.abs(dis1[i]-dis2[i])
+            # The weight 5 for val_b is chosen arbitrarily, 2 and so on.
+            val = 5 * val_b + 2 * val_d + val_dist
+            return val
+        else:
+            val = 5 * val_b + 2 * val_d
+            return val
 
     def constraintFunction(self, disps):
         """
@@ -948,9 +983,22 @@ class Arrange3D(object):
         return val
     
     def second_constraintFunction(self, disps):
-        comb = combinations(self.constraint, 2)
-        print(list(comb))
+        mol_1_matches = []
+        mol_2_matches = []
         coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, disps[:self.dof_1])
         coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, disps[self.dof_1:])
-        b1 = self.calcBondLens(coords_1, self.bonds_1)
-        b2 = self.calcBondLens(coords_2, self.bonds_2)
+        combs = combinations(self.constraint, 2)
+        for comb in list(combs):
+            matches_1 = [match for match in self.get_idx(comb[0], self.mol_1.mols_indices)]
+            matches_2 = [match for match in self.get_idx(comb[1], self.mol_1.mols_indices)]
+            matches_1.extend(matches_2)
+            matches_3 = [match for match in self.get_idx(comb[0], self.mol_2.mols_indices)]
+            matches_4 = [match for match in self.get_idx(comb[1], self.mol_2.mols_indices)]
+            matches_3.extend(matches_4)
+            mol_2_matches.append(matches_3)
+        dis1 = self.calcBondLens(coords_1, mol_1_matches)
+        dis2 = self.calcBondLens(coords_2, mol_2_matches)
+        val_dist = 0.0
+        for i in range(len(dis1)):
+            val_dist += np.abs(dis1[i]-dis2[i])
+        return val_dist
