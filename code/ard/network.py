@@ -134,7 +134,7 @@ class Network(object):
 
         mopac_object = Mopac(reac_obj, prod_mol, self.forcefield, form_bonds, logger, total_prod_num, self.count, self.constraint)
         H298_reac, H298_prod = mopac_object.mopac_get_H298(reac_mol_copy)
-        
+
         if H298_prod == False and H298_reac == False:
             return 0
         self.logger.info('Product energy calculate by mopac is {} kcal/mol and reactant is {} kcal/mol'.format(H298_prod, H298_reac))

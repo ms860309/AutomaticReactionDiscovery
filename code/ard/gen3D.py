@@ -13,6 +13,7 @@ import os
 #third party
 import numpy as np
 from scipy.optimize import minimize, basinhopping
+from scipy.spatial import distance_matrix
 from openbabel import pybel
 from openbabel import openbabel as ob
 from rmgpy import settings
@@ -21,6 +22,7 @@ import rmgpy.molecule
 from rmgpy.data.thermo import ThermoDatabase
 from rmgpy.molecule.adjlist import to_adjacency_list
 from rmgpy.molecule.converter import from_ob_mol
+from itertools import combinations 
 
 # local application imports
 import constants
@@ -472,7 +474,7 @@ class Molecule(pybel.Molecule):
         else:
             self.mols_indices = tuple([atom] for atom in range(len(self.atoms)))
 
-    def detRotors(self, constraint):
+    def detRotors(self):
         """
         Determine the rotors and atoms in the rotors of the molecule.
         """
@@ -483,22 +485,20 @@ class Molecule(pybel.Molecule):
         for bond_1 in pybel.ob.OBMolBondIter(self.OBMol):
             if bond_1.IsRotor():
                 ref_1, ref_2 = bond_1.GetBeginAtomIdx() - 1, bond_1.GetEndAtomIdx() - 1
-                if (ref_1 not in constraint) or (ref_2 not in constraint):
-                    self.rotors.append((ref_1, ref_2))
-                    atom_in_rotor = [False] * natoms
-                    atom_in_rotor[ref_1] = True
-                    new_atom = True
+                self.rotors.append((ref_1, ref_2))
+                atom_in_rotor = [False] * natoms
+                atom_in_rotor[ref_1] = True
+                new_atom = True
 
-                    while new_atom:
-                        new_atom = False
-                        for bond_2 in pybel.ob.OBMolBondIter(self.OBMol):
-                            ref_3, ref_4 = bond_2.GetBeginAtomIdx() - 1, bond_2.GetEndAtomIdx() - 1
-                            if not (ref_1 == ref_3 and ref_2 == ref_4):
-                                if atom_in_rotor[ref_3] ^ atom_in_rotor[ref_4]:
-                                    atom_in_rotor[ref_3], atom_in_rotor[ref_4] = True, True
-                                    new_atom = True
-                    self.atom_in_rotor.append(atom_in_rotor)
-        print('rotor: {}'.format(self.rotors))
+                while new_atom:
+                    new_atom = False
+                    for bond_2 in pybel.ob.OBMolBondIter(self.OBMol):
+                        ref_3, ref_4 = bond_2.GetBeginAtomIdx() - 1, bond_2.GetEndAtomIdx() - 1
+                        if not (ref_1 == ref_3 and ref_2 == ref_4):
+                            if atom_in_rotor[ref_3] ^ atom_in_rotor[ref_4]:
+                                atom_in_rotor[ref_3], atom_in_rotor[ref_4] = True, True
+                                new_atom = True
+                self.atom_in_rotor.append(atom_in_rotor)
 
     def detCloseAtoms(self, d):
         """
@@ -630,17 +630,14 @@ class Arrange3D(object):
         self.dof_1, self.def_2 = 6 * (len(self.mol_1.mols) - 1), 6 * (len(self.mol_2.mols) - 1)
 
         for mol in mol_1.mols:
-            mol.detRotors(self.constraint)
+            mol.detRotors()
             mol.detCloseAtoms(d_intramol)
             self.dof_1 += len(mol.rotors)
 
         for mol in mol_2.mols:
-            mol.detRotors(self.constraint)
+            mol.detRotors()
             mol.detCloseAtoms(d_intramol)
-            if mol.rotors == []:
-                pass
-            else:
-                self.def_2 += len(mol.rotors)
+            self.def_2 += len(mol.rotors)
 
         # Convert mols to nodes and center molecules
         self.nodes_1 = [mol.toNode() for mol in self.mol_1.mols]
@@ -677,7 +674,7 @@ class Arrange3D(object):
             result = minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
-                                       options={'maxiter': 5000, 'disp': False, 'ftol': 0.001, 'eps':1e-6}) #, callback = callbackF, 'eps':1e-10
+                                       options={'maxiter': 5000, 'disp': False, 'ftol': 0.001}, callback = callbackF) #, callback = callbackF, 'eps':1e-10
 
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
@@ -770,7 +767,6 @@ class Arrange3D(object):
             coord_vect_2 = coords[bond[1][0]][bond[1][1]]
             diff = coord_vect_1 - coord_vect_2
             dist.append(np.linalg.norm(diff))
-
         return dist
 
     @staticmethod
@@ -915,6 +911,7 @@ class Arrange3D(object):
         coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, disps[:self.dof_1])
         coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, disps[self.dof_1:])
         b1 = self.calcBondLens(coords_1, self.bonds_1)
+        print(self.bonds_1)
         b2 = self.calcBondLens(coords_2, self.bonds_2)
         d1 = self.calcDihedralAngs(coords_1, self.torsions_1)
         d2 = self.calcDihedralAngs(coords_2, self.torsions_2)
@@ -949,3 +946,11 @@ class Arrange3D(object):
         val = min([a - self.d_intermol for a in intermol_dists if a != 0] +
                   [b - self.d_intramol for b in intramol_dists if b != 0])
         return val
+    
+    def second_constraintFunction(self, disps):
+        comb = combinations(self.constraint, 2)
+        print(list(comb))
+        coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, disps[:self.dof_1])
+        coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, disps[self.dof_1:])
+        b1 = self.calcBondLens(coords_1, self.bonds_1)
+        b2 = self.calcBondLens(coords_2, self.bonds_2)
