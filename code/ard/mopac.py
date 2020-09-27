@@ -45,10 +45,10 @@ class Mopac(object):
         reactant_path = os.path.join(tmpdir, 'reactant.mop')
         product_path = os.path.join(tmpdir, 'product.mop')
 
-        reac_geo, prod_geo = self.genInput(self.reactant_mol, self.product_mol, reac_mol_copy)
+        reac_geo, prod_geo, reactant_mol, product_mol = self.genInput(self.reactant_mol, self.product_mol, reac_mol_copy)
         
         if reac_geo == False and prod_geo == False:
-            return False, False
+            return False, False, False, False
         else:
             if os.path.exists(tmpdir):
                 shutil.rmtree(tmpdir)
@@ -67,7 +67,7 @@ class Mopac(object):
             product = getHeatofFormation(tmpdir, 'product.out')
             self.finalize(start_time, 'mopac')
 
-            return float(reactant), float(product)
+            return float(reactant), float(product), reactant_mol, product_mol
     
     def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 4.0):
         start_time = time.time()
@@ -93,10 +93,13 @@ class Mopac(object):
             gen3D.constraint_force_field(product_mol.OBMol, self.constraint)
 
         # Arrange
-        arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint)
-        msg = arrange3D.arrangeIn3D()
-        if msg != '':
-            print(msg)
+        try:
+            arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint)
+            msg = arrange3D.arrangeIn3D()
+            if msg != '':
+                print(msg)
+        except:
+            return False, False, False, False
 
         # Check reactant expected forming bond length must smaller than 4 angstrom after arrange. Default = 4
         dist = self.check_bond_length(reactant_mol, self.form_bonds) # return the maximum value in array
@@ -121,7 +124,7 @@ class Mopac(object):
             self.logger.info('Form bond distance is greater than threshold.')
             self.logger.info('Now finished {}/{}'.format(self.num, self.count))
             self.finalize(start_time, 'arrange')
-            return False, False
+            return False, False, False, False
         else:
             self.logger.info('\nHere is the {} product.'.format(self.num))
             self.logger.info('Structure:\n{}'.format(str(reactant_mol.toNode())))
@@ -151,7 +154,7 @@ class Mopac(object):
 
             reactant_mol.setCoordsFromMol(reac_mol_copy)
             self.finalize(start_time, 'arrange')
-            return reactant_geometry, product_geometry
+            return reactant_geometry, product_geometry, reactant_mol, product_mol
      
     def finalize(self, start_time, jobname):
         """
