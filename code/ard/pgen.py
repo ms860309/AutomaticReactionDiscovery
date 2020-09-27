@@ -151,10 +151,10 @@ class Generate(object):
                             # Because in SSM or GSM double bond is only a little distance change.
                             # That is the double bond can't be a driving coordinate, ssm will automatically deal with this little distance change.
                             for i in break_bonds:
-                                if i[2] >= 2 and len(break_bonds) >= 2:
+                                if i[2] >= 2 and (i[0], i[1], i[2] - 1) in bonds:
                                     break_bonds.remove(i)
                             for i in form_bonds:
-                                if i[2] >= 2 and len(form_bonds) >= 2:
+                                if i[2] >= 2 and (i[0], i[1], i[2] + 1) in bonds:
                                         form_bonds.remove(i)
                             self.add_bonds.append(form_bonds)
                             self.break_bonds.append(break_bonds)
@@ -205,6 +205,10 @@ class Generate(object):
             return False
         else:
             # Filter the bond dissociation energy
+            num = 0
+            for bb in bbond_list:
+                num += bb[2]
+
             for break_bond in bbond_list:
                 first_atom = reactant_graph.atoms[break_bond[0]].label
                 second_atom = reactant_graph.atoms[break_bond[1]].label
@@ -214,10 +218,20 @@ class Generate(object):
                     # use 100 instead
                     energy += 100
                 else:
-                    try:
-                        energy += props.bond_dissociation_energy[first_atom, second_atom, bond_type]
-                    except:
-                        energy += props.bond_dissociation_energy[second_atom, first_atom, bond_type]
+                    # consider if break double bond (2-->1 not break 2) then the bond dissociation use double bond energy - single bond energy
+                    if num >= 3 and bond_type >= 2:
+                        try:
+                            energy += props.bond_dissociation_energy[first_atom, second_atom, bond_type]
+                            energy -= props.bond_dissociation_energy[first_atom, second_atom, bond_type - 1]
+                        except:
+                            energy += props.bond_dissociation_energy[second_atom, first_atom, bond_type]
+                            energy -= props.bond_dissociation_energy[second_atom, first_atom, bond_type - 1]
+                    else:
+                        try:
+                            energy += props.bond_dissociation_energy[first_atom, second_atom, bond_type]
+                        except:
+                            energy += props.bond_dissociation_energy[second_atom, first_atom, bond_type]
+
             if energy/constants.cal_to_J >= self.bond_dissociation_cutoff:
                 return False
             else:

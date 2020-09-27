@@ -671,15 +671,22 @@ class Arrange3D(object):
                 print(self.objectiveFunction(Xi[:dof]))
 
             disps_guess = np.array([0.0]*dof)
-            """
+            
             result = minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
                                        options={'maxiter': 5000, 'disp': False, 'ftol': 0.001}) #, callback = callbackF, 'eps':1e-10
             """
             result = minimize(self.objectiveFunction, disps_guess,
-                                       constraints={'type': 'ineq', 'fun': self.constraintFunction},
+                                       constraints=[{'type': 'ineq', 'fun': self.constraintFunction},
+                                                    {'type': 'eq', 'fun': self.second_constraintFunction}],
+                                       method='SLSQP',
+                                       options={'maxiter': 5000, 'disp': False, 'ftol': 0.001}) #, callback = callbackF, 'eps':1e-10
+
+            result = minimize(self.objectiveFunction, disps_guess,
+                                       constraints={'type': 'ineq', 'fun': self.constraintFunction}, # COBYLA constraint can not use eq
                                        method='COBYLA')
+            """
 
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
@@ -951,6 +958,7 @@ class Arrange3D(object):
                 matches_1 = [match for match in self.get_idx(comb[0], self.mol_1.mols_indices)]
                 matches_2 = [match for match in self.get_idx(comb[1], self.mol_1.mols_indices)]
                 matches_1.extend(matches_2)
+                mol_1_matches.append(matches_1)
                 matches_3 = [match for match in self.get_idx(comb[0], self.mol_2.mols_indices)]
                 matches_4 = [match for match in self.get_idx(comb[1], self.mol_2.mols_indices)]
                 matches_3.extend(matches_4)
@@ -966,6 +974,7 @@ class Arrange3D(object):
         else:
             val = 5 * val_b + 2 * val_d
             return val
+
 
     def constraintFunction(self, disps):
         """
@@ -992,12 +1001,14 @@ class Arrange3D(object):
             matches_1 = [match for match in self.get_idx(comb[0], self.mol_1.mols_indices)]
             matches_2 = [match for match in self.get_idx(comb[1], self.mol_1.mols_indices)]
             matches_1.extend(matches_2)
+            mol_1_matches.append(matches_1)
             matches_3 = [match for match in self.get_idx(comb[0], self.mol_2.mols_indices)]
             matches_4 = [match for match in self.get_idx(comb[1], self.mol_2.mols_indices)]
             matches_3.extend(matches_4)
             mol_2_matches.append(matches_3)
         dis1 = self.calcBondLens(coords_1, mol_1_matches)
         dis2 = self.calcBondLens(coords_2, mol_2_matches)
+
         val_dist = 0.0
         for i in range(len(dis1)):
             val_dist += np.abs(dis1[i]-dis2[i])

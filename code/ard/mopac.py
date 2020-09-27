@@ -57,14 +57,14 @@ class Mopac(object):
                 f.write("CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
                 f.write("\n{}".format(reac_geo))
             start_time = time.time()
-            self.runMopac(tmpdir, 'reactant.mop')
-            reactant = self.getHeatofFormation(tmpdir, 'reactant.out')
+            runMopac(tmpdir, 'reactant.mop')
+            reactant = getHeatofFormation(tmpdir, 'reactant.out')
 
             with open(product_path, 'w') as f:
                 f.write("CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
                 f.write("\n{}".format(prod_geo))
-            self.runMopac(tmpdir, 'product.mop')
-            product = self.getHeatofFormation(tmpdir, 'product.out')
+            runMopac(tmpdir, 'product.mop')
+            product = getHeatofFormation(tmpdir, 'product.out')
             self.finalize(start_time, 'mopac')
 
             return float(reactant), float(product)
@@ -160,30 +160,6 @@ class Mopac(object):
         self.logger.info('Total {} run time: {:.1f} s'.format(jobname, time.time() - start_time))
 
     @staticmethod
-    def getHeatofFormation(tmpdir, target = 'reactant.out'):
-        """
-        if Error return False, which HF may be 0.0
-        """
-        input_path = os.path.join(tmpdir, target)
-        with open(input_path, 'r') as f:
-            lines = f.readlines()
-        for idx, line in enumerate(lines):
-            if line.strip().startswith('FINAL HEAT OF FORMATION'):
-                break
-        string = lines[idx].split()
-        if string[0] == 'FINAL':
-            HeatofFormation = string[5]
-        else:
-            HeatofFormation = False
-        return HeatofFormation
-
-    @staticmethod
-    def runMopac(tmpdir, target = 'reactant.mop'):
-        input_path = os.path.join(tmpdir, target)
-        p = Popen(['mopac', input_path])
-        p.wait()
-
-    @staticmethod
     def check_bond_length(product, add_bonds):
         """
         Use reactant coordinate to check if the add bonds's bond length is too long.
@@ -203,3 +179,25 @@ class Mopac(object):
         if dist == []:
             dist = [0]
         return float(max(dist))
+
+def getHeatofFormation(tmpdir, target = 'reactant.out'):
+    """
+    if Error return False, which HF may be 0.0
+    """
+    input_path = os.path.join(tmpdir, target)
+    with open(input_path, 'r') as f:
+        lines = f.readlines()
+    for idx, line in enumerate(lines):
+        if line.strip().startswith('FINAL HEAT OF FORMATION'):
+            break
+    string = lines[idx].split()
+    if string[0] == 'FINAL':
+        HeatofFormation = string[5]
+    else:
+        HeatofFormation = False
+    return HeatofFormation
+
+def runMopac(tmpdir, target = 'reactant.mop'):
+    input_path = os.path.join(tmpdir, target)
+    p = Popen(['mopac', input_path])
+    p.wait()

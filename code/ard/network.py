@@ -20,6 +20,7 @@ import util
 from quantum import QuantumError
 from node import Node
 from pgen import Generate
+import mopac
 from mopac import Mopac
 
 
@@ -68,7 +69,14 @@ class Network(object):
         if self.method == "mopac":
             self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))
             reac_mol_copy = mol_object.copy()
-            prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, reac_mol_copy, mol, add_bonds[prod_mols.index(mol)], self.logger, len(prod_mols))]
+            if self.generations == 1:
+                H298_reac = self.get_mopac_H298(mol_object)
+                update_field = {'reactant_energy':H298_reac}
+                pool_collection.update_one(targets[0], {"$set": update_field}, True)
+                prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, reac_mol_copy, mol, add_bonds[prod_mols.index(mol)], self.logger, len(prod_mols))]
+            else:
+                H298_reac = targets[0]['reactant_energy']
+                prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, reac_mol_copy, mol, add_bonds[prod_mols.index(mol)], self.logger, len(prod_mols), H298_reac)]
         else:
             self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))
             # Load thermo database and choose which libraries to search
@@ -126,7 +134,7 @@ class Network(object):
             return 1
         return 0
     
-    def filter_dh_mopac(self, reac_obj, reac_mol_copy, prod_mol, form_bonds, logger, total_prod_num):
+    def filter_dh_mopac(self, reac_obj, reac_mol_copy, prod_mol, form_bonds, logger, total_prod_num, refH = None):
         self.count += 1
         mopac_object = Mopac(reac_obj, prod_mol, self.forcefield, form_bonds, logger, total_prod_num, self.count, self.constraint)
         H298_reac, H298_prod = mopac_object.mopac_get_H298(reac_mol_copy)
@@ -134,7 +142,12 @@ class Network(object):
         if H298_prod == False and H298_reac == False:
             return 0
         self.logger.info('Product energy calculate by mopac is {} kcal/mol and reactant is {} kcal/mol'.format(H298_prod, H298_reac))
-        dH = H298_prod - H298_reac
+        if refH:
+            self.logger.info('In the {} generations, reactant hf use {} instead.'.format(self.generations, refH))
+            dH = H298_prod - refH
+        else:
+            dH = H298_prod - H298_reac
+
         if dH < self.dh_cutoff:
             self.logger.info('Delta H is {}, smaller than threshold'.format(dH))
             self.logger.info('Finished {}/{}'.format(self.count, total_prod_num))
@@ -143,18 +156,31 @@ class Network(object):
         self.logger.info('Finished {}/{}\n'.format(self.count, total_prod_num))
         return 0
 
-    def check_bond_length(self, coords, add_bonds):
-        """
-        Use reactant coordinate to check if the add bonds's bond length is too long.
-        Return a 'list of distance'.
-        """
-        dist = []
-        for bond in add_bonds:
-            coord_vect_1 = coords[0][bond[0]]
-            coord_vect_2 = coords[0][bond[1]]
-            diff = coord_vect_1 - coord_vect_2
-            dist.append(np.linalg.norm(diff))
-        return dist
+    @staticmethod
+    def get_mopac_H298(mol_object, charge = 0, multiplicity = 'SINGLET', method = 'PM7'):
+        tmpdir = os.path.join(os.path.dirname(os.getcwd()), 'tmp')
+        reactant_path = os.path.join(tmpdir, 'reactant.mop')
+        if os.path.exists(tmpdir):
+            shutil.rmtree(tmpdir)
+        os.mkdir(tmpdir)
+
+        reac_geo = str(mol_object.toNode()).splitlines()
+        reactant_geometry = []
+        for i in reac_geo:
+            i_list = i.split()
+            atom = i_list[0] + " "
+            k = i_list[1:] + [""]
+            l = " 0 ".join(k)
+            out = atom + l
+            reactant_geometry.append(out)
+        reactant_geometry = "\n".join(reactant_geometry)
+
+        with open(reactant_path, 'w') as f:
+            f.write("CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
+            f.write("\n{}".format(reactant_geometry))
+        mopac.runMopac(tmpdir, 'reactant.mop')
+        mol_hf = mopac.getHeatofFormation(tmpdir, 'reactant.out')
+        return float(mol_hf)
 
     def unique_key_filterIsomorphic_itself(self, base):
         """
@@ -230,7 +256,8 @@ class Network(object):
         reactant_mol.setCoordsFromMol(reactant_mol_copy)
         return output_dir
 
-    def dir_check(self, subdir, b_dirname, num):
+    @staticmethod
+    def dir_check(subdir, b_dirname, num):
         """
         When parallely run job, the dir is constructed but data is not on database yet
         """
@@ -242,7 +269,6 @@ class Network(object):
                 number += 1
             else:
                 check = True
-        
         return new_name
 
     @staticmethod
