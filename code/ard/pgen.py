@@ -50,7 +50,7 @@ class Generate(object):
 
     def __init__(self, reac_mol, reactant_inchikey, reactant_graph, bond_dissociation_cutoff, use_inchi_key, constraint = None):
         self.reac_mol = reac_mol
-        self.reactant_inchikey = reactant_inchikey
+        self.reactant_inchikey = [reactant_inchikey, reac_mol.write('inchiKey').strip()]
         self.reac_mol_graph = reactant_graph
         self.bond_dissociation_cutoff = float(bond_dissociation_cutoff)
         self.atoms = None

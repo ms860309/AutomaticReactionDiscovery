@@ -52,13 +52,13 @@ class Network(object):
         qm_collection = db['qm_calculate_center']
         pool_collection = db['pool']
         statistics_collection = db['statistics']
-        targets = list(pool_collection.find({}))
+        targets = list(pool_collection.find({'generations': 1}))
 
         # Add all reactant to a list for pgen filter isomorphic
-        inchi_key_list = [i['reactant_inchi_key'] for i in targets]
+        initial_reactant_inchi_key = targets[0]['reactant_inchi_key']
 
         # Generate all possible products
-        gen = Generate(mol_object, inchi_key_list, self.reactant_graph, self.bond_dissociation_cutoff, use_inchi_key, self.constraint)
+        gen = Generate(mol_object, initial_reactant_inchi_key, self.reactant_graph, self.bond_dissociation_cutoff, use_inchi_key, self.constraint)
         self.logger.info('Generating all possible products...')
         gen.generateProducts(nbreak = int(nbreak), nform =  int(nform))
         prod_mols = gen.prod_mols
@@ -73,7 +73,7 @@ class Network(object):
                 H298_reac = self.get_mopac_H298(mol_object)
                 update_field = {'reactant_energy':H298_reac}
                 pool_collection.update_one(targets[0], {"$set": update_field}, True)
-                prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, reac_mol_copy, mol, add_bonds[prod_mols.index(mol)], break_bonds[prod_mols.index(mol)], self.logger, len(prod_mols))]
+                prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, reac_mol_copy, mol, add_bonds[prod_mols.index(mol)], break_bonds[prod_mols.index(mol)], self.logger, len(prod_mols), H298_reac)]
             else:
                 H298_reac = targets[0]['reactant_energy']
                 prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, reac_mol_copy, mol, add_bonds[prod_mols.index(mol)], self.logger, len(prod_mols), H298_reac)]
@@ -102,9 +102,9 @@ class Network(object):
             'reactant_inchi_key':reactant_key, 
             'add how many products':len(prod_mols_filtered),
             'generations': self.generations})
-
-        self.logger.info('Generate geometry........\n')
+        
         if self.method != "mopac":
+            self.logger.info('Generate geometry........\n')
             for mol in prod_mols_filtered:
                 index = prod_mols.index(mol)
                 # Generate geometry and return path
@@ -152,23 +152,26 @@ class Network(object):
         if dH < self.dh_cutoff:
             self.logger.info('Delta H is {}, smaller than threshold'.format(dH))
             self.logger.info('Finished {}/{}'.format(self.count, total_prod_num))
-            qm_collection = db['qm_calculate_center']
-            dir_path = self.output(reactant, product, form_bonds, break_bonds)
-            reactant_key = reactant.write('inchiKey').strip()
-            product_name = product.write('inchiKey').strip()
-            self.logger.info('\nReactant inchi key: {}\nProduct inchi key: {}\nDirectory path: {}\n'.format(reactant_key, product_name, dir_path))
-            qm_collection.insert_one({
-                                'reaction': [reactant_key, product_name], 
-                                'Reactant SMILES':reactant.write('can').split()[0], 
-                                'reactant_inchi_key':reactant_key, 
-                                'product_inchi_key':product_name, 
-                                'Product SMILES':product.write('can').split()[0], 
-                                'path':dir_path, 
-                                'ssm_status':'job_unrun',
-                                'generations':self.generations
-                                }
-                                )
-            return 1
+            if H298_reac - refH > self.dh_cutoff: # Filter the high energy binding mode (Here maybe we should choose the lowest one as the refH)
+                return 0
+            else:
+                qm_collection = db['qm_calculate_center']
+                dir_path = self.output(reactant, product, form_bonds, break_bonds)
+                reactant_key = reactant.write('inchiKey').strip()
+                product_name = product.write('inchiKey').strip()
+                self.logger.info('\nReactant inchi key: {}\nProduct inchi key: {}\nDirectory path: {}\n'.format(reactant_key, product_name, dir_path))
+                qm_collection.insert_one({
+                                    'reaction': [reactant_key, product_name], 
+                                    'Reactant SMILES':reactant.write('can').split()[0], 
+                                    'reactant_inchi_key':reactant_key, 
+                                    'product_inchi_key':product_name, 
+                                    'Product SMILES':product.write('can').split()[0], 
+                                    'path':dir_path, 
+                                    'ssm_status':'job_unrun',
+                                    'generations':self.generations
+                                    }
+                                    )
+                return 1
         self.logger.info('Delta H is {}, greater than threshold'.format(dH))
         self.logger.info('Finished {}/{}\n'.format(self.count, total_prod_num))
         return 0

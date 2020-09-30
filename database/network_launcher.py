@@ -36,7 +36,7 @@ def launch_ard_jobs():
         # first reactant need to add to pool
         initial_reactant = next(pybel.readfile('xyz', path.join(script_path, 'reactant.xyz')))
         initial_reactant_inchi_key = initial_reactant.write('inchiKey').strip()
-        pool_collection.insert_one({'reactant_inchi_key':initial_reactant_inchi_key})
+        pool_collection.insert_one({'reactant_inchi_key':initial_reactant_inchi_key, 'generations': 1})
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
