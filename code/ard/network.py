@@ -188,23 +188,24 @@ class Network(object):
         if dH < self.dh_cutoff:
             self.logger.info('Delta H is {}, smaller than threshold'.format(dH))
             self.logger.info('Finished {}/{}'.format(self.count, total_prod_num))
-            qm_collection = db['qm_calculate_center']
-            dir_path = self.output(reactant, product, form_bonds, break_bonds)
-            reactant_key = reactant.write('inchiKey').strip()
-            product_name = product.write('inchiKey').strip()
-            self.logger.info('\nReactant inchi key: {}\nProduct inchi key: {}\nDirectory path: {}\n'.format(reactant_key, product_name, dir_path))
-            qm_collection.insert_one({
-                                'reaction': [reactant_key, product_name],
-                                'Reactant SMILES':reactant.write('can').split()[0],
-                                'reactant_inchi_key':reactant_key,
-                                'product_inchi_key':product_name,
-                                'Product SMILES':product.write('can').split()[0],
-                                'reactant_mopac_hf':H298_reac,
-                                'product_mopac_hf':H298_prod,
-                                'path':dir_path,
-                                'generations':self.generations
-                                }
-                                )
+            if H298_reac - refH > self.dh_cutoff: # Filter the high energy binding mode (Here maybe we should choose the lowest one as the refH)
+                return 0
+            else:
+                qm_collection = db['qm_calculate_center']
+                dir_path = self.output(reactant, product, form_bonds, break_bonds)
+                reactant_key = reactant.write('inchiKey').strip()
+                product_name = product.write('inchiKey').strip()
+                self.logger.info('\nReactant inchi key: {}\nProduct inchi key: {}\nDirectory path: {}\n'.format(reactant_key, product_name, dir_path))
+                qm_collection.insert_one({
+                                    'reaction': [reactant_key, product_name], 
+                                    'Reactant SMILES':reactant.write('can').split()[0], 
+                                    'reactant_inchi_key':reactant_key, 
+                                    'product_inchi_key':product_name, 
+                                    'Product SMILES':product.write('can').split()[0], 
+                                    'path':dir_path, 
+                                    'ssm_status':'job_unrun',
+                                    'generations':self.generations
+                                    })
                 return 1
         self.logger.info('Delta H is {}, greater than threshold'.format(dH))
         self.logger.info('Finished {}/{}\n'.format(self.count, total_prod_num))
