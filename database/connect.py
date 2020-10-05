@@ -25,6 +25,13 @@ db = getattr(Connector(), 'db')
 # debug
 """
 qm_collection = db['qm_calculate_center']
+query = [{'$match':{'reactant_inchi_key':'OWCQMKVAAHGRRF-UHFFFAOYSA-N'}},
+            {'$group':{'_id':'$reactant_inchi_key', 'reactant_mopac_hf':{'$min':'$reactant_mopac_hf'}}}]
+a = list(qm_collection.aggregate(query))[0]['reactant_mopac_hf']
+print(a)
+
+
+qm_collection = db['qm_calculate_center']
 query = {'ssm_status':'job_fail'}
 targets = list(qm_collection.find(query))
 for target in targets:
