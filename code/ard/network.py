@@ -97,7 +97,7 @@ class Network(object):
                 H298_reac = targets[0]['reactant_energy']
             prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_rmg(H298_reac, mol, thermo_db)]
 
-        self.logger.info('After delta H filter {} product remain.\n'.format(len(prod_mols)))
+        self.logger.info('After delta H filter {} product remain.\n'.format(len(prod_mols_filtered)))
         
         if self.method != "mopac":
             self.logger.info('Generate geometry........\n')
@@ -125,11 +125,11 @@ class Network(object):
                 'add how many products':len(prod_mols_filtered),
                 'generations': self.generations})
         else:
-            self.logger.info('Now find the lowest binding mode energy(mopac)....\n')
+            self.logger.info('Now find the lowest binding mode energy(mopac)....')
             query = [{'$match':{'reactant_inchi_key':reactant_key}},
                      {'$group':{'_id':'$reactant_inchi_key', 'reactant_mopac_hf':{'$min':'$reactant_mopac_hf'}}}]
             minimum_energy = list(qm_collection.aggregate(query))[0]['reactant_mopac_hf']
-            self.logger.info('The lowest energy of binding mode is {}\n'.format(minimum_energy))
+            self.logger.info('The lowest energy of binding mode is {}'.format(minimum_energy))
             ssm_target_query = {'$and': 
                     [
                     { "reactant_inchi_key":reactant_key},
@@ -138,6 +138,7 @@ class Network(object):
                     ]
                 }
             ssm_unrun_targets = list(qm_collection.find(ssm_target_query))
+            self.logger.info('There are {} products remain after binding energy filter'.format(len(ssm_unrun_targets)))
             for unrun_job in ssm_unrun_targets:
                 update_field = {"ssm_status":"job_unrun"}
                 qm_collection.update_one(unrun_job, {"$set": update_field}, True)
