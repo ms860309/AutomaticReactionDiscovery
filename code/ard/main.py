@@ -102,7 +102,7 @@ class ARD(object):
 
 def readInput(input_file):
     # Allowed keywords
-    keys = ('reactant', 'nbreak', 'nform', 'dh_cutoff', 'dh_cutoff_method', 
+    keys = ('reactant', 'nbreak', 'nform', 'dh_cutoff', 'dh_cutoff_method', 'binding_mode_energy_cutoff',
             'manual_bonds', 'bond_dissociation_cutoff', 'constraint', 'use_inchi_key')
     # Read all data from file
     with open(input_file, 'r') as f:

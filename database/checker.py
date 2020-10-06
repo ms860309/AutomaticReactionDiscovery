@@ -764,7 +764,7 @@ def check_irc_equal_status(target):
     elif pyMol_1.write('inchiKey').strip() != pyMol_3.write('inchiKey').strip() and pyMol_2.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip():
         return 'forward does not equal to reactant but reverse equal to product'
     else:
-        return 'unknown'
+        return 'unknown (Maybe both of them are not equal to reactant&product)'
 
 """
 IRC opt check.
