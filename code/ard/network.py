@@ -131,12 +131,10 @@ class Network(object):
             minimum_energy = list(qm_collection.aggregate(query))[0]['reactant_mopac_hf']
             self.logger.info('The lowest energy of binding mode is {}'.format(minimum_energy))
             ssm_target_query = {'$and': 
-                    [
-                    { "reactant_inchi_key":reactant_key},
+                    [{ "reactant_inchi_key":reactant_key},
                     {'reactant_mopac_hf':
                         {'$lte':minimum_energy + self.binding_mode_energy_cutoff}}
-                    ]
-                }
+                    ]}
             ssm_unrun_targets = list(qm_collection.find(ssm_target_query))
             self.logger.info('There are {} products remain after binding energy filter'.format(len(ssm_unrun_targets)))
             for unrun_job in ssm_unrun_targets:
@@ -199,7 +197,9 @@ class Network(object):
                                 'Reactant SMILES':reac_obj.write('can').split()[0], 
                                 'reactant_inchi_key':reactant_key, 
                                 'product_inchi_key':product_name, 
-                                'Product SMILES':prod_mol.write('can').split()[0], 
+                                'Product SMILES':prod_mol.write('can').split()[0],
+                                'reactant_mopac_hf':H298_reac,
+                                'product_mopac_hf':H298_prod,
                                 'path':dir_path, 
                                 'generations':self.generations
                                 })
