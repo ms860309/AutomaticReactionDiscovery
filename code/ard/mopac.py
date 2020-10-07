@@ -54,7 +54,7 @@ class Mopac(object):
                 shutil.rmtree(tmpdir)
             os.mkdir(tmpdir)
             with open(reactant_path, 'w') as f:
-                f.write("CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
+                f.write("NOSYM 1SCF CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
                 f.write("\n{}".format(reac_geo))
             start_time = time.time()
             runMopac(tmpdir, 'reactant.mop')
@@ -154,7 +154,7 @@ class Mopac(object):
 
             reactant_mol.setCoordsFromMol(reac_mol_copy)
             self.finalize(start_time, 'arrange')
-            return reactant_geometry, product_geometry, reactant_mol, product_mol
+            return reactant_geometry, product_geometry, reactant_mol.toNode(), product_mol.toNode()
      
     def finalize(self, start_time, jobname):
         """

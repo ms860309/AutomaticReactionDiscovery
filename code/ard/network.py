@@ -190,16 +190,16 @@ class Network(object):
             self.logger.info('Finished {}/{}'.format(self.count, total_prod_num))
 
             qm_collection = db['qm_calculate_center']
-            dir_path = self.output(reactant, product, form_bonds, break_bonds)
-            reactant_key = reactant.write('inchiKey').strip()
-            product_name = product.write('inchiKey').strip()
+            dir_path = self.output(reactant, product, form_bonds, break_bonds, prod_mol)
+            reactant_key = reac_obj.write('inchiKey').strip()
+            product_name = prod_mol.write('inchiKey').strip()
             self.logger.info('\nReactant inchi key: {}\nProduct inchi key: {}\nDirectory path: {}\n'.format(reactant_key, product_name, dir_path))
             qm_collection.insert_one({
                                 'reaction': [reactant_key, product_name], 
-                                'Reactant SMILES':reactant.write('can').split()[0], 
+                                'Reactant SMILES':reac_obj.write('can').split()[0], 
                                 'reactant_inchi_key':reactant_key, 
                                 'product_inchi_key':product_name, 
-                                'Product SMILES':product.write('can').split()[0], 
+                                'Product SMILES':prod_mol.write('can').split()[0], 
                                 'path':dir_path, 
                                 'ssm_status':'job_unrun',
                                 'generations':self.generations
@@ -309,25 +309,23 @@ class Network(object):
         reactant_mol.setCoordsFromMol(reactant_mol_copy)
         return output_dir
 
-    def output(self, reactant_mol, product_mol, add_bonds, break_bonds, **kwargs):
+    def output(self, reactant_mol, product_mol, add_bonds, break_bonds, prod_mol, **kwargs):
         # Database
         qm_collection = db['qm_calculate_center']
 
-        reactant = reactant_mol.toNode()
-        product = product_mol.toNode()
-        self.logger.info('Reactant and product geometry is :\n{}\n****\n{}'.format(str(reactant), str(product)))
+        self.logger.info('Reactant and product geometry is :\n{}\n****\n{}'.format(str(reactant_mol), str(product_mol)))
         subdir = os.path.join(os.path.dirname(self.ard_path), 'reactions')
         if not os.path.exists(subdir):
             os.mkdir(subdir)
-        b_dirname = product_mol.write('inchiKey').strip()
+        b_dirname = prod_mol.write('inchiKey').strip()
         targets = list(qm_collection.find({'product_inchi_key':b_dirname}))
         dirname = self.dir_check(subdir, b_dirname, len(targets) + 1)
 
         output_dir = util.makeOutputSubdirectory(subdir, dirname)
         kwargs['output_dir'] = output_dir
         #self.makeInputFile(reactant, product, **kwargs)
-        self.makeDrawFile(reactant, 'reactant.xyz', **kwargs)
-        self.makeDrawFile(product, 'product.xyz', **kwargs)
+        self.makeDrawFile(reactant_mol, 'reactant.xyz', **kwargs)
+        self.makeDrawFile(product_mol, 'product.xyz', **kwargs)
         self.makeisomerFile(add_bonds, break_bonds, **kwargs)
         return output_dir
 
