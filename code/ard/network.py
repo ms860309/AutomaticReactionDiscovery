@@ -201,7 +201,6 @@ class Network(object):
                                 'product_inchi_key':product_name, 
                                 'Product SMILES':prod_mol.write('can').split()[0], 
                                 'path':dir_path, 
-                                'ssm_status':'job_unrun',
                                 'generations':self.generations
                                 })
             return 1
