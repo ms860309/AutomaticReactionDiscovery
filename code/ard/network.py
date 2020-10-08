@@ -140,6 +140,7 @@ class Network(object):
             for unrun_job in ssm_unrun_targets:
                 update_field = {"ssm_status":"job_unrun"}
                 qm_collection.update_one(unrun_job, {"$set": update_field}, True)
+            """
             delete_query = {'$and':
                     [
                     { "reactant_inchi_key":reactant_key},
@@ -149,7 +150,7 @@ class Network(object):
             delete_targets = list(qm_collection.find(delete_query))
             for target in delete_targets:
                 qm_collection.delete_one(target)
-
+            """
             # Generate geometry and insert to database
             statistics_collection.insert_one({
                 'Reactant SMILES':mol_object.write('can').split()[0], 
@@ -228,7 +229,7 @@ class Network(object):
         reactant_geometry = "\n".join(reactant_geometry)
 
         with open(reactant_path, 'w') as f:
-            f.write("CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
+            f.write("NOSYM 1SCF CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
             f.write("\n{}".format(reactant_geometry))
         mopac.runMopac(tmpdir, 'reactant.mop')
         mol_hf = mopac.getHeatofFormation(tmpdir, 'reactant.out')

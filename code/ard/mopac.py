@@ -71,7 +71,7 @@ class Mopac(object):
     
     def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 4.0):
         start_time = time.time()
-
+        print(reactant_mol.toNode())
         reactant_mol.separateMol()
         if len(reactant_mol.mols) > 1:
             reactant_mol.mergeMols()
@@ -151,11 +151,12 @@ class Mopac(object):
                 out = atom + l
                 reactant_geometry.append(out)
             reactant_geometry = "\n".join(reactant_geometry)
-
+            
+            reactant = reactant_mol.toNode()
             reactant_mol.setCoordsFromMol(reac_mol_copy)
             self.finalize(start_time, 'arrange')
-            return reactant_geometry, product_geometry, reactant_mol.toNode(), product_mol.toNode()
-     
+            return reactant_geometry, product_geometry, reactant, product_mol.toNode()
+            
     def finalize(self, start_time, jobname):
         """
         Finalize the job.
