@@ -1,14 +1,13 @@
 $rem
 JOBTYPE                   FORCE
-METHOD                    B97-D3
-DFT_D                     D3_BJ
-BASIS                     def2-mSVP
-SCF_ALGORITHM             DIIS
-MAX_SCF_CYCLES            100
-SCF_CONVERGENCE           6
+METHOD                    B3LYP
+BASIS                     6-31G*
+SCF_ALGORITHM diis
+SCF_MAX_CYCLES 150
+SCF_CONVERGENCE 6
+WAVEFUNCTION_ANALYSIS FALSE
+SYMMETRY   FALSE
 SYM_IGNORE                TRUE
-SYMMETRY                  FALSE
-WAVEFUNCTION_ANALYSIS     FALSE
 XC_GRID                   1
 $end
 

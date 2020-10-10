@@ -2,16 +2,16 @@ $molecule
 $end
 
 $rem
-JOBTYPE                   FREQ
-METHOD                    B97-D3
-DFT_D                     D3_BJ
-BASIS                     def2-mSVP
-SCF_ALGORITHM             DIIS
-MAX_SCF_CYCLES            250
-SCF_CONVERGENCE           8
-SYM_IGNORE                TRUE
-SYMMETRY                  FALSE
-WAVEFUNCTION_ANALYSIS     FALSE
+	JOBTYPE                   FREQ
+	METHOD                    B3LYP
+	BASIS                     6-31G*
+	SCF_ALGORITHM             DIIS
+	MAX_SCF_CYCLES            150
+	SCF_CONVERGENCE           6
+	SYM_IGNORE                TRUE
+	SYMMETRY                  FALSE
+	WAVEFUNCTION_ANALYSIS     FALSE
+	XC_GRID                   1
 $end
 
 @@@
@@ -21,21 +21,20 @@ read
 $end
 
 $rem
-JOBTYPE                   TS
-METHOD                    B97-D3
-DFT_D                     D3_BJ
-BASIS                     def2-mSVP
-SCF_GUESS                 READ
-GEOM_OPT_HESSIAN          READ
-SCF_ALGORITHM             DIIS
-MAX_SCF_CYCLES            250
-SCF_CONVERGENCE           8
-SYM_IGNORE                TRUE
-SYMMETRY                  FALSE
-GEOM_OPT_MAX_CYCLES       300
-GEOM_OPT_TOL_GRADIENT     100
-GEOM_OPT_TOL_DISPLACEMENT 400
-GEOM_OPT_TOL_ENERGY       33
-WAVEFUNCTION_ANALYSIS     FALSE
-
+	JOBTYPE                   TS
+	METHOD                    B3LYP
+	BASIS                     6-31G*
+	SCF_GUESS                 READ
+	GEOM_OPT_HESSIAN          READ
+	SCF_ALGORITHM             DIIS
+	MAX_SCF_CYCLES            150
+	SCF_CONVERGENCE           6
+	SYM_IGNORE                TRUE
+	SYMMETRY                  FALSE
+	GEOM_OPT_MAX_CYCLES       300
+	GEOM_OPT_TOL_GRADIENT     100
+	GEOM_OPT_TOL_DISPLACEMENT 400
+	GEOM_OPT_TOL_ENERGY       33
+	WAVEFUNCTION_ANALYSIS     FALSE
+	XC_GRID                   1
 $end
