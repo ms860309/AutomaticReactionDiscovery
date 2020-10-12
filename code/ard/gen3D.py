@@ -50,7 +50,7 @@ def make3DandOpt(mol, forcefield='uff', make3D=True):
         mol.make3D(forcefield=forcefield)
     mol.localopt(forcefield=forcefield)
 
-def constraint_force_field(mol, freeze_index, forcefield='uff', steps = 500):
+def constraint_force_field(mol, freeze_index, forcefield='uff', method = 'SteepestDescent', steps = 500):
     """
     An openbabel constraint force field.
     mol is OBMol object
@@ -66,7 +66,10 @@ def constraint_force_field(mol, freeze_index, forcefield='uff', steps = 500):
     ff = ob.OBForceField.FindForceField(forcefield)
     ff.Setup(mol, constraint_forcefield)
     ff.SetConstraints(constraint_forcefield)
-    ff.ConjugateGradients(steps)
+    if method == 'SteepestDescent':
+        ff.SteepestDescent(steps)
+    elif method == 'ConjugateGradients':
+        ff.ConjugateGradients(steps)
     ff.GetCoordinates(mol)
 
 def makeMolFromAtomsAndBonds(atoms, bonds, spin=None):

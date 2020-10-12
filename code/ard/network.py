@@ -31,11 +31,13 @@ info = psutil.virtual_memory()
 
 class Network(object):
 
-    def __init__(self, reac_mol, reactant_graph, forcefield, logger, **kwargs):
+    def __init__(self, reac_mol, reactant_graph, logger, **kwargs):
         self.reac_mol = reac_mol
         self.reactant_graph = reactant_graph
-        self.forcefield = forcefield
         self.logger = logger
+        self.forcefield = kwargs['forcefield']
+        self.constraintff_alg = kwargs['constraintff_alg']
+        self.mopac_method = kwargs['mopac_method']
         self.dh_cutoff = float(kwargs['dh_cutoff'])
         self.bond_dissociation_cutoff = kwargs['bond_dissociation_cutoff']
         self.ard_path = kwargs['ard_path']
@@ -172,7 +174,7 @@ class Network(object):
 
     def filter_dh_mopac(self, reac_obj, reac_mol_copy, prod_mol, form_bonds, break_bonds, logger, total_prod_num, refH = None):
         self.count += 1
-        mopac_object = Mopac(reac_obj, prod_mol, self.forcefield, form_bonds, logger, total_prod_num, self.count, self.constraint)
+        mopac_object = Mopac(reac_obj, prod_mol, self.mopac_method, self.forcefield, self.constraintff_alg, form_bonds, logger, total_prod_num, self.count, self.constraint)
         H298_reac, H298_prod, reactant, product = mopac_object.mopac_get_H298(reac_mol_copy)
 
         if H298_prod == False or H298_reac == False:
@@ -209,8 +211,7 @@ class Network(object):
         self.logger.info('Finished {}/{}\n'.format(self.count, total_prod_num))
         return 0
 
-    @staticmethod
-    def get_mopac_H298(mol_object, charge = 0, multiplicity = 'SINGLET', method = 'PM7'):
+    def get_mopac_H298(self, mol_object, charge = 0, multiplicity = 'SINGLET'):
         tmpdir = os.path.join(os.path.dirname(os.getcwd()), 'tmp')
         reactant_path = os.path.join(tmpdir, 'reactant.mop')
         if os.path.exists(tmpdir):
@@ -229,7 +230,7 @@ class Network(object):
         reactant_geometry = "\n".join(reactant_geometry)
 
         with open(reactant_path, 'w') as f:
-            f.write("NOSYM 1SCF CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
+            f.write("NOSYM 1SCF CHARGE={} {} {}\n\n".format(charge, multiplicity, self.mopac_method))
             f.write("\n{}".format(reactant_geometry))
         mopac.runMopac(tmpdir, 'reactant.mop')
         mol_hf = mopac.getHeatofFormation(tmpdir, 'reactant.out')
@@ -266,8 +267,8 @@ class Network(object):
             product_mol.gen3D(make3D=False)
             ff.Setup(Hatom.OBMol)
         else:
-            #gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint)
-            gen3D.constraint_force_field(product_mol.OBMol, self.constraint)
+            gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint, forcefield = self.forcefield, method = self.constraintff_alg)
+            gen3D.constraint_force_field(product_mol.OBMol, self.constraint, forcefield = self.forcefield, method = self.constraintff_alg)
 
         # Arrange
         arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint)
@@ -286,8 +287,8 @@ class Network(object):
             product_mol.gen3D(make3D=False)
             ff.Setup(Hatom.OBMol)
         else:
-            gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint)
-            gen3D.constraint_force_field(product_mol.OBMol, self.constraint)
+            gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint, forcefield = self.forcefield, method = self.constraintff_alg)
+            gen3D.constraint_force_field(product_mol.OBMol, self.constraint, forcefield = self.forcefield, method = self.constraintff_alg)
 
         reactant = reactant_mol.toNode()
         product = product_mol.toNode()

@@ -8,9 +8,9 @@ if __name__ == '__main__':
     import sys
     import os
     from os import path
-    sys.path.append(path.join(path.dirname( path.dirname( path.abspath(__file__))),'code/ard'))
-    sys.path.append(path.join(path.dirname( path.dirname( path.abspath(__file__))),'code/mol_graph'))
-    sys.path.append(path.join(path.dirname( path.dirname( path.abspath(__file__))),'database'))
+    sys.path.append(path.join(path.dirname(path.dirname( path.abspath(__file__))),'code/ard'))
+    sys.path.append(path.join(path.dirname(path.dirname( path.abspath(__file__))),'code/mol_graph'))
+    sys.path.append(path.join(path.dirname(path.dirname( path.abspath(__file__))),'database'))
 
     #third party
     import argparse

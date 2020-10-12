@@ -25,17 +25,19 @@ class MopacError(Exception):
 
 class Mopac(object):
 
-    def __init__(self, reactant_mol, product_mol, forcefield, form_bonds, logger, count, num, constraint = None):
+    def __init__(self, reactant_mol, product_mol, mopac_method, forcefield, constraintff_alg, form_bonds, logger, count, num, constraint = None):
         self.reactant_mol = reactant_mol
         self.product_mol = product_mol
+        self.mopac_method = mopac_method
         self.forcefield = forcefield
+        self.constraintff_alg = constraintff_alg
         self.form_bonds = form_bonds
         self.logger = logger
         self.count = count
         self.num = num
         self.constraint = constraint
 
-    def mopac_get_H298(self, reac_mol_copy, charge = 0, multiplicity = 'SINGLET', method = 'PM7'):
+    def mopac_get_H298(self, reac_mol_copy, charge = 0, multiplicity = 'SINGLET'):
         """
         Create a directory folder called "tmp" for mopac calculation
         Create a input file called "input.mop" for mopac calculation
@@ -54,14 +56,14 @@ class Mopac(object):
                 shutil.rmtree(tmpdir)
             os.mkdir(tmpdir)
             with open(reactant_path, 'w') as f:
-                f.write("NOSYM 1SCF CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
+                f.write("NOSYM 1SCF CHARGE={} {} {}\n\n".format(charge, multiplicity, self.mopac_method))
                 f.write("\n{}".format(reac_geo))
             start_time = time.time()
             runMopac(tmpdir, 'reactant.mop')
             reactant = getHeatofFormation(tmpdir, 'reactant.out')
 
             with open(product_path, 'w') as f:
-                f.write("CHARGE={} {} {}\n\n".format(charge, multiplicity, method))
+                f.write("CHARGE={} {} {}\n\n".format(charge, multiplicity, self.mopac_method))
                 f.write("\n{}".format(prod_geo))
             runMopac(tmpdir, 'product.mop')
             product = getHeatofFormation(tmpdir, 'product.out')
@@ -71,7 +73,7 @@ class Mopac(object):
     
     def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 4.0):
         start_time = time.time()
-        print(reactant_mol.toNode())
+
         reactant_mol.separateMol()
         if len(reactant_mol.mols) > 1:
             reactant_mol.mergeMols()
@@ -89,8 +91,8 @@ class Mopac(object):
             product_mol.gen3D(make3D=False)
             ff.Setup(Hatom.OBMol)
         else:
-            #gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint)
-            gen3D.constraint_force_field(product_mol.OBMol, self.constraint)
+            gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint, forcefield = self.forcefield, method = self.constraintff_alg)
+            gen3D.constraint_force_field(product_mol.OBMol, self.constraint, forcefield = self.forcefield, method = self.constraintff_alg)
 
         # Arrange
         try:
@@ -115,8 +117,8 @@ class Mopac(object):
             product_mol.gen3D(make3D=False)
             ff.Setup(Hatom.OBMol)
         else:
-            gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint)
-            gen3D.constraint_force_field(product_mol.OBMol, self.constraint)
+            gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint, forcefield = self.forcefield, method = self.constraintff_alg)
+            gen3D.constraint_force_field(product_mol.OBMol, self.constraint, forcefield = self.forcefield, method = self.constraintff_alg)
         
         if dist >= threshold:
             self.logger.info('Here is the {} product.'.format(self.num))

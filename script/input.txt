@@ -1,10 +1,13 @@
-reactant          0                 # Reactant
-nbreak            2                 # Maximum number of bonds to be broken
-nform             2                 # Maximum number of bonds to be formed
-dH_cutoff         20                # Heat of reaction cutoff in kcal/mol
-dH_cutoff_method  mopac             # method
-binding_mode_energy_cutoff  60      # After arrange may generate many different binding mode reactant, using this cutoff to filter. (Only word woth mopac)
-manual_bonds      1                 # Manully specify bonds function
-bond_dissociation_cutoff 165        # Bond dissociation energy cutoff in kcal/mol
-use_inchi_key     1                 # Use inchi key as a filter 
-constraint        1                 # The index of constraint atom index (start from 0). eg. constraint forcefield or break-form bond etc.
+reactant                       0                    # Reactant
+nbreak                         2                    # Maximum number of bonds to be broken
+nform                          2                    # Maximum number of bonds to be formed
+forcefield                     UFF                  # The force field method
+constraintff_alg               SteepestDescent      # The force field algorithm  can use 'SteepestDescent' or 'ConjugateGradients'
+dH_cutoff                      20                   # Heat of reaction cutoff in kcal/mol
+dH_cutoff_method               mopac                # rmg group additivity method or mopac could be choose
+mopac_method                   PM6                  # The mopac calculation level of theory (PM6, PM7, etc..)
+binding_mode_energy_cutoff     60                   # After arrange may generate many different binding mode reactant, using this cutoff to filter. (Only word woth mopac)
+manual_bonds                   1                    # Manully specify bonds function
+bond_dissociation_cutoff       165                  # Bond dissociation energy cutoff in kcal/mol
+use_inchi_key                  1                    # Use inchi key as a filter 
+constraint                     1                    # The index of constraint atom index (start from 0). eg. constraint forcefield or break-form bond etc.

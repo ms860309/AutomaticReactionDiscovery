@@ -54,10 +54,11 @@ class ARD(object):
 
     """
 
-    def __init__(self, reactant, forcefield='uff', distance=3.5, output_dir='', **kwargs):
+    def __init__(self, reactant, **kwargs):
         self.reactant = reactant
         self.reactant_graph = kwargs['graph']
-        self.forcefield = forcefield
+        self.forcefield = kwargs['forcefield']
+        self.constraintff_alg = kwargs['constraintff_alg']
         self.nbreak = kwargs['nbreak']
         self.nform = kwargs['nform']
         self.dh_cutoff = float(kwargs['dh_cutoff'])
@@ -80,6 +81,7 @@ class ARD(object):
         self.logger.info('Heat of reaction cutoff: {} kcal/mol'.format(self.dh_cutoff))
         self.logger.info('Bond dissociation energy cutoff: {} kcal/mol'.format(self.bond_dissociation_cutoff))
         self.logger.info('Force field for 3D structure generation: {}'.format(self.forcefield))
+        self.logger.info('Force field algorithm: {}'.format(self.constraintff_alg))
         self.logger.info('######################################################################\n')
 
     def executeXYZ(self, **kwargs):
@@ -87,7 +89,7 @@ class ARD(object):
         start_time = time.time()
         
         reac_mol = self.reactant
-        network = Network(reac_mol, self.reactant_graph, forcefield = self.forcefield, logger = self.logger, **kwargs)
+        network = Network(reac_mol, self.reactant_graph, logger = self.logger, **kwargs)
         network.genNetwork(reac_mol, self.use_inchi_key, nbreak = kwargs['nbreak'], nform = kwargs['nform'])
         self.finalize(start_time)
 
@@ -102,7 +104,7 @@ class ARD(object):
 
 def readInput(input_file):
     # Allowed keywords
-    keys = ('reactant', 'nbreak', 'nform', 'dh_cutoff', 'dh_cutoff_method', 'binding_mode_energy_cutoff',
+    keys = ('reactant', 'nbreak', 'nform', 'forcefield', 'constraintff_alg', 'mopac_method', 'dh_cutoff', 'dh_cutoff_method', 'binding_mode_energy_cutoff',
             'manual_bonds', 'bond_dissociation_cutoff', 'constraint', 'use_inchi_key')
     # Read all data from file
     with open(input_file, 'r') as f:
