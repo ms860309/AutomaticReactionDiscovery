@@ -679,7 +679,7 @@ class Arrange3D(object):
             result = minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
-                                       options={'maxiter': 5000, 'disp': False, 'ftol': 0.001}) #, callback = callbackF, 'eps':1e-10
+                                       options={'maxiter': 5000, 'disp': False, 'ftol': 0.5}, callback = callbackF) #, callback = callbackF, 'eps':1e-10
             """
             result = minimize(self.objectiveFunction, disps_guess,
                                        constraints=[{'type': 'ineq', 'fun': self.constraintFunction},
@@ -691,10 +691,6 @@ class Arrange3D(object):
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction}, # COBYLA constraint can not use eq
                                        method='COBYLA')
             """
-            print('----------')
-            for mol in self.mol_1.mols:
-                for atom in mol:
-                    print(atom.coords)
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
                            str(result.status) + ':\n' + result.message + '\n')
@@ -710,10 +706,7 @@ class Arrange3D(object):
             for i in range(0, len(self.mol_2.mols)):
                 self.nodes_2[i].coords = coords_2[i]
                 self.mol_2.mols[i].setCoordsFromMol(self.nodes_2[i].toPybelMol())
-            print('----------')
-            for mol in self.mol_1.mols:
-                for atom in mol:
-                    print(atom.coords)
+
             if len(self.mol_1.mols) > 1:
                 self.mol_1.mergeMols()
             if len(self.mol_2.mols) > 1:
@@ -735,11 +728,21 @@ class Arrange3D(object):
             coords = n.coords
             max_distance = 0.0
             for coord in coords:
-                distance = np.sqrt(coord.dot(coord))
+                distance = np.linalg.norm(coord)
                 if distance > max_distance:
                     max_distance = distance
             max_distances.append(max_distance)
         return max_distances
+
+    @staticmethod
+    def fragment_dist(nodes):
+        """
+        Center the molecules about the origin and return the distances between
+        the origin and the atom farthest from the origin, which can be used as
+        size estimates for the molecules.
+        """
+        disp = nodes.getCentroid()
+        return disp
 
     def setInitialPositions(self, nodes):
         """
@@ -835,17 +838,15 @@ class Arrange3D(object):
         """
         Determine minimum distance between two nonbonded atoms in a molecule.
         """
-        dist_min = 0
+        dist_min = 0.0
         for i, mol in enumerate(mols):
             natoms = len(coords[i])
             for j in range(0, natoms - 1):
                 for k in range(j + 1, natoms):
                     if not mol.close_atoms[j][k]:
-                        diff = np.array(mols[i][j].coords) - np.array(mols[i][k].coords)
-                        dist = np.sqrt(diff.dot(diff))
+                        diff = coords[i][j] - coords[i][k]
+                        dist = np.linalg.norm(diff)
                         if dist_min > dist or dist_min == 0:
-                            print(i,j)
-                            print(i,k)
                             dist_min = dist
         return dist_min
 
@@ -996,12 +997,27 @@ class Arrange3D(object):
         coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, disps[self.dof_1:])
         intermol_dists = [self.minIntermolDist(coords_1), self.minIntermolDist(coords_2)]
         intramol_dists = [self.minIntramolDist(coords_1, self.mol_1.mols),
-                          self.minIntramolDist(coords_2, self.mol_2.mols)]
-        print(intramol_dists)
+                                       self.minIntramolDist(coords_2, self.mol_2.mols)]
         val = min([a - self.d_intermol for a in intermol_dists if a != 0] +
                   [b - self.d_intramol for b in intramol_dists if b != 0])
         return val
-    
+
+    """
+    def second_constraintFunction(self, disps):
+        coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, disps[:self.dof_1])
+        coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, disps[self.dof_1:])
+        dist_1 = []
+        dist_2 = []
+        for mol_node in self.mol_1.mols:
+            dist = self.fragment_dist(mol_node.toNode())
+            dist_1.append(dist)
+        for mol_node in self.mol_2.mols:
+            dist = self.fragment_dist(mol_node.toNode())
+            dist_2.append(dist)
+        distance_1 = np.linalg.norm(dist_1[0] - dist_1[1]) - 5.0
+        distance_2 = np.linalg.norm(dist_1[0] - dist_1[1]) - 5.0
+        return min([distance_1], [distance_2])
+
     def second_constraintFunction(self, disps):
         mol_1_matches = []
         mol_2_matches = []
@@ -1024,3 +1040,4 @@ class Arrange3D(object):
         for i in range(len(dis1)):
             val_dist += np.abs(dis1[i]-dis2[i])
         return val_dist
+    """

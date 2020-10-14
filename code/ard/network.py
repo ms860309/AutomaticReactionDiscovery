@@ -45,7 +45,9 @@ class Network(object):
         self.method = kwargs["dh_cutoff_method"]
         self.binding_mode_energy_cutoff = float(kwargs['binding_mode_energy_cutoff'])
         self.constraint = kwargs['constraint_index']
+        self.binding_cutoff_select = kwargs['binding_cutoff_select']
         self.count = 0
+        self.moac_reac = None
 
     def genNetwork(self, mol_object, use_inchi_key, nbreak, nform):
         """
@@ -127,13 +129,20 @@ class Network(object):
                 'add how many products':len(prod_mols_filtered),
                 'generations': self.generations})
         else:
-            self.logger.info('Now find the lowest binding mode energy(mopac)....')
-            query = [{'$match':{'reactant_inchi_key':reactant_key}},
-                     {'$group':{'_id':'$reactant_inchi_key', 'reactant_mopac_hf':{'$min':'$reactant_mopac_hf'}}}]
-            minimum_energy = list(qm_collection.aggregate(query))[0]['reactant_mopac_hf']
-            self.logger.info('The lowest energy of binding mode is {}'.format(minimum_energy))
+            if self.binding_cutoff_select == 'lowest':
+                self.logger.info('Now find the lowest binding mode energy(mopac)....')
+                query = [{'$match':{'reactant_inchi_key':reactant_key}},
+                        {'$group':{'_id':'$reactant_inchi_key', 'reactant_mopac_hf':{'$min':'$reactant_mopac_hf'}}}]
+                minimum_energy = list(qm_collection.aggregate(query))[0]['reactant_mopac_hf']
+                self.logger.info('The lowest energy of binding mode is {}'.format(minimum_energy))
+            else:
+                # Assume user is using starting reactant as reference
+                self.logger.info('Now the binding mode energy reference will use the starting reactant mopac HF...')
+                minimum_energy = H298_reac
+                self.logger.info('The lowest energy of binding mode is {}'.format(minimum_energy))
+
             ssm_target_query = {'$and': 
-                    [{ "reactant_inchi_key":reactant_key},
+                    [{ 'reactant_inchi_key':reactant_key},
                     {'reactant_mopac_hf':
                         {'$lte':minimum_energy + self.binding_mode_energy_cutoff}}
                     ]}
@@ -142,17 +151,15 @@ class Network(object):
             for unrun_job in ssm_unrun_targets:
                 update_field = {"ssm_status":"job_unrun"}
                 qm_collection.update_one(unrun_job, {"$set": update_field}, True)
-            """
             delete_query = {'$and':
-                    [
-                    { "reactant_inchi_key":reactant_key},
+                    [{'reactant_inchi_key':reactant_key},
                     {'reactant_mopac_hf':
-                        {'$gt':minimum_energy + self.dh_cutoff}}
+                        {'$gt':minimum_energy + self.binding_mode_energy_cutoff}}
                     ]}
             delete_targets = list(qm_collection.find(delete_query))
             for target in delete_targets:
                 qm_collection.delete_one(target)
-            """
+
             # Generate geometry and insert to database
             statistics_collection.insert_one({
                 'Reactant SMILES':mol_object.write('can').split()[0], 

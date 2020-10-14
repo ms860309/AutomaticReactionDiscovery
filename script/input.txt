@@ -6,7 +6,8 @@ constraintff_alg               SteepestDescent      # The force field algorithm 
 dH_cutoff                      20                   # Heat of reaction cutoff in kcal/mol
 dH_cutoff_method               mopac                # rmg group additivity method or mopac could be choose
 mopac_method                   PM6                  # The mopac calculation level of theory (PM6, PM7, etc..)
-binding_mode_energy_cutoff     60                   # After arrange may generate many different binding mode reactant, using this cutoff to filter. (Only word woth mopac)
+binding_mode_energy_cutoff     30                   # After arrange may generate many different binding mode reactant, using this cutoff to filter. (Only word woth mopac)
+binding_cutoff_select          starting             # Use the starting reactant mopac energy as ref or the lowest mopac reactant hf in database. option 'lowest' or 'starting'
 manual_bonds                   1                    # Manully specify bonds function
 bond_dissociation_cutoff       165                  # Bond dissociation energy cutoff in kcal/mol
 use_inchi_key                  1                    # Use inchi key as a filter 
