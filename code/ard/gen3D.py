@@ -563,7 +563,7 @@ class Arrange3D(object):
 
         self.initializeVars(mol_1, mol_2)
 
-    def initializeVars(self, mol_1, mol_2, d_intermol=2.5, d_intramol=0.8):
+    def initializeVars(self, mol_1, mol_2, d_intermol=2.5, d_intramol=1.0):
         """
         Set up class variables and determine the bonds and torsions to be
         matched between reactant and product.
@@ -675,7 +675,7 @@ class Arrange3D(object):
                 print(self.objectiveFunction(Xi[:dof]))
 
             disps_guess = np.array([0.0]*dof)
-            
+
             result = minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
@@ -691,7 +691,10 @@ class Arrange3D(object):
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction}, # COBYLA constraint can not use eq
                                        method='COBYLA')
             """
-
+            print('----------')
+            for mol in self.mol_1.mols:
+                for atom in mol:
+                    print(atom.coords)
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
                            str(result.status) + ':\n' + result.message + '\n')
@@ -707,15 +710,15 @@ class Arrange3D(object):
             for i in range(0, len(self.mol_2.mols)):
                 self.nodes_2[i].coords = coords_2[i]
                 self.mol_2.mols[i].setCoordsFromMol(self.nodes_2[i].toPybelMol())
-
+            print('----------')
+            for mol in self.mol_1.mols:
+                for atom in mol:
+                    print(atom.coords)
             if len(self.mol_1.mols) > 1:
                 self.mol_1.mergeMols()
             if len(self.mol_2.mols) > 1:
                 self.mol_2.mergeMols()
-        """
-        with open('visual.txt', 'a') as f:
-            f.write('------------------------------\n')
-        """
+
         return ret
 
     @staticmethod
@@ -838,9 +841,11 @@ class Arrange3D(object):
             for j in range(0, natoms - 1):
                 for k in range(j + 1, natoms):
                     if not mol.close_atoms[j][k]:
-                        diff = coords[i][j] - coords[i][k]
+                        diff = np.array(mols[i][j].coords) - np.array(mols[i][k].coords)
                         dist = np.sqrt(diff.dot(diff))
                         if dist_min > dist or dist_min == 0:
+                            print(i,j)
+                            print(i,k)
                             dist_min = dist
         return dist_min
 
@@ -992,6 +997,7 @@ class Arrange3D(object):
         intermol_dists = [self.minIntermolDist(coords_1), self.minIntermolDist(coords_2)]
         intramol_dists = [self.minIntramolDist(coords_1, self.mol_1.mols),
                           self.minIntramolDist(coords_2, self.mol_2.mols)]
+        print(intramol_dists)
         val = min([a - self.d_intermol for a in intermol_dists if a != 0] +
                   [b - self.d_intramol for b in intramol_dists if b != 0])
         return val

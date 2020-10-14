@@ -314,7 +314,6 @@ class Network(object):
         # Database
         qm_collection = db['qm_calculate_center']
 
-        self.logger.info('Reactant and product geometry is :\n{}\n****\n{}'.format(str(reactant_mol), str(product_mol)))
         subdir = os.path.join(os.path.dirname(self.ard_path), 'reactions')
         if not os.path.exists(subdir):
             os.mkdir(subdir)

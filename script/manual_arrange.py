@@ -62,13 +62,12 @@ def gen_geometry(reactant_mol, product_mol, constraint):
 
     gen3D.constraint_force_field(reactant_mol.OBMol, constraint)
     gen3D.constraint_force_field(product_mol.OBMol, constraint)
-    print(reactant_mol.toNode())
-    raise
+
     arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, constraint)
     msg = arrange3D.arrangeIn3D()
     if msg != '':
         print(msg)
-
+    print(reactant_mol.toNode())
     gen3D.constraint_force_field(reactant_mol.OBMol, constraint)
     gen3D.constraint_force_field(product_mol.OBMol, constraint)
 
