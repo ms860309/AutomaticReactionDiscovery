@@ -2,7 +2,6 @@
 import os
 import time
 import psutil
-import copy
 import shutil
 
 #third party
@@ -256,28 +255,19 @@ class Network(object):
         # Database
         qm_collection = db['qm_calculate_center']
 
-        reactant_mol.separateMol()
-        if len(reactant_mol.mols) > 1:
-            reactant_mol.mergeMols()
-        product_mol.separateMol()
-        if len(product_mol.mols) > 1:
-            product_mol.mergeMols()
-
         reactant_mol_copy = reactant_mol.copy()
         # Initial optimization
         if self.constraint == None:
             Hatom = gen3D.readstring('smi', '[H]')
             ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
-            ff.Setup(Hatom.OBMol)
-            reactant_mol.gen3D(make3D=False)
-            ff.Setup(Hatom.OBMol)
-            product_mol.gen3D(make3D=False)
-            ff.Setup(Hatom.OBMol)
+            reactant_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
+            product_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
         else:
-            gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint, forcefield = self.forcefield, method = self.constraintff_alg)
-            gen3D.constraint_force_field(product_mol.OBMol, self.constraint, forcefield = self.forcefield, method = self.constraintff_alg)
+            reactant_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
+            product_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
 
         # Arrange
+        # If arrange error can use try
         arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint)
         msg = arrange3D.arrangeIn3D()
         if msg != '':
@@ -286,16 +276,14 @@ class Network(object):
         # After arrange to prevent openbabel use the previous product coordinates if it is isomorphic
         # to the current one, even if it has different atom indices participating in the bonds.
         if self.constraint == None:
-            Hatom = gen3D.readstring('smi', '[H]')
-            ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
             ff.Setup(Hatom.OBMol)
             reactant_mol.gen3D(make3D=False)
             ff.Setup(Hatom.OBMol)
             product_mol.gen3D(make3D=False)
             ff.Setup(Hatom.OBMol)
         else:
-            gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint, forcefield = self.forcefield, method = self.constraintff_alg)
-            gen3D.constraint_force_field(product_mol.OBMol, self.constraint, forcefield = self.forcefield, method = self.constraintff_alg)
+            reactant_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
+            product_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
 
         reactant = reactant_mol.toNode()
         product = product_mol.toNode()

@@ -71,28 +71,18 @@ class Mopac(object):
 
             return float(reactant), float(product), reactant_mol, product_mol
     
-    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 4.0):
+    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 5.0):
         start_time = time.time()
-
-        reactant_mol.separateMol()
-        if len(reactant_mol.mols) > 1:
-            reactant_mol.mergeMols()
-        product_mol.separateMol()
-        if len(product_mol.mols) > 1:
-            product_mol.mergeMols()
 
         # Initial optimization
         if self.constraint == None:
             Hatom = gen3D.readstring('smi', '[H]')
             ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
-            ff.Setup(Hatom.OBMol)
-            reactant_mol.gen3D(make3D=False)
-            ff.Setup(Hatom.OBMol)
-            product_mol.gen3D(make3D=False)
-            ff.Setup(Hatom.OBMol)
+            reactant_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
+            product_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
         else:
-            gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint, forcefield = self.forcefield, method = self.constraintff_alg)
-            gen3D.constraint_force_field(product_mol.OBMol, self.constraint, forcefield = self.forcefield, method = self.constraintff_alg)
+            reactant_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
+            product_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
 
         # Arrange
         try:
@@ -109,16 +99,14 @@ class Mopac(object):
         # After arrange to prevent openbabel use the previous product coordinates if it is isomorphic
         # to the current one, even if it has different atom indices participating in the bonds.
         if self.constraint == None:
-            Hatom = gen3D.readstring('smi', '[H]')
-            ff = pybel.ob.OBForceField.FindForceField(self.forcefield)
             ff.Setup(Hatom.OBMol)
             reactant_mol.gen3D(make3D=False)
             ff.Setup(Hatom.OBMol)
             product_mol.gen3D(make3D=False)
             ff.Setup(Hatom.OBMol)
         else:
-            gen3D.constraint_force_field(reactant_mol.OBMol, self.constraint, forcefield = self.forcefield, method = self.constraintff_alg)
-            gen3D.constraint_force_field(product_mol.OBMol, self.constraint, forcefield = self.forcefield, method = self.constraintff_alg)
+            reactant_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
+            product_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
         
         if dist >= threshold:
             self.logger.info('Here is the {} product.'.format(self.num))

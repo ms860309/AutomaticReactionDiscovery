@@ -64,13 +64,12 @@ def constraint_force_field(mol, freeze_index, forcefield='uff', method = 'Steepe
     
     #Set up forcefield
     ff = ob.OBForceField.FindForceField(forcefield)
-    ff.Setup(mol, constraint_forcefield)
+    ff.Setup(mol.OBMol, constraint_forcefield)
     ff.SetConstraints(constraint_forcefield)
     if method == 'SteepestDescent':
         ff.SteepestDescent(steps)
     elif method == 'ConjugateGradients':
         ff.ConjugateGradients(steps)
-    ff.GetCoordinates(mol)
 
 def makeMolFromAtomsAndBonds(atoms, bonds, spin=None):
     """
@@ -266,7 +265,6 @@ class Molecule(pybel.Molecule):
             coord_vec = other_atom.OBAtom.GetVector()
             atom.OBAtom.SetVector(coord_vec)
 
-
     def isCarbeneOrNitrene(self):
         """
         Return a boolean indicating whether or not the molecule is a carbene or
@@ -325,13 +323,12 @@ class Molecule(pybel.Molecule):
         self.OBMol.SetEnergy(energy)
         return ngrad
 
-    def gen3D(self, forcefield='uff', make3D=True):
+    def gen3D(self, constraint, forcefield='uff', method = 'SteepestDescent', make3D=True):
         """
         Generate 3D coordinates using the specified force field.
         """
         spin = self.spin
         self.separateMol()
-
         # Generate 3D geometries separately
         if len(self.mols) > 1:
             for mol in self.mols:
@@ -354,13 +351,18 @@ class Molecule(pybel.Molecule):
                     ind = [a.idx for a in mol]
                     bond = mol.OBMol.GetBond(ind[0], ind[1])
                     bond.SetLength(1.21)
-                else:
+                elif constraint == None:
                     make3DandOpt(mol, forcefield=forcefield, make3D=make3D)
+                else:
+                    constraint_force_field(mol, constraint, forcefield, method)
 
             self.mergeMols()
             self.OBMol.SetTotalSpinMultiplicity(spin)
         else:
-            make3DandOpt(self, forcefield=forcefield, make3D=make3D)
+            if constraint == None:
+                make3DandOpt(self, forcefield=forcefield, make3D=make3D)
+            else:
+                constraint_force_field(self, constraint, forcefield, method)
 
     def separateMol(self):
         """
@@ -563,7 +565,7 @@ class Arrange3D(object):
 
         self.initializeVars(mol_1, mol_2)
 
-    def initializeVars(self, mol_1, mol_2, d_intermol=2.5, d_intramol=1.0):
+    def initializeVars(self, mol_1, mol_2, d_intermol=3.0, d_intramol=2.0):
         """
         Set up class variables and determine the bonds and torsions to be
         matched between reactant and product.
@@ -660,37 +662,14 @@ class Arrange3D(object):
         dof = self.dof_1 + self.def_2
         if dof != 0:
             def callbackF(Xi):
-                """
-                coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, Xi[:self.dof_1])
-                coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, Xi[self.dof_1:])
-                for i in range(0, len(self.mol_1.mols)):
-                    self.nodes_1[i].coords = coords_1[i]
-                    self.mol_1.mols[i].setCoordsFromMol(self.nodes_1[i].toPybelMol())
-                with open('visual.txt', 'a') as f:
-                    f.write(str(21))
-                    f.write('\n\n')
-                    f.write(str(self.mol_1.toNode()))
-                    f.write('\n')
-                """
                 print(self.objectiveFunction(Xi[:dof]))
 
             disps_guess = np.array([0.0]*dof)
-
             result = minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
                                        options={'maxiter': 5000, 'disp': False, 'ftol': 0.001}) #, callback = callbackF, 'eps':1e-10
-            """
-            result = minimize(self.objectiveFunction, disps_guess,
-                                       constraints=[{'type': 'ineq', 'fun': self.constraintFunction},
-                                                    {'type': 'eq', 'fun': self.second_constraintFunction}],
-                                       method='SLSQP',
-                                       options={'maxiter': 5000, 'disp': False, 'ftol': 0.001}) #, callback = callbackF, 'eps':1e-10
 
-            result = minimize(self.objectiveFunction, disps_guess,
-                                       constraints={'type': 'ineq', 'fun': self.constraintFunction}, # COBYLA constraint can not use eq
-                                       method='COBYLA')
-            """
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
                            str(result.status) + ':\n' + result.message + '\n')
@@ -997,7 +976,7 @@ class Arrange3D(object):
         coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, disps[self.dof_1:])
         intermol_dists = [self.minIntermolDist(coords_1), self.minIntermolDist(coords_2)]
         intramol_dists = [self.minIntramolDist(coords_1, self.mol_1.mols),
-                                       self.minIntramolDist(coords_2, self.mol_2.mols)]
+                          self.minIntramolDist(coords_2, self.mol_2.mols)]
         val = min([a - self.d_intermol for a in intermol_dists if a != 0] +
                   [b - self.d_intramol for b in intramol_dists if b != 0])
         return val
