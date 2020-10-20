@@ -70,6 +70,7 @@ def constraint_force_field(mol, freeze_index, forcefield='uff', method = 'Steepe
         ff.SteepestDescent(steps)
     elif method == 'ConjugateGradients':
         ff.ConjugateGradients(steps)
+    ff.GetCoordinates(mol.OBMol)
 
 def makeMolFromAtomsAndBonds(atoms, bonds, spin=None):
     """
@@ -329,12 +330,13 @@ class Molecule(pybel.Molecule):
         """
         spin = self.spin
         self.separateMol()
+
         # Generate 3D geometries separately
         if len(self.mols) > 1:
             for mol in self.mols:
                 is_hydrogen_mol = len(mol.atoms) == 2 and all(a.OBAtom.GetAtomicNum() == 1 for a in mol)
                 is_oxygen_mol = len(mol.atoms) == 2 and all(a.OBAtom.GetAtomicNum() == 8 for a in mol)
-
+                
                 if make3D and len(mol.atoms) == 1:  # Atoms
                     mol.atoms[0].OBAtom.SetVector(0.0, 0.0, 0.0)
                 elif make3D and is_hydrogen_mol:
@@ -668,7 +670,7 @@ class Arrange3D(object):
             result = minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
-                                       options={'maxiter': 5000, 'disp': False, 'ftol': 0.001}) #, callback = callbackF, 'eps':1e-10
+                                       options={'maxiter': 5000, 'disp': False, 'ftol': 0.001}, callback = callbackF) #, callback = callbackF, 'eps':1e-10
 
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +

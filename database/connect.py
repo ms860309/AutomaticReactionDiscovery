@@ -11,7 +11,7 @@ class Connector(object):
         #self.server = 'mongodb://localhost:27017/'
         #self.mongo_db = mongo_db
         self.client = self.connect()
-        self.db = self.client['re_4']
+        self.db = self.client['re_1']
 
     def connect(self):
         client = MongoClient(self.server, serverSelectionTimeoutMS=2000)
@@ -24,6 +24,13 @@ db = getattr(Connector(), 'db')
 
 # debug
 """
+qm_collection = db['qm_calculate_center']
+query = {'reactant_inchi_key':'OWCQMKVAAHGRRF-UHFFFAOYSA-N'}
+a = list(qm_collection.find(query))
+for i in a:
+    print(i['reactant_mopac_hf'])
+
+
 qm_collection = db['qm_calculate_center']
 query = [{'$match':{'reactant_inchi_key':'OWCQMKVAAHGRRF-UHFFFAOYSA-N'}},
             {'$group':{'_id':'$reactant_inchi_key', 'reactant_mopac_hf':{'$min':'$reactant_mopac_hf'}}}]

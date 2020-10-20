@@ -53,6 +53,7 @@ def extract_constraint_index(constraint):
     return lines
 
 def gen_geometry(reactant_mol, product_mol, constraint):
+
     reactant_mol.separateMol()
     if len(reactant_mol.mols) > 1:
         reactant_mol.mergeMols()
@@ -60,20 +61,19 @@ def gen_geometry(reactant_mol, product_mol, constraint):
     if len(product_mol.mols) > 1:
         product_mol.mergeMols()
 
-    gen3D.constraint_force_field(reactant_mol.OBMol, constraint)
-    gen3D.constraint_force_field(product_mol.OBMol, constraint)
+    reactant_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
+    product_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
 
     arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, constraint)
     msg = arrange3D.arrangeIn3D()
     if msg != '':
         print(msg)
-    print(reactant_mol.toNode())
-    gen3D.constraint_force_field(reactant_mol.OBMol, constraint)
-    gen3D.constraint_force_field(product_mol.OBMol, constraint)
+
+    reactant_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
+    product_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
 
     reactant = reactant_mol.toNode()
     product = product_mol.toNode()
-
 
 bonds_path = './bonds.txt'
 xyz_path = './reactant.xyz'
@@ -82,7 +82,7 @@ bonds = extract_bonds(bonds_path)
 constraint = extract_constraint_index(constraint_path)
 reactant = readXYZ(xyz_path, bonds=bonds)
 atoms = tuple(atom.atomicnum for atom in reactant)
-product_bonds = ((0, 1, 1), (0, 2, 1), (0, 3, 1), (0, 4, 1), (1, 2, 1), (1, 3, 1), (1, 5, 1), (2, 4, 1), (2, 5, 1), (2, 20, 1), (4, 5, 1), (5, 19, 1), (6, 13, 1), (7, 14, 1), (8, 9, 1), (8, 12, 1), (9, 10, 2), (9, 15, 1), (10, 11, 1), (10, 16, 1), (11, 12, 1), (11, 17, 1), (12, 13, 2), (13, 14, 1), (11, 18, 1))
+product_bonds = ((0, 1, 1), (0, 2, 1), (0, 3, 1), (0, 4, 1), (1, 2, 1), (1, 3, 1), (1, 5, 1), (2, 4, 1), (2, 5, 1), (3, 4, 1), (3, 5, 1), (3, 6, 1), (4, 5, 1), (5, 7, 1), (8, 15, 1), (9, 16, 1), (10, 11, 1), (10, 14, 1), (11, 12, 2), (11, 17, 1), (12, 13, 1), (12, 18, 1), (13, 14, 1), (13, 19, 1), (14, 15, 2), (15, 16, 1), (13, 20, 1))
 product = gen3D.makeMolFromAtomsAndBonds(atoms, product_bonds, spin=reactant.spin)
 product.setCoordsFromMol(reactant)
 
