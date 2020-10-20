@@ -277,9 +277,9 @@ class Network(object):
         # to the current one, even if it has different atom indices participating in the bonds.
         if self.constraint == None:
             ff.Setup(Hatom.OBMol)
-            reactant_mol.gen3D(make3D=False)
+            reactant_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
             ff.Setup(Hatom.OBMol)
-            product_mol.gen3D(make3D=False)
+            product_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
             ff.Setup(Hatom.OBMol)
         else:
             reactant_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
