@@ -531,7 +531,7 @@ def check_irc_content(target_path, direction = 'forward'):
             with open(opt_in, 'w') as f:
                 f.write('$molecule\n{} {}\n'.format(0, 1))
                 f.write('\n'.join(geo))
-                f.write('$end\n\n')
+                f.write('\n$end\n\n')
                 for line in config:
                     f.write(line + '\n')
         else:
@@ -1024,37 +1024,37 @@ def insert_ard():
     reactions_collection = db['reactions']
     energy_query = {"energy_status":
                     {"$in":
-                        ["job_launched", "job_running", "job_queueing"]
+                        ["job_unrun", "job_launched", "job_running", "job_queueing"]
                     }
                 }
     ssm_query = {"ssm_status":
                     {"$in":
-                        ["job_launched", "job_running", "job_queueing"]
+                        ["job_unrun", "job_launched", "job_running", "job_queueing"]
                     }
                 }
     ts_query = {"ts_status":
                     {"$in":
-                        ["job_launched", "job_running", "job_queueing"]
+                        ["job_unrun", "job_launched", "job_running", "job_queueing"]
                     }
                 }
     irc_query_1 = {"irc_forward_status":
                     {"$in":
-                        ["job_launched", "job_running", "job_queueing", "need opt"]
+                        ["job_unrun", "job_launched", "job_running", "job_queueing", "need opt"]
                     }
                 }
     irc_query_2 = {"irc_reverse_status":
                     {"$in":
-                        ["job_launched", "job_running", "job_queueing", "need opt"]
+                        ["job_unrun", "job_launched", "job_running", "job_queueing", "need opt"]
                     }
                 }
     opt_query_1 = {"opt_forward_status":
                     {"$in":
-                        ["opt_job_launched", "opt_job_running", "opt_job_queueing"]
+                        ["job_unrun", "opt_job_launched", "opt_job_running", "opt_job_queueing"]
                     }
                 }
     opt_query_2 = {"opt_reverse_status":
                     {"$in":
-                        ["opt_job_launched", "opt_job_running", "opt_job_queueing"]
+                        ["job_unrun", "opt_job_launched", "opt_job_running", "opt_job_queueing"]
                     }
                 }
     not_finished_number = len(list(qm_collection.find(energy_query))) + len(list(qm_collection.find(ssm_query))) + len(list(qm_collection.find(ts_query))) + len(list(qm_collection.find(irc_query_1))) + len(list(qm_collection.find(irc_query_2))) + len(list(qm_collection.find(opt_query_1))) + len(list(qm_collection.find(opt_query_2)))
