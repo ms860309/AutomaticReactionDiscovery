@@ -71,7 +71,7 @@ class Mopac(object):
 
             return float(reactant), float(product), reactant_mol, product_mol
     
-    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 5.0):
+    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 100.0):
         start_time = time.time()
 
         # Initial optimization
