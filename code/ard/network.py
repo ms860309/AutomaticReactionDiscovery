@@ -46,6 +46,7 @@ class Network(object):
         self.constraint = kwargs['constraint_index']
         self.binding_cutoff_select = kwargs['binding_cutoff_select']
         self.count = 0
+        self.preopt = kwargs['pre_opt']
         self.moac_reac = None
 
     def genNetwork(self, mol_object, use_inchi_key, nbreak, nform):
@@ -111,16 +112,28 @@ class Network(object):
                 dir_path = self.gen_geometry(mol_object, mol, add_bonds[index], break_bonds[index])
                 product_name = mol.write('inchiKey').strip()
                 self.logger.info('\nReactant inchi key: {}\nProduct inchi key: {}\nDirectory path: {}\n'.format(reactant_key, product_name, dir_path))
-                qm_collection.insert_one({
-                                    'reaction': [reactant_key, product_name], 
-                                    'Reactant SMILES':mol_object.write('can').split()[0], 
-                                    'reactant_inchi_key':reactant_key, 
-                                    'product_inchi_key':product_name, 
-                                    'Product SMILES':mol.write('can').split()[0], 
-                                    'path':dir_path, 
-                                    'ssm_status':'job_unrun',
-                                    'generations':self.generations
-                                    })
+                if self.preopt == '1':
+                    qm_collection.insert_one({
+                                        'reaction': [reactant_key, product_name], 
+                                        'Reactant SMILES':mol_object.write('can').split()[0], 
+                                        'reactant_inchi_key':reactant_key, 
+                                        'product_inchi_key':product_name, 
+                                        'Product SMILES':mol.write('can').split()[0], 
+                                        'path':dir_path, 
+                                        'opt_status':'job_unrun',
+                                        'generations':self.generations
+                                        })
+                else:           
+                    qm_collection.insert_one({
+                                        'reaction': [reactant_key, product_name], 
+                                        'Reactant SMILES':mol_object.write('can').split()[0], 
+                                        'reactant_inchi_key':reactant_key, 
+                                        'product_inchi_key':product_name, 
+                                        'Product SMILES':mol.write('can').split()[0], 
+                                        'path':dir_path, 
+                                        'ssm_status':'job_unrun',
+                                        'generations':self.generations
+                                        })
             # Generate geometry and insert to database
             statistics_collection.insert_one({
                 'Reactant SMILES':mol_object.write('can').split()[0], 
@@ -148,8 +161,12 @@ class Network(object):
             ssm_unrun_targets = list(qm_collection.find(ssm_target_query))
             self.logger.info('There are {} products remain after binding energy filter'.format(len(ssm_unrun_targets)))
             for unrun_job in ssm_unrun_targets:
-                update_field = {"ssm_status":"job_unrun"}
-                qm_collection.update_one(unrun_job, {"$set": update_field}, True)
+                if self.preopt == '1'
+                    update_field = {"opt_status":"job_unrun"}
+                    qm_collection.update_one(unrun_job, {"$set": update_field}, True)
+                else:
+                    update_field = {"ssm_status":"job_unrun"}
+                    qm_collection.update_one(unrun_job, {"$set": update_field}, True)
             delete_query = {'$and':
                     [{'reactant_inchi_key':reactant_key},
                     {'reactant_mopac_hf':
