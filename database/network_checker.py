@@ -120,7 +120,7 @@ def print_information(generations):
     opt_query_3 = {'$and': 
                     [
                     { "opt_status":
-                        {"$in":'job_fail'}
+                        ["$in":'job_fail']
                         },
                     {'generations':generations}
                     ]
