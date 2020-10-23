@@ -921,6 +921,122 @@ def check_irc_opt_job():
                         qm_collection.update_one(target, {"$set": update_field}, True)
 
 """
+OPT check
+"""
+def select_opt_target():
+    """
+    This method is to inform job checker which targets 
+    to check, which need meet one requirement:
+    1. status is job_launched or job_running
+    Returns a list of targe
+    """
+
+    qm_collection = db['qm_calculate_center']
+    reg_query = {'opt_status':
+                    {"$in":
+                        ["job_launched", "job_running", "job_queueing"]
+                    }
+                }
+    targets = list(qm_collection.find(reg_query))
+    return targets
+
+def check_opt_job_status(job_id):
+    """
+    This method checks pbs status of a job given job_id
+    Returns off_queue or job_launched or job_running
+    """
+
+    commands = ['qstat', '-f', job_id]
+    process = subprocess.Popen(commands,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    if "Unknown Job Id" in stderr.decode():
+        return "off_queue"
+
+    # in pbs stdout is byte, so we need to decode it at first.
+    stdout = stdout.decode().strip().split()
+    idx = stdout.index('job_state')
+    if stdout[idx+2] == 'R':
+        return "job_running"
+    elif stdout[idx+2] == 'Q':
+        return 'job_queueing'
+    else:
+        return "job_launched"
+    
+def check_opt_content(dir_path):
+    reactant_path = os.path.join(dir_path, 'reactant.xyz')
+    OPT_path = path.join(dir_path, "OPT")
+    
+    with open(reactant_path, 'r') as f1:
+        lines = f1.readlines()
+    atom_number = int(lines[0])
+    
+    outputname = path.join(OPT_path, 'opt.out')
+    
+    with open(outputname, 'r') as f:
+        f.seek(0, 2)
+        fsize = f.tell()
+        f.seek(max(fsize - 4096, 0), 0)  # Read last  4kB of file
+        lines = f.readlines()
+        
+    if lines[-5] == '        *  Thank you very much for using Q-Chem.  Have a nice day.  *\n':
+        for idx, i in enumerate(lines):
+            if i.startswith('                       Coordinates (Angstroms)\n'):
+                break
+
+        geo = []
+        for i in lines[idx + 2 : idx + 2 + atom_number]:
+            atom = i.split()[1:]
+            geo.append('  '.join(atom))
+
+        with open(reactant_path, 'w') as f2:
+            f2.write(str(len(geo)))
+            f2.write('\n\n')
+            f2.write('\n'.join(geo))
+            
+        return 'job_success'
+    else:
+        return 'job_fail'
+
+def check_opt_job():
+    """
+    This method checks job with following steps:
+    1. select jobs to check
+    2. check the job pbs-status, e.g., qstat -f "job_id"
+    3. check job content
+    4. update with new status
+    """
+    # 1. select jobs to check
+    targets = select_opt_target()
+    qm_collection = db['qm_calculate_center']
+
+    # 2. check the job pbs_status
+    for target in targets:
+        job_id = target['opt_jobid']
+        new_status = check_opt_job_status(job_id)
+        if new_status == "off_queue":
+            # 3. check job content
+            new_status = check_opt_content(target['path'])
+
+        # 4. check with original status which
+        # should be job_launched or job_running
+        # if any difference update status
+        orig_status = target['opt_status']
+        if orig_status != new_status:
+            if new_status == 'job_success':
+                update_field = {
+                                'opt_status': new_status, 'ssm_status': 'job_unrun'
+                            }
+                qm_collection.update_one(target, {"$set": update_field}, True)
+            else:
+                update_field = {
+                                'opt_status': new_status
+                            }
+                qm_collection.update_one(target, {"$set": update_field}, True)
+
+"""
 Barrier check.
 """
 def select_barrier_target():
@@ -1072,12 +1188,13 @@ def insert_ard():
             qm_collection.update_one(ard_qm_target, {"$set": update_field_for_qm_target}, True)
             reactions_collection.update_one(target, {"$set": update_field_for_reaction_target}, True)
 
-#check_energy_jobs()
-#check_ssm_jobs()
-#check_ts_jobs()
-#check_irc_jobs()
-#check_irc_equal()
-#check_irc_opt_job()
-#update_barrier_information()
-#insert_reaction()
-#insert_ard()
+check_energy_jobs()
+check_ssm_jobs()
+check_opt_job()
+check_ts_jobs()
+check_irc_jobs()
+check_irc_equal()
+check_irc_opt_job()
+update_barrier_information()
+insert_reaction()
+insert_ard()
