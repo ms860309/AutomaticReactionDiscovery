@@ -1017,24 +1017,24 @@ def check_opt_job():
         job_id = target['opt_jobid']
         new_status = check_opt_job_status(job_id)
         if new_status == "off_queue":
-                # 3. check job content
-                new_status = check_opt_content(target['path'])
+            # 3. check job content
+            new_status = check_opt_content(target['path'])
 
-                # 4. check with original status which
-                # should be job_launched or job_running
-                # if any difference update status
-                orig_status = target['opt_status']
-                if orig_status != new_status:
-                    if new_status == 'job_success':
-                        update_field = {
-                                        'opt_status': new_status, 'ssm_status': 'job_unrun'
-                                    }
-                        qm_collection.update_one(target, {"$set": update_field}, True)
-                    else:
-                        update_field = {
-                                        'opt_status': new_status
-                                    }
-                        qm_collection.update_one(target, {"$set": update_field}, True)
+        # 4. check with original status which
+        # should be job_launched or job_running
+        # if any difference update status
+        orig_status = target['opt_status']
+        if orig_status != new_status:
+            if new_status == 'job_success':
+                update_field = {
+                                'opt_status': new_status, 'ssm_status': 'job_unrun'
+                            }
+                qm_collection.update_one(target, {"$set": update_field}, True)
+            else:
+                update_field = {
+                                'opt_status': new_status
+                            }
+                qm_collection.update_one(target, {"$set": update_field}, True)
 
 """
 Barrier check.

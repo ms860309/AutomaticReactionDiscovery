@@ -161,7 +161,7 @@ class Network(object):
             ssm_unrun_targets = list(qm_collection.find(ssm_target_query))
             self.logger.info('There are {} products remain after binding energy filter'.format(len(ssm_unrun_targets)))
             for unrun_job in ssm_unrun_targets:
-                if self.preopt == '1'
+                if self.preopt == '1':
                     update_field = {"opt_status":"job_unrun"}
                     qm_collection.update_one(unrun_job, {"$set": update_field}, True)
                 else:

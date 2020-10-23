@@ -164,7 +164,7 @@ def select_opt_target():
     return selected_targets
 
 def launch_opt_jobs():
-    targets = select_ssm_target()
+    targets = select_opt_target()
     
     for target in targets:
         OPT_dir_path = path.join(target, 'OPT/')
@@ -196,6 +196,7 @@ def create_opt_input(dir_path, OPT_dir_path):
     with open(opt_input, 'w') as f:
         f.write('$molecule\n{} {}\n'.format(0, 1))
         f.write('\n'.join(geo))
+        f.write('\n')
         f.write('$end\n\n')
         for line in config:
             f.write(line + '\n')
