@@ -95,7 +95,6 @@ class Generate(object):
         reactant_bonds = tuple(sorted(reactant_bonds))
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.GetExplicitValence() for atom in self.reac_mol]
-
         # Initialize set for storing bonds of products
         # A set is used to ensure that no duplicate products are added
         products_bonds = set()
@@ -143,7 +142,7 @@ class Generate(object):
                         for j in form_bonds:
                             if i[0] == j[0] and i[1] == j[1]:
                                 form_bonds.remove(j)
-                if self.check_bond_type(bonds):
+                if self.check_bond_type(bonds, reactant_valences):
                     mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
                     mol.setCoordsFromMol(self.reac_mol)
                     if self.check_bond_dissociation_energy_and_isomorphic_and_rings(bonds, break_bonds):
@@ -161,7 +160,7 @@ class Generate(object):
                             self.break_bonds.append(break_bonds)
                             self.prod_mols.append(mol)
 
-    def check_bond_type(self, bonds):
+    def check_bond_type(self, bonds, reactant_valences):
         bond_type = {}
         for i in range(len(self.atoms)):
             num = 0
@@ -174,11 +173,13 @@ class Generate(object):
             return False
         else:
             for idx, i in enumerate(self.atoms):
-                if i == 6 and bond_type[idx] > 5: # use !=  or  >   need test
-                    return False
+                if i == 6 and bond_type[idx] != 4: # use !=  or  >   need test
+                    if bond_type[idx] != reactant_valences[idx]:  # sometimes the input carbon bond type only 3
+                        return False
             for idx, i in enumerate(self.atoms):
                 if i == 8 and bond_type[idx] != 2: # use !=  or  >   need test
-                    return False
+                    if bond_type[idx] != reactant_valences[idx]:
+                        return False
             return True
     
     def check_bond_dissociation_energy_and_isomorphic_and_rings(self, bond_list, bbond_list):
@@ -383,4 +384,3 @@ class Generate(object):
 
         # Return valid valences
         return valences_temp
-

@@ -75,7 +75,7 @@ class ElementData(object):
                     electronegativity=2.04, max_bonds=4),
             Element(symbol='C', name='Carbon', atomic_num=6, mass_amu=12.0,
                     covalent_radius=0.76, vdw_radius=1.7, bond_radius=0.76,
-                    electronegativity=2.55, max_bonds=5),
+                    electronegativity=2.55, max_bonds=4),
             Element(symbol='N', name='Nitrogen', atomic_num=7, mass_amu=14.003074005,
                     covalent_radius=0.71, vdw_radius=1.55, bond_radius=0.71,
                     electronegativity=3.04, max_bonds=4),
