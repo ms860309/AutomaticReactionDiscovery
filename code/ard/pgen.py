@@ -177,7 +177,7 @@ class Generate(object):
                 if i == 6 and bond_type[idx] > 5: # use !=  or  >   need test
                     return False
             for idx, i in enumerate(self.atoms):
-                if i == 8 and bond_type[idx] > 2: # use !=  or  >   need test
+                if i == 8 and bond_type[idx] != 2: # use !=  or  >   need test
                     return False
             return True
     

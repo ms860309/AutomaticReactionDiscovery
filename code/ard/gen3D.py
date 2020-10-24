@@ -567,7 +567,7 @@ class Arrange3D(object):
 
         self.initializeVars(mol_1, mol_2)
 
-    def initializeVars(self, mol_1, mol_2, d_intermol=3.0, d_intramol=1.5):
+    def initializeVars(self, mol_1, mol_2, d_intermol=3.0, d_intramol=2.0):
         """
         Set up class variables and determine the bonds and torsions to be
         matched between reactant and product.
@@ -670,7 +670,7 @@ class Arrange3D(object):
             result = minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
-                                       options={'maxiter': 500, 'disp': False}) #, callback = callbackF, 'eps':1e-10
+                                       options={'maxiter': 500, 'disp': False}, callback = callbackF) #, callback = callbackF, 'eps':1e-10
 
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
