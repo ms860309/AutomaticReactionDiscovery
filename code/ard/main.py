@@ -105,7 +105,7 @@ class ARD(object):
 def readInput(input_file):
     # Allowed keywords
     keys = ('reactant', 'nbreak', 'nform', 'forcefield', 'constraintff_alg', 'mopac_method', 'dh_cutoff', 'dh_cutoff_method', 'binding_mode_energy_cutoff',
-            'manual_bonds', 'bond_dissociation_cutoff', 'constraint', 'use_inchi_key', 'binding_cutoff_select', 'pre_opt')
+            'manual_bonds', 'bond_dissociation_cutoff', 'constraint', 'use_inchi_key', 'binding_cutoff_select', 'pre_opt', 'manual_cluster_bond')
     # Read all data from file
     with open(input_file, 'r') as f:
         input_data = f.read().splitlines()
@@ -136,12 +136,12 @@ def extract_constraint_index(constraint):
     lines = eval(lines)
     return lines
 
-def readXYZ(xyz, bonds = None):
+def readXYZ(xyz, bonds = None, cluster_bond = None, constraint = None):
     # extract molecule information from xyz
     mol = next(pb.readfile('xyz', xyz))
     # Manually give bond information 
     # (Because in metal system the bond information detect by openbabel usually have some problem)
-    if bonds:
+    if bonds or cluster_bond:
         m = Molecule(pb.ob.OBMol())
         obmol = m.OBMol
 
@@ -155,6 +155,11 @@ def readXYZ(xyz, bonds = None):
             obatom.SetVector(*coords)
             obmol.AddAtom(obatom)
             del obatom
+            
+        if cluster_bond:
+            bonds = [(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx(), bond.GetBondOrder())
+                            for bond in pb.ob.OBMolBondIter(mol.OBMol)
+                            if bond.GetBeginAtomIdx() - 1 not in constraint or bond.GetEndAtomIdx() - 1 not in constraint]
 
         for bond in bonds:
             obmol.AddBond(bond[0], bond[1], bond[2])

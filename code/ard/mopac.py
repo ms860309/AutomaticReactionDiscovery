@@ -68,10 +68,9 @@ class Mopac(object):
             runMopac(tmpdir, 'product.mop')
             product = getHeatofFormation(tmpdir, 'product.out')
             self.finalize(start_time, 'mopac')
-
             return float(reactant), float(product), reactant_mol, product_mol
     
-    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 100.0):
+    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 6.0):
         start_time = time.time()
 
         # Initial optimization
@@ -95,7 +94,6 @@ class Mopac(object):
 
         # Check reactant expected forming bond length must smaller than 4 angstrom after arrange. Default = 4
         dist = self.check_bond_length(reactant_mol, self.form_bonds) # return the maximum value in array
-        
         # After arrange to prevent openbabel use the previous product coordinates if it is isomorphic
         # to the current one, even if it has different atom indices participating in the bonds.
         if self.constraint == None:

@@ -55,8 +55,13 @@ if __name__ == '__main__':
         bonds = extract_bonds(args.bonds)
         kwargs['bonds'] = bonds
     else:
+        if kwargs['manual_cluster_bond'] == 1:
+            bonds = extract_bonds(args.bonds)
+            kwargs['manual_cluster_bond'] = bonds
+        else:
+            kwargs['manual_cluster_bond'] = None
         kwargs['bonds'] = None
-    OBMol, reactant_graph = readXYZ(reactant_file, kwargs['bonds'])
+    OBMol, reactant_graph = readXYZ(reactant_file, kwargs['bonds'], kwargs['manual_cluster_bond'], kwargs['constraint_index'])
 
     kwargs['reactant'] = OBMol
     kwargs['graph'] = reactant_graph

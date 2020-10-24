@@ -86,11 +86,13 @@ class Generate(object):
             raise Exception('Breaking/forming bonds is limited to a maximum of 3')
 
         # Extract bonds as an unmutable sequence (indices are made compatible with atom list)
-        reactant_bonds = tuple(sorted(
-            [(bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1, bond.GetBondOrder())
-             for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol)]
-        ))
-
+        reactant_bonds= []
+        for bond in pybel.ob.OBMolBondIter(self.reac_mol.OBMol):
+            sorted_bond = sorted((bond.GetBeginAtomIdx() - 1, bond.GetEndAtomIdx() - 1))
+            bond_order = bond.GetBondOrder()
+            bonds = tuple(sorted_bond) + (bond_order,)
+            reactant_bonds.append(bonds)
+        reactant_bonds = tuple(sorted(reactant_bonds))
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.GetExplicitValence() for atom in self.reac_mol]
 
@@ -141,7 +143,6 @@ class Generate(object):
                         for j in form_bonds:
                             if i[0] == j[0] and i[1] == j[1]:
                                 form_bonds.remove(j)
-
                 if self.check_bond_type(bonds):
                     mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
                     mol.setCoordsFromMol(self.reac_mol)
@@ -173,10 +174,10 @@ class Generate(object):
             return False
         else:
             for idx, i in enumerate(self.atoms):
-                if i == 6 and bond_type[idx] != 4: # use !=  or  >   need test
+                if i == 6 and bond_type[idx] > 5: # use !=  or  >   need test
                     return False
             for idx, i in enumerate(self.atoms):
-                if i == 8 and bond_type[idx] != 2: # use !=  or  >   need test
+                if i == 8 and bond_type[idx] > 2: # use !=  or  >   need test
                     return False
             return True
     
@@ -231,7 +232,6 @@ class Generate(object):
                             energy += props.bond_dissociation_energy[first_atom, second_atom, bond_type]
                         except:
                             energy += props.bond_dissociation_energy[second_atom, first_atom, bond_type]
-
             if energy/constants.cal_to_J >= self.bond_dissociation_cutoff:
                 return False
             else:
