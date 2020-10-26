@@ -95,6 +95,7 @@ class Generate(object):
         reactant_bonds = tuple(sorted(reactant_bonds))
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.GetExplicitValence() for atom in self.reac_mol]
+        reactant_valences = [3, 3, 4, 5, 3, 4, 1, 1, 1, 1, 2, 4, 4, 3, 3, 4, 2, 1, 1, 1, 1]
         # Initialize set for storing bonds of products
         # A set is used to ensure that no duplicate products are added
         products_bonds = set()
@@ -142,7 +143,7 @@ class Generate(object):
                         for j in form_bonds:
                             if i[0] == j[0] and i[1] == j[1]:
                                 form_bonds.remove(j)
-                if self.check_bond_type(bonds, reactant_valences):
+                if self.check_bond_type(bonds, reactant_valences, form_bonds, break_bonds):
                     mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
                     mol.setCoordsFromMol(self.reac_mol)
                     if self.check_bond_dissociation_energy_and_isomorphic_and_rings(bonds, break_bonds):
@@ -154,13 +155,13 @@ class Generate(object):
                                 if i[2] >= 2 and (i[0], i[1], i[2] - 1) in bonds:
                                     break_bonds.remove(i)
                             for i in form_bonds:
-                                if i[2] >= 2 and (i[0], i[1], i[2] + 1) in bonds:
+                                if i[2] >= 2 and (i[0], i[1], i[2] - 1) in bonds:
                                         form_bonds.remove(i)
                             self.add_bonds.append(form_bonds)
                             self.break_bonds.append(break_bonds)
                             self.prod_mols.append(mol)
 
-    def check_bond_type(self, bonds, reactant_valences):
+    def check_bond_type(self, bonds, reactant_valences, form_bonds, break_bonds):
         bond_type = {}
         for i in range(len(self.atoms)):
             num = 0
@@ -176,10 +177,24 @@ class Generate(object):
                 if i == 6 and bond_type[idx] != 4: # use !=  or  >   need test
                     if bond_type[idx] != reactant_valences[idx]:  # sometimes the input carbon bond type only 3
                         return False
+                    else:
+                        for form_bond in form_bonds:
+                            if idx == form_bond[0] or idx == form_bond[1]:
+                                return False
+                        for break_bond in break_bonds:
+                            if idx == break_bond[0] or idx == break_bond[1]:
+                                return False
             for idx, i in enumerate(self.atoms):
                 if i == 8 and bond_type[idx] != 2: # use !=  or  >   need test
                     if bond_type[idx] != reactant_valences[idx]:
                         return False
+                    else:
+                        for form_bond in form_bonds:
+                            if idx == form_bond[0] or idx == form_bond[1]:
+                                return False
+                        for break_bond in break_bonds:
+                            if idx == break_bond[0] or idx == break_bond[1]:
+                                return False
             return True
     
     def check_bond_dissociation_energy_and_isomorphic_and_rings(self, bond_list, bbond_list):

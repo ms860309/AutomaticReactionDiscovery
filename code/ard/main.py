@@ -139,6 +139,7 @@ def extract_constraint_index(constraint):
 def readXYZ(xyz, bonds = None, cluster_bond = None, constraint = None):
     # extract molecule information from xyz
     mol = next(pb.readfile('xyz', xyz))
+    reactant_atom = [a.OBAtom.GetAtomicNum() for a in mol]
     # Manually give bond information 
     # (Because in metal system the bond information detect by openbabel usually have some problem)
     if bonds or cluster_bond:
@@ -155,14 +156,17 @@ def readXYZ(xyz, bonds = None, cluster_bond = None, constraint = None):
             obatom.SetVector(*coords)
             obmol.AddAtom(obatom)
             del obatom
-            
+ 
         if cluster_bond:
             bonds = [(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx(), bond.GetBondOrder())
-                            for bond in pb.ob.OBMolBondIter(mol.OBMol)
-                            if bond.GetBeginAtomIdx() - 1 not in constraint or bond.GetEndAtomIdx() - 1 not in constraint]
+                            for bond in pb.ob.OBMolBondIter(mol.OBMol)]
+            bonds = imaginary_bond(bonds, reactant_atom, constraint)
+            bonds.extend(cluster_bond)
 
+        
         for bond in bonds:
             obmol.AddBond(bond[0], bond[1], bond[2])
+
         #obmol.ConnectTheDots()
         #obmol.PerceiveBondOrders()
         #obmol.SetTotalSpinMultiplicity(1)
@@ -183,3 +187,15 @@ def readXYZ(xyz, bonds = None, cluster_bond = None, constraint = None):
         ))
         make_graph(reactant_graph, bond_list= reactant_bonds)
     return mol_obj, reactant_graph
+
+def imaginary_bond(bonds, reactant_atom, constraint):
+    for atom in constraint:
+        for bond in bonds:
+            idx_1 = bond[0] - 1
+            idx_2 = bond[1] - 1
+            if idx_1 == atom or idx_2 == atom:
+                if idx_1 not in constraint or idx_2 not in constraint:
+                    # remove hydrogen
+                    if reactant_atom[idx_1] != 1 and reactant_atom[idx_2] != 1:
+                        bonds.remove(bond)
+    return bonds
