@@ -95,7 +95,6 @@ class Generate(object):
         reactant_bonds = tuple(sorted(reactant_bonds))
         # Extract valences as a mutable sequence
         reactant_valences = [atom.OBAtom.GetExplicitValence() for atom in self.reac_mol]
-        reactant_valences = [3, 3, 4, 5, 3, 4, 1, 1, 1, 1, 2, 4, 4, 3, 3, 4, 2, 1, 1, 1, 1]
         # Initialize set for storing bonds of products
         # A set is used to ensure that no duplicate products are added
         products_bonds = set()

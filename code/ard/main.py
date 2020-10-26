@@ -160,7 +160,7 @@ def readXYZ(xyz, bonds = None, cluster_bond = None, constraint = None):
         if cluster_bond:
             bonds = [(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx(), bond.GetBondOrder())
                             for bond in pb.ob.OBMolBondIter(mol.OBMol)]
-            bonds = imaginary_bond(bonds, reactant_atom, constraint)
+            #bonds = imaginary_bond(bonds, reactant_atom, constraint)
             bonds.extend(cluster_bond)
 
         
