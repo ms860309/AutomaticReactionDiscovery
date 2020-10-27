@@ -151,10 +151,10 @@ class Generate(object):
                             # Because in SSM or GSM double bond is only a little distance change.
                             # That is the double bond can't be a driving coordinate, ssm will automatically deal with this little distance change.
                             for i in break_bonds:
-                                if i[2] >= 2 and (i[0], i[1], i[2] - 1) in bonds:
+                                if i[2] >= 2 and (i[0], i[1], i[2] - 1) in reactant_bonds:
                                     break_bonds.remove(i)
                             for i in form_bonds:
-                                if i[2] >= 2 and (i[0], i[1], i[2] - 1) in bonds:
+                                if i[2] >= 2 and (i[0], i[1], i[2] - 1) in reactant_bonds:
                                         form_bonds.remove(i)
                             self.add_bonds.append(form_bonds)
                             self.break_bonds.append(break_bonds)
