@@ -56,14 +56,14 @@ class Mopac(object):
                 shutil.rmtree(tmpdir)
             os.mkdir(tmpdir)
             with open(reactant_path, 'w') as f:
-                f.write("NOSYM 1SCF CHARGE={} {} {}\n\n".format(charge, multiplicity, self.mopac_method))
+                f.write("NOSYM CHARGE={} {} {}\n\n".format(charge, multiplicity, self.mopac_method))
                 f.write("\n{}".format(reac_geo))
             start_time = time.time()
             runMopac(tmpdir, 'reactant.mop')
             reactant = getHeatofFormation(tmpdir, 'reactant.out')
 
             with open(product_path, 'w') as f:
-                f.write("CHARGE={} {} {}\n\n".format(charge, multiplicity, self.mopac_method))
+                f.write("NOSYM CHARGE={} {} {}\n\n".format(charge, multiplicity, self.mopac_method))
                 f.write("\n{}".format(prod_geo))
             runMopac(tmpdir, 'product.mop')
             product = getHeatofFormation(tmpdir, 'product.out')
@@ -124,7 +124,6 @@ class Mopac(object):
                 i_list = i.split()
                 atom = i_list[0] + " "
                 k = i_list[1:] + [""]
-                l = " 0 ".join(k)
                 out = atom + l
                 product_geometry.append(out)
             product_geometry = "\n".join(product_geometry)
@@ -135,11 +134,8 @@ class Mopac(object):
                 i_list = i.split()
                 atom = i_list[0] + " "
                 k = i_list[1:] + [""]
-                l = " 0 ".join(k)
-                out = atom + l
                 reactant_geometry.append(out)
             reactant_geometry = "\n".join(reactant_geometry)
-            
             reactant = reactant_mol.toNode()
             reactant_mol.setCoordsFromMol(reac_mol_copy)
             self.finalize(start_time, 'arrange')

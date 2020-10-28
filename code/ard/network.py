@@ -253,7 +253,7 @@ class Network(object):
         reactant_geometry = "\n".join(reactant_geometry)
 
         with open(reactant_path, 'w') as f:
-            f.write("NOSYM 1SCF CHARGE={} {} {}\n\n".format(charge, multiplicity, self.mopac_method))
+            f.write("NOSYM CHARGE={} {} {}\n\n".format(charge, multiplicity, self.mopac_method))
             f.write("\n{}".format(reactant_geometry))
         mopac.runMopac(tmpdir, 'reactant.mop')
         mol_hf = mopac.getHeatofFormation(tmpdir, 'reactant.out')
