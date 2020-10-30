@@ -241,7 +241,7 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
                 update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
                                 'initial_dir_name':rxn_dir, 
                                 'path':new_path, 
-                                'ssm_status': 'job_fail', 
+                                'ssm_status': 'job_success',                                # Though the reactant equal to product but TS maybe fine. The SSM somehow do not use constrained optimize in product
                                 'ard_ssm_equal':'ssm reactant equal to product',            # This is a special case but sometimes it will happen.
                                 'Product SMILES': prod_smi}
                 qm_collection.update_one(i, {"$set": update_field}, True)
@@ -1037,6 +1037,127 @@ def check_opt_job():
                 qm_collection.update_one(target, {"$set": update_field}, True)
 
 """
+Low level OPT check
+"""
+def select_low_opt_target():
+    """
+    This method is to inform job checker which targets 
+    to check, which need meet one requirement:
+    1. status is job_launched or job_running
+    Returns a list of targe
+    """
+
+    qm_collection = db['qm_calculate_center']
+    reg_query = {'low_opt_status':
+                    {"$in":
+                        ["job_launched", "job_running", "job_queueing"]
+                    }
+                }
+    targets = list(qm_collection.find(reg_query))
+    return targets
+
+def check_low_opt_job_status(job_id):
+    """
+    This method checks pbs status of a job given job_id
+    Returns off_queue or job_launched or job_running
+    """
+
+    commands = ['qstat', '-f', job_id]
+    process = subprocess.Popen(commands,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    if "Unknown Job Id" in stderr.decode():
+        return "off_queue"
+
+    # in pbs stdout is byte, so we need to decode it at first.
+    stdout = stdout.decode().strip().split()
+    idx = stdout.index('job_state')
+    if stdout[idx+2] == 'R':
+        return "job_running"
+    elif stdout[idx+2] == 'Q':
+        return 'job_queueing'
+    else:
+        return "job_launched"
+    
+def check_low_opt_content(dir_path):
+    reactant_path = os.path.join(dir_path, 'reactant.xyz')
+    OPT_path = path.join(dir_path, "OPT")
+    
+    with open(reactant_path, 'r') as f1:
+        lines = f1.readlines()
+    atom_number = int(lines[0])
+    
+    outputname = path.join(OPT_path, 'low_opt.out')
+    
+    with open(outputname, 'r') as f:
+        f.seek(0, 2)
+        fsize = f.tell()
+        f.seek(max(fsize - 4096, 0), 0)  # Read last  4kB of file
+        lines = f.readlines()
+        
+    if lines[-5] == '        *  Thank you very much for using Q-Chem.  Have a nice day.  *\n':
+        for idx, i in enumerate(lines):
+            if i.startswith('                       Coordinates (Angstroms)\n'):
+                break
+
+        geo = []
+        for i in lines[idx + 2 : idx + 2 + atom_number]:
+            atom = i.split()[1:]
+            geo.append('  '.join(atom))
+
+        with open(reactant_path, 'w') as f2:
+            f2.write(str(len(geo)))
+            f2.write('\n\n')
+            f2.write('\n'.join(geo))
+
+        for idx2, i in enumerate(lines):
+            if i.startswith(' **  OPTIMIZATION CONVERGED  **\n'):
+                break
+        
+        low_opt_energy = lines[idx2-4].split()[-1]
+        return 'job_success', float(low_opt_energy)
+    else:
+        return 'job_fail', float(0.0)
+
+def check_low_opt_job():
+    """
+    This method checks job with following steps:
+    1. select jobs to check
+    2. check the job pbs-status, e.g., qstat -f "job_id"
+    3. check job content
+    4. update with new status
+    """
+    # 1. select jobs to check
+    targets = select_low_opt_target()
+    qm_collection = db['qm_calculate_center']
+
+    # 2. check the job pbs_status
+    for target in targets:
+        job_id = target['low_opt_jobid']
+        new_status = check_opt_job_status(job_id)
+        if new_status == "off_queue":
+            # 3. check job content
+            new_status, energy = check_low_opt_content(target['path'])
+
+        # 4. check with original status which
+        # should be job_launched or job_running
+        # if any difference update status
+        orig_status = target['low_opt_status']
+        if orig_status != new_status:
+            if new_status == 'job_success':
+                update_field = {
+                                'low_opt_status': new_status, 'low_energy': energy, 'check_binding_status': 'need check'
+                            }
+                qm_collection.update_one(target, {"$set": update_field}, True)
+            else:
+                update_field = {
+                                'low_opt_status': new_status, 'low_energy': energy
+                            }
+                qm_collection.update_one(target, {"$set": update_field}, True)
+
+"""
 Barrier check.
 """
 def select_barrier_target():
@@ -1188,8 +1309,55 @@ def insert_ard():
             qm_collection.update_one(ard_qm_target, {"$set": update_field_for_qm_target}, True)
             reactions_collection.update_one(target, {"$set": update_field_for_reaction_target}, True)
 
+
+"""
+Binding energy cutoff filter
+"""
+def check_bindind_cutoff():
+    """
+    This method is to inform job checker which targets 
+    to check, which need meet one requirement:
+    1. status is job_launched or job_running
+    Returns a list of targe
+    """
+    qm_collection = db['qm_calculate_center']
+    running_query = {"low_opt_status":
+                    {"$in":
+                        ["job_unrun", "job_launched", "job_running", "job_queueing"]
+                    }
+                }
+    targets = list(qm_collection.find(running_query))
+    if len(targets) == 0:
+        query = {'check_binding_status': 'need check'}
+        targets = list(qm_collection.find(query))
+        cutoff_target = list(qm_collection.find({'Reactant':'initial reactant'}))
+        cutoff_energy = float(cutoff_target[0]['binding_mode_energy_cutoff'])
+
+        if cutoff_target[0]['binding_cutoff_select'] == 'starting':
+            qchem_energy = cutoff_target[0]['low_energy']
+        elif cutoff_target[0]['binding_cutoff_select'] == 'lowest':
+            query = [{'$match':{'reactant_inchi_key':cutoff_target[0]['reactant_inchi_key']}},
+                    {'$group':{'_id':'$reactant_inchi_key', 'low_energy':{'$min':'$low_energy'}}}]
+            qchem_energy = list(qm_collection.aggregate(query))[0]['low_energy']
+        else:
+            print('Please select the lowest or starting as reference')
+            print('Note that "Should manually add into database"')
+            raise
+
+        for target in targets:
+            delta = (float(target['low_energy']) - float(qchem_energy)) * 627.5095
+            if delta > cutoff_energy:
+                qm_collection.update_one(target, {"$set": {'check_binding_status': 'greater than cutoff'}}, True)
+            else:
+                qm_collection.update_one(target, {"$set": {'check_binding_status': 'smaller than cutoff', 'opt_status':'job_unrun'}}, True)
+    
+    return targets
+
+
+
 check_energy_jobs()
 check_ssm_jobs()
+check_low_opt_job()
 check_opt_job()
 check_ts_jobs()
 check_irc_jobs()

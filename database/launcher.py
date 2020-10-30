@@ -168,7 +168,8 @@ def launch_opt_jobs():
     
     for target in targets:
         OPT_dir_path = path.join(target, 'OPT/')
-        os.mkdir(OPT_dir_path)
+        if not os.path.exists(OPT_dir_path):
+            os.mkdir(OPT_dir_path)
         os.chdir(OPT_dir_path)
         
         create_opt_input(target, OPT_dir_path)
@@ -219,6 +220,79 @@ def update_opt_status(target, job_id):
     collect = db['qm_calculate_center']
     reg_query = {"path":target}
     update_field = {"opt_status":"job_launched", "opt_jobid":job_id}
+    collect.update_one(reg_query, {"$set": update_field}, True)
+
+"""
+Submmit Low level OPT calculation job
+1. select unrun job
+2. push unrun job to qchem
+3. update status "job_launched"
+"""
+    
+def select_low_opt_target():
+    qm_collection = db['qm_calculate_center']
+    reg_query = {"low_opt_status":"job_unrun"}
+    targets = list(qm_collection.find(reg_query))
+    selected_targets = [target['path'] for target in targets]
+    return selected_targets
+
+def launch_low_opt_jobs():
+    targets = select_opt_target()
+    
+    for target in targets:
+        OPT_dir_path = path.join(target, 'OPT/')
+        if not os.path.exists(OPT_dir_path):
+            os.mkdir(OPT_dir_path)
+        os.chdir(OPT_dir_path)
+        
+        create_low_opt_input(target, OPT_dir_path)
+        subfile = create_opt_sub_file(target, OPT_dir_path)
+        cmd = 'qsub {}'.format(subfile)
+        process = subprocess.Popen([cmd],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, shell = True)
+        stdout, stderr = process.communicate()
+        # get job id from stdout, e.g., "106849.h81"
+        job_id = stdout.decode().replace("\n", "")
+        # update status job_launched
+        update_opt_status(target, job_id)
+
+def create_low_opt_input(dir_path, OPT_dir_path):
+    base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(OPT_dir_path)))), 'config')
+    low_opt_lot = path.join(base_dir_path, 'low_opt.lot')
+    low_opt_input = path.join(OPT_dir_path, 'low_opt.in')
+    reactant_path = path.join(dir_path, 'reactant.xyz')
+    with open(low_opt_lot) as f:
+        config = [line.strip() for line in f]
+    with open(reactant_path) as f:
+        lines = f.read().split('\n')
+        geo = [line for line in lines[2:]]
+    with open(low_opt_input, 'w') as f:
+        f.write('$molecule\n{} {}\n'.format(0, 1))
+        f.write('\n'.join(geo))
+        f.write('\n')
+        f.write('$end\n\n')
+        for line in config:
+            f.write(line + '\n')
+
+def create_low_opt_sub_file(dir_path, OPT_dir_path, ncpus = 8, mpiprocs = 1, ompthreads = 8):
+    subfile = path.join(OPT_dir_path, 'cal_low_opt.job')
+    shell = '#!/usr/bin/bash'
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    target_path = 'cd {}'.format(OPT_dir_path)
+    nes1 = 'module load qchem'
+    nes2 = 'export QCSCRATCH=/tmp/$PBS_JOBID'
+    nes3 = 'mkdir -p $QCSCRATCH'
+    nes4 = 'qchem -nt {} {} {}'.format(ncpus, 'low_opt.in', 'low_opt.out')
+    nes5 = 'rm -r $QCSCRATCH'
+    with open(subfile, 'w') as f:
+        f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, nes2, nes3, nes4, nes5))
+    return subfile
+    
+def update_low_opt_status(target, job_id):
+    collect = db['qm_calculate_center']
+    reg_query = {"path":target}
+    update_field = {"low_opt_status":"job_launched", "low_opt_jobid":job_id}
     collect.update_one(reg_query, {"$set": update_field}, True)
 
 """
@@ -485,6 +559,7 @@ def create_irc_opt_sub_file(irc_path, direction = 'forward', ncpus = 8, mpiprocs
 
 #launch_energy_jobs()
 #launch_ssm_jobs()
+#launch_low_opt_jobs()
 #launch_opt_jobs()
 #launch_ts_jobs()
 #launch_irc_jobs()

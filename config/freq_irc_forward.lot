@@ -6,9 +6,9 @@ $rem
 	METHOD                    B3LYP
 	DFT_D                     D3_BJ
 	BASIS                     def2-SV(P)
-	ECP                       fit-LANL2DZ
+	ECP                       def2-ecp
 	SCF_ALGORITHM             DIIS
-	MAX_SCF_CYCLES            250
+	MAX_SCF_CYCLES            150
 	SCF_CONVERGENCE           8
 	SYM_IGNORE                TRUE
 	SYMMETRY                  FALSE
@@ -27,7 +27,7 @@ $rem
 	METHOD                    B3LYP
 	DFT_D                     D3_BJ
 	BASIS                     def2-SV(P)
-	ECP                       fit-LANL2DZ
+	ECP                       def2-ecp
 	SCF_CONVERGENCE           8
 	SCF_GUESS READ
 	geom_opt_hessian   read
@@ -37,7 +37,7 @@ $rem
 	rpath_max_stepsize 100
 	rpath_tol_displacement 800
 	geom_opt_coords   0
-	max_scf_cycles   250
+	max_scf_cycles   150
 	geom_opt_max_cycles   1500
 	symmetry   FALSE
 	sym_ignore   TRUE

@@ -124,6 +124,7 @@ class Mopac(object):
                 i_list = i.split()
                 atom = i_list[0] + " "
                 k = i_list[1:] + [""]
+                l = " 0 ".join(k)
                 out = atom + l
                 product_geometry.append(out)
             product_geometry = "\n".join(product_geometry)
@@ -134,6 +135,8 @@ class Mopac(object):
                 i_list = i.split()
                 atom = i_list[0] + " "
                 k = i_list[1:] + [""]
+                l = " 0 ".join(k)
+                out = atom + l
                 reactant_geometry.append(out)
             reactant_geometry = "\n".join(reactant_geometry)
             reactant = reactant_mol.toNode()

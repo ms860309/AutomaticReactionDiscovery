@@ -6,7 +6,7 @@ $rem
 	METHOD                    B3LYP
 	DFT_D                     D3_BJ
 	BASIS                     def2-SV(P)
-	ECP                       fit-LANL2DZ
+	ECP                       def2-ecp
 	SCF_ALGORITHM             DIIS
 	MAX_SCF_CYCLES            250
 	SCF_CONVERGENCE           8
@@ -27,7 +27,7 @@ $rem
 	METHOD                    B3LYP
 	DFT_D                     D3_BJ
 	BASIS                     def2-SV(P)
-	ECP                       fit-LANL2DZ
+	ECP                       def2-ecp
 	SCF_CONVERGENCE           8
 	SCF_GUESS READ
 	geom_opt_hessian   read
