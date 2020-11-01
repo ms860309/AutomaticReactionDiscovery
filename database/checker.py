@@ -978,9 +978,14 @@ def check_opt_content(dir_path):
     with open(outputname, 'r') as f:
         f.seek(0, 2)
         fsize = f.tell()
-        f.seek(max(fsize - 4096, 0), 0)  # Read last  4kB of file
+        f.seek(max(fsize - 8192, 0), 0)  # Read last  4kB of file
         lines = f.readlines()
-        
+
+    for idx3, i in enumerate(lines):
+        if i.startswith('   Searching for a Minimum\n'):
+            break
+    opt_cycle = int(lines[idx3 + 2].split()[-1])
+
     if lines[-5] == '        *  Thank you very much for using Q-Chem.  Have a nice day.  *\n':
         for idx, i in enumerate(lines):
             if i.startswith('                       Coordinates (Angstroms)\n'):
@@ -996,9 +1001,9 @@ def check_opt_content(dir_path):
             f2.write('\n\n')
             f2.write('\n'.join(geo))
             
-        return 'job_success'
+        return 'job_success', opt_cycle
     else:
-        return 'job_fail'
+        return 'job_fail', opt_cycle
 
 def check_opt_job():
     """
@@ -1018,7 +1023,7 @@ def check_opt_job():
         new_status = check_opt_job_status(job_id)
         if new_status == "off_queue":
             # 3. check job content
-            new_status = check_opt_content(target['path'])
+            new_status, opt_cycle = check_opt_content(target['path'])
 
         # 4. check with original status which
         # should be job_launched or job_running
@@ -1027,14 +1032,17 @@ def check_opt_job():
         if orig_status != new_status:
             if new_status == 'job_success':
                 update_field = {
-                                'opt_status': new_status, 'ssm_status': 'job_unrun'
+                                'opt_status': new_status, 'ssm_status': 'job_unrun', 'opt_iter':opt_cycle
                             }
-                qm_collection.update_one(target, {"$set": update_field}, True)
-            else:
+            elif new_status == "job_running" or new_status == "job_queueing":
                 update_field = {
                                 'opt_status': new_status
                             }
-                qm_collection.update_one(target, {"$set": update_field}, True)
+            else:
+                update_field = {
+                                'opt_status': new_status, 'opt_iter':opt_cycle
+                            }
+            qm_collection.update_one(target, {"$set": update_field}, True)
 
 """
 Low level OPT check
@@ -1094,9 +1102,14 @@ def check_low_opt_content(dir_path):
     with open(outputname, 'r') as f:
         f.seek(0, 2)
         fsize = f.tell()
-        f.seek(max(fsize - 4096, 0), 0)  # Read last  4kB of file
+        f.seek(max(fsize - 8192, 0), 0)  # Read last  8kB of file
         lines = f.readlines()
-        
+
+    for idx3, i in enumerate(lines):
+        if i.startswith('   Searching for a Minimum\n'):
+            break
+    opt_cycle = int(lines[idx3 + 2].split()[-1])
+
     if lines[-5] == '        *  Thank you very much for using Q-Chem.  Have a nice day.  *\n':
         for idx, i in enumerate(lines):
             if i.startswith('                       Coordinates (Angstroms)\n'):
@@ -1115,11 +1128,11 @@ def check_low_opt_content(dir_path):
         for idx2, i in enumerate(lines):
             if i.startswith(' **  OPTIMIZATION CONVERGED  **\n'):
                 break
-        
+
         low_opt_energy = lines[idx2-4].split()[-1]
-        return 'job_success', float(low_opt_energy)
+        return 'job_success', float(low_opt_energy), opt_cycle
     else:
-        return 'job_fail', float(0.0)
+        return 'job_fail', float(0.0), opt_cycle
 
 def check_low_opt_job():
     """
@@ -1139,7 +1152,7 @@ def check_low_opt_job():
         new_status = check_opt_job_status(job_id)
         if new_status == "off_queue":
             # 3. check job content
-            new_status, energy = check_low_opt_content(target['path'])
+            new_status, energy, low_opt_iteration = check_low_opt_content(target['path'])
 
         # 4. check with original status which
         # should be job_launched or job_running
@@ -1148,14 +1161,17 @@ def check_low_opt_job():
         if orig_status != new_status:
             if new_status == 'job_success':
                 update_field = {
-                                'low_opt_status': new_status, 'low_energy': energy, 'check_binding_status': 'need check'
+                                'low_opt_status': new_status, 'low_energy': energy, 'low_opt_iter':low_opt_iteration, 'check_binding_status': 'need check'
                             }
-                qm_collection.update_one(target, {"$set": update_field}, True)
+            elif new_status == "job_running" or new_status == "job_queueing":
+                update_field = {
+                                'low_opt_status': new_status
+                            }
             else:
                 update_field = {
-                                'low_opt_status': new_status, 'low_energy': energy
+                                'low_opt_status': new_status, 'low_energy': energy, 'low_opt_iter':low_opt_iteration
                             }
-                qm_collection.update_one(target, {"$set": update_field}, True)
+            qm_collection.update_one(target, {"$set": update_field}, True)
 
 """
 Barrier check.
@@ -1346,11 +1362,14 @@ def check_bindind_cutoff():
 
         for target in targets:
             delta = (float(target['low_energy']) - float(qchem_energy)) * 627.5095
-            if delta > cutoff_energy:
-                qm_collection.update_one(target, {"$set": {'check_binding_status': 'greater than cutoff'}}, True)
+
+            if target['Reactant'] == "initial reactant":
+                qm_collection.update_one(target, {"$set": {'check_binding_status': 'had checked', 'deltaH':delta}}, True)
+            elif delta > cutoff_energy:
+                qm_collection.update_one(target, {"$set": {'check_binding_status': 'greater than cutoff', 'deltaH':delta}}, True)
             else:
-                qm_collection.update_one(target, {"$set": {'check_binding_status': 'smaller than cutoff', 'opt_status':'job_unrun'}}, True)
-    
+                qm_collection.update_one(target, {"$set": {'check_binding_status': 'smaller than cutoff', 'opt_status':'job_unrun', 'deltaH':delta}}, True)
+
     return targets
 
 
@@ -1358,6 +1377,7 @@ def check_bindind_cutoff():
 check_energy_jobs()
 check_ssm_jobs()
 check_low_opt_job()
+check_bindind_cutoff()
 check_opt_job()
 check_ts_jobs()
 check_irc_jobs()

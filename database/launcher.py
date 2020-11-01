@@ -160,20 +160,20 @@ def select_opt_target():
     qm_collection = db['qm_calculate_center']
     reg_query = {"opt_status":"job_unrun"}
     targets = list(qm_collection.find(reg_query))
-    selected_targets = [target['path'] for target in targets]
-    return selected_targets
+    return targets
 
 def launch_opt_jobs():
     targets = select_opt_target()
     
     for target in targets:
-        OPT_dir_path = path.join(target, 'OPT/')
+        dir_path = target['path']
+        OPT_dir_path = path.join(dir_path, 'OPT/')
         if not os.path.exists(OPT_dir_path):
             os.mkdir(OPT_dir_path)
         os.chdir(OPT_dir_path)
         
-        create_opt_input(target, OPT_dir_path)
-        subfile = create_opt_sub_file(target, OPT_dir_path)
+        create_opt_input(dir_path, OPT_dir_path)
+        subfile = create_opt_sub_file(dir_path, OPT_dir_path)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -218,9 +218,8 @@ def create_opt_sub_file(dir_path, OPT_dir_path, ncpus = 8, mpiprocs = 1, ompthre
     
 def update_opt_status(target, job_id):
     collect = db['qm_calculate_center']
-    reg_query = {"path":target}
     update_field = {"opt_status":"job_launched", "opt_jobid":job_id}
-    collect.update_one(reg_query, {"$set": update_field}, True)
+    collect.update_one(target, {"$set": update_field}, True)
 
 """
 Submmit Low level OPT calculation job
@@ -233,20 +232,20 @@ def select_low_opt_target():
     qm_collection = db['qm_calculate_center']
     reg_query = {"low_opt_status":"job_unrun"}
     targets = list(qm_collection.find(reg_query))
-    selected_targets = [target['path'] for target in targets]
-    return selected_targets
+    return targets
 
 def launch_low_opt_jobs():
-    targets = select_opt_target()
+    targets = select_low_opt_target()
     
     for target in targets:
-        OPT_dir_path = path.join(target, 'OPT/')
+        dir_path = target['path']
+        OPT_dir_path = path.join(dir_path, 'OPT/')
         if not os.path.exists(OPT_dir_path):
             os.mkdir(OPT_dir_path)
         os.chdir(OPT_dir_path)
         
-        create_low_opt_input(target, OPT_dir_path)
-        subfile = create_opt_sub_file(target, OPT_dir_path)
+        create_low_opt_input(dir_path, OPT_dir_path)
+        subfile = create_low_opt_sub_file(dir_path, OPT_dir_path)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -255,7 +254,7 @@ def launch_low_opt_jobs():
         # get job id from stdout, e.g., "106849.h81"
         job_id = stdout.decode().replace("\n", "")
         # update status job_launched
-        update_opt_status(target, job_id)
+        update_low_opt_status(target, job_id)
 
 def create_low_opt_input(dir_path, OPT_dir_path):
     base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(OPT_dir_path)))), 'config')
@@ -291,9 +290,8 @@ def create_low_opt_sub_file(dir_path, OPT_dir_path, ncpus = 8, mpiprocs = 1, omp
     
 def update_low_opt_status(target, job_id):
     collect = db['qm_calculate_center']
-    reg_query = {"path":target}
     update_field = {"low_opt_status":"job_launched", "low_opt_jobid":job_id}
-    collect.update_one(reg_query, {"$set": update_field}, True)
+    collect.update_one(target, {"$set": update_field}, True)
 
 """
 Submmit TS calculation job

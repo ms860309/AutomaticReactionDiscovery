@@ -40,6 +40,8 @@ class Network(object):
         self.dh_cutoff = float(kwargs['dh_cutoff'])
         self.bond_dissociation_cutoff = kwargs['bond_dissociation_cutoff']
         self.ard_path = kwargs['ard_path']
+        print(self.ard_path)
+        raise
         self.generations = kwargs['generations']
         self.method = kwargs["dh_cutoff_method"]
         self.binding_mode_energy_cutoff = float(kwargs['binding_mode_energy_cutoff'])
@@ -137,12 +139,18 @@ class Network(object):
         if self.generations == 1:
             if self.preopt == '1':
                 # Add low level opt of the initial reactant
+                reactant_path = os.path.join(self.ard_path, 'reactant.xyz')
+                subdir = os.path.join(os.path.join(os.path.dirname(self.ard_path), 'reactions'), 'initial_reactant')
+                new_reactant_path = os.path.join(subdir, 'reactant.xyz')
+                os.mkdir(subdir)
+                shutil.copyfile(reactant_path, new_reactant_path)
                 qm_collection.insert_one({
                                         'Reactant': 'initial reactant',
                                         'reactant_inchi_key':reactant_key,
                                         'low_opt_status':'job_unrun',
                                         'binding_cutoff_select':self.binding_cutoff_select,
-                                        'binding_mode_energy_cutoff':self.binding_mode_energy_cutoff})
+                                        'binding_mode_energy_cutoff':self.binding_mode_energy_cutoff,
+                                        'path':subdir})
 
         # Generate geometry and insert to database
         statistics_collection.insert_one({
