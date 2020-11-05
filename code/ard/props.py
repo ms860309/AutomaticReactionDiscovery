@@ -17,7 +17,7 @@ Element = namedtuple("Element", ["symbol", "name", "atomic_num", "mass_amu",
                                  "covalent_radius", "vdw_radius", "bond_radius",
                                  "electronegativity", "max_bonds"])
 
-valenceelec = {1: 1, 2: 2, 6: 4, 7: 5, 8: 6, 9: 7, 10: 8, 14: 4, 15: 5, 16: 6, 17: 7, 28: 4, 35: 7, 18: 8, 53: 7}
+valenceelec = {1: 1, 2: 2, 6: 4, 7: 5, 8: 6, 9: 7, 10: 8, 13: 3, 14: 4, 15: 5, 16: 6, 17: 7, 28: 4, 35: 7, 18: 8, 53: 7}
 
 # data from http://staff.ustc.edu.cn/~luo971/2010-91-CRC-BDEs-Tables.pdf
 # unit is kj/mol
@@ -50,7 +50,8 @@ bond_dissociation_energy =     {('H', 'H', 1.0): 432.0, ('H', 'C', 1): 411.0,
                                 ('S', 'O', 2): 522.0, ('S', 'S', 1): 226.0,
                                 ('S', 'S', 2): 425.0, ('S', 'Cl', 1): 255.0,
                                 ('Cl', 'Cl', 1): 240.0, ('C', 'C', 1.5): 518.0,
-                                ('O', 'S', 1): 265.0, ('C', 'C', 2.5): 663.0}
+                                ('O', 'S', 1): 265.0, ('C', 'C', 2.5): 663.0,
+                                ('Si', 'H', 1): 318.}
 
 class ElementData(object):
     """Contains full periodic table element data and methods to access them
@@ -81,7 +82,7 @@ class ElementData(object):
                     electronegativity=3.04, max_bonds=4),
             Element(symbol='O', name='Oxygen', atomic_num=8, mass_amu=15.99491462,
                     covalent_radius=0.66, vdw_radius=1.52, bond_radius=0.66,
-                    electronegativity=3.44, max_bonds=2),
+                    electronegativity=3.44, max_bonds=3),
             Element(symbol='F', name='Fluorine', atomic_num=9, mass_amu=18.99840322,
                     covalent_radius=0.57, vdw_radius=1.47, bond_radius=0.57,
                     electronegativity=3.98, max_bonds=1),
@@ -96,7 +97,7 @@ class ElementData(object):
                     electronegativity=1.31, max_bonds=2),
             Element(symbol='Al', name='Aluminium', atomic_num=13, mass_amu=26.98153863,
                     covalent_radius=1.21, vdw_radius=1.84, bond_radius=1.21,
-                    electronegativity=1.61, max_bonds=6),
+                    electronegativity=1.61, max_bonds=4),
             Element(symbol='Si', name='Silicon', atomic_num=14, mass_amu=27.976926532,
                     covalent_radius=1.11, vdw_radius=2.1, bond_radius=1.11,
                     electronegativity=1.9, max_bonds=6),

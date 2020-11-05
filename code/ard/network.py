@@ -40,8 +40,6 @@ class Network(object):
         self.dh_cutoff = float(kwargs['dh_cutoff'])
         self.bond_dissociation_cutoff = kwargs['bond_dissociation_cutoff']
         self.ard_path = kwargs['ard_path']
-        print(self.ard_path)
-        raise
         self.generations = kwargs['generations']
         self.method = kwargs["dh_cutoff_method"]
         self.binding_mode_energy_cutoff = float(kwargs['binding_mode_energy_cutoff'])
