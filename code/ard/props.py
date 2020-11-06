@@ -100,7 +100,7 @@ class ElementData(object):
                     electronegativity=1.61, max_bonds=4),
             Element(symbol='Si', name='Silicon', atomic_num=14, mass_amu=27.976926532,
                     covalent_radius=1.11, vdw_radius=2.1, bond_radius=1.11,
-                    electronegativity=1.9, max_bonds=6),
+                    electronegativity=1.9, max_bonds=4),
             Element(symbol='P', name='Phosphorus', atomic_num=15, mass_amu=30.97376163,
                     covalent_radius=1.07, vdw_radius=1.8, bond_radius=1.07,
                     electronegativity=2.19, max_bonds=6),
