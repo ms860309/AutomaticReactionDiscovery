@@ -94,7 +94,7 @@ def create_ard_sub_file(dir_path, script_path, gen_num, next_reactant, ncpus = 8
     target_path = 'cd {}'.format(script_path)
     nes1 = 'source ~/.bashrc'
     nes2 = 'conda activate rmg3'
-    command = 'python {} {} {} -bonds {} -constraint {} -constraint {} -generations {}'.format(ard_path, input_path, product_xyz_path, bonds_path, constraint, fixed_atom, gen_num)    
+    command = 'python {} {} {} -bonds {} -constraint {} -fixed_atom {} -generations {}'.format(ard_path, input_path, product_xyz_path, bonds_path, constraint, fixed_atom, gen_num)    
     deactivate = 'conda deactivate'
     
     with open(subfile, 'w') as f:
