@@ -34,6 +34,7 @@ if __name__ == '__main__':
     parser.add_argument('reactant', type=str, metavar='infile', help='An reactant xyz input file')
     parser.add_argument('-bonds', type=str, help='Manual specify bonds', required=False)
     parser.add_argument('-constraint', type=str, help='Manual specify constraint atom index (start from 0)', required=False)
+    parser.add_argument('-fixed_atom', type=str, help='Manual specify fixed atom index (start from 0)', required=False)
     parser.add_argument('-generations',default=1, type=int, help='The network generation index', required=False)
     args = parser.parse_args()
 
@@ -49,6 +50,12 @@ if __name__ == '__main__':
         kwargs['constraint_index'] = index
     else:
         kwargs['constraint_index'] = None
+
+    if kwargs['fixed_atom'] == '1':
+        index = extract_constraint_index(args.fixed_atom)
+        kwargs['fixed_atom'] = index
+    else:
+        kwargs['fixed_atom'] = None
 
     # Manual set up bonds
     if kwargs['manual_bonds'] == '1':

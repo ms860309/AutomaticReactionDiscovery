@@ -48,7 +48,7 @@ class Generate(object):
           (beginAtomIdx, endAtomIdx, bondOrder)
     """
 
-    def __init__(self, reac_mol, reactant_inchikey, reactant_graph, bond_dissociation_cutoff, use_inchi_key, constraint = None):
+    def __init__(self, reac_mol, reactant_inchikey, reactant_graph, bond_dissociation_cutoff, use_inchi_key, constraint = None, fixed_atom = None):
         self.reac_mol = reac_mol
         self.reactant_inchikey = [reactant_inchikey, reac_mol.write('inchiKey').strip()]
         self.reac_mol_graph = reactant_graph
@@ -65,6 +65,11 @@ class Generate(object):
             self.constraint = []
         else:
             self.constraint = constraint
+            
+        if fixed_atom == None:
+            self.fixed_atom = []
+        else:
+            self.fixed_atom = fixed_atom
 
         self.carbond_list = [idx for idx, atom in enumerate(self.atoms) if atom == 6] # use for check 3&4 membered ring
                 
@@ -105,8 +110,16 @@ class Generate(object):
                           for atom1_idx in range(natoms - 1)
                           for atom2_idx in range(atom1_idx + 1, natoms)
                           if atom1_idx not in self.constraint or atom2_idx not in self.constraint]
+        bond_can_form = []
+        for bonds in bonds_form_all:
+            if bonds[0] not in self.fixed_atom and bonds[1] not in self.fixed_atom:
+                bond_can_form.append(bonds)
+
+        bond_can_break = [bond for bond in reactant_bonds
+                              if bond[0] not in self.fixed_atom or bond[1] not in self.fixed_atom]
         # Generate products
-        bf_combinations = ((0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2))
+        #bf_combinations = ((0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2))
+        bf_combinations = ((3, 3),)
         for bf in bf_combinations:
             if bf[0] <= nbreak and bf[1] <= nform:
                 self._generateProductsHelper(
@@ -115,7 +128,8 @@ class Generate(object):
                     products_bonds,
                     reactant_bonds,
                     reactant_valences,
-                    bonds_form_all
+                    bond_can_form,
+                    bond_can_break
                 )
 
         if products_bonds:
@@ -173,27 +187,12 @@ class Generate(object):
             return False
         else:
             for idx, i in enumerate(self.atoms):
-                if i == 6 and bond_type[idx] != 4: # use !=  or  >   need test
-                    if bond_type[idx] != reactant_valences[idx]:  # sometimes the input carbon bond type only 3
-                        return False
-                    else:
-                        for form_bond in form_bonds:
-                            if idx == form_bond[0] or idx == form_bond[1]:
-                                return False
-                        for break_bond in break_bonds:
-                            if idx == break_bond[0] or idx == break_bond[1]:
-                                return False
-            for idx, i in enumerate(self.atoms):
-                if i == 8 and bond_type[idx] != 2: # use !=  or  >   need test
-                    if bond_type[idx] != reactant_valences[idx]:
-                        return False
-                    else:
-                        for form_bond in form_bonds:
-                            if idx == form_bond[0] or idx == form_bond[1]:
-                                return False
-                        for break_bond in break_bonds:
-                            if idx == break_bond[0] or idx == break_bond[1]:
-                                return False
+                if i == 6 and bond_type[idx] > 4: # use !=  or  >   need test
+                    return False
+                elif i == 8 and bond_type[idx] > 3: # use !=  or  >   need test
+                    return False
+                elif i == 14 and bond_type[idx] > 5: # use !=  or  >   need test
+                    return False
             return True
     
     def check_bond_dissociation_energy_and_isomorphic_and_rings(self, bond_list, bbond_list):
@@ -260,11 +259,11 @@ class Generate(object):
                 return True
         return False
 
-    def _generateProductsHelper(self, nbreak, nform, products, bonds, valences, bonds_form_all, bonds_broken = None):
+    def _generateProductsHelper(self, nbreak, nform, products, bonds, valences, bond_can_form, bond_can_break, bonds_broken = None):
         """
         Generate products recursively given the number of bonds that should be
         broken and formed, a set for storing the products, a sequence of atoms,
-        of bonds, and of valences. `bonds_form_all` should contain a tuple of
+        of bonds, and of valences. `bond_can_form` should contain a tuple of
         tuples of bonds that contains all possibilities for forming bonds.
         Nothing is returned, but formed products are added to `products`.
         """
@@ -272,12 +271,15 @@ class Generate(object):
             bonds_broken = []
 
         if nbreak == 0 and nform == 0:
-            if all(bonds_broken[num][0] not in self.constraint or bonds_broken[num][1] not in self.constraint for num in range(len(bonds_broken))):
+            if all(bonds_broken[num][0] not in self.fixed_atom or bonds_broken[num][1] not in self.fixed_atom for num in range(len(bonds_broken))):
                 products.add((tuple(sorted(bonds))))
 
         if nbreak > 0:
             # Break bond
-            for bond_break_idx, bond_break in enumerate(bonds):
+            for bond_break in bond_can_break:
+                if bond_break not in bonds:
+                    continue
+                bond_break_idx = bonds.index(bond_break)
                 valences_break = self.changeValences(valences, bond_break, -1)
                 bonds_break = self.breakBond(bonds, bond_break_idx)
 
@@ -294,14 +296,15 @@ class Generate(object):
                     products,
                     bonds_break,
                     valences_break,
-                    bonds_form_all,
-                    bonds_broken,
+                    bond_can_form,
+                    bond_can_break,
+                    bonds_broken
                 )
             # Remove last bond that has been broken after loop terminates
             del bonds_broken[-1]
         elif nform > 0:
             # Form bond
-            for bond_form in bonds_form_all:
+            for bond_form in bond_can_form:
                 # Do not add bond if it has previously been broken
                 if bond_form[:2] in [bond[:2] for bond in bonds_broken]:
                     continue
@@ -319,8 +322,9 @@ class Generate(object):
                     products,
                     bonds_form,
                     valences_form,
-                    bonds_form_all,
-                    bonds_broken,
+                    bond_can_form,
+                    bond_can_break,
+                    bonds_broken
                 )
 
     @staticmethod

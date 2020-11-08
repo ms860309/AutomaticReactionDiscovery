@@ -47,6 +47,7 @@ class Network(object):
         self.binding_cutoff_select = kwargs['binding_cutoff_select']
         self.count = 0
         self.preopt = kwargs['pre_opt']
+        self.fixed_atom = kwargs['fixed_atom']
         self.moac_reac = None
 
     def genNetwork(self, mol_object, use_inchi_key, nbreak, nform):
@@ -66,7 +67,7 @@ class Network(object):
         reactant_key = mol_object.write('inchiKey').strip()  # inchikey
 
         # Generate all possible products
-        gen = Generate(mol_object, initial_reactant_inchi_key, self.reactant_graph, self.bond_dissociation_cutoff, use_inchi_key, self.constraint)
+        gen = Generate(mol_object, initial_reactant_inchi_key, self.reactant_graph, self.bond_dissociation_cutoff, use_inchi_key, self.constraint, self.fixed_atom)
         self.logger.info('Generating all possible products...')
         gen.generateProducts(nbreak = int(nbreak), nform =  int(nform))
         prod_mols = gen.prod_mols
@@ -134,6 +135,7 @@ class Network(object):
                                         'ssm_status':'job_unrun',
                                         'generations':self.generations
                                         })
+
         if self.generations == 1:
             if self.preopt == '1':
                 # Add low level opt of the initial reactant

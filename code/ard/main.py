@@ -105,7 +105,7 @@ class ARD(object):
 def readInput(input_file):
     # Allowed keywords
     keys = ('reactant', 'nbreak', 'nform', 'forcefield', 'constraintff_alg', 'mopac_method', 'dh_cutoff', 'dh_cutoff_method', 'binding_mode_energy_cutoff',
-            'manual_bonds', 'bond_dissociation_cutoff', 'constraint', 'use_inchi_key', 'binding_cutoff_select', 'pre_opt', 'manual_cluster_bond')
+            'manual_bonds', 'bond_dissociation_cutoff', 'constraint', 'use_inchi_key', 'binding_cutoff_select', 'pre_opt', 'manual_cluster_bond', 'fixed_atom')
     # Read all data from file
     with open(input_file, 'r') as f:
         input_data = f.read().splitlines()
@@ -132,6 +132,12 @@ def extract_bonds(bonds):
 
 def extract_constraint_index(constraint):
     with open(constraint, 'r') as f:
+        lines = f.read()
+    lines = eval(lines)
+    return lines
+
+def extract_fixed_atom_index(fixed_atom):
+    with open(fixed_atom, 'r') as f:
         lines = f.read()
     lines = eval(lines)
     return lines

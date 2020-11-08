@@ -70,7 +70,7 @@ class Mopac(object):
             self.finalize(start_time, 'mopac')
             return float(reactant), float(product), reactant_mol, product_mol
     
-    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 5.0):
+    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 10.0):
         start_time = time.time()
 
         # Initial optimization
@@ -84,13 +84,10 @@ class Mopac(object):
             product_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
 
         # Arrange
-        try:
-            arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint)
-            msg = arrange3D.arrangeIn3D()
-            if msg != '':
-                print(msg)
-        except:
-            return False, False, False, False
+        arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint)
+        msg = arrange3D.arrangeIn3D()
+        if msg != '':
+            print(msg)
 
         # Check reactant expected forming bond length must smaller than 4 angstrom after arrange. Default = 4
         dist = self.check_bond_length(reactant_mol, self.form_bonds) # return the maximum value in array
