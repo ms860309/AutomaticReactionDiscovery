@@ -114,9 +114,17 @@ class Generate(object):
         for bonds in bonds_form_all:
             if bonds[0] not in self.fixed_atom and bonds[1] not in self.fixed_atom:
                 bond_can_form.append(bonds)
+        butane_carbond = [0,1,5,8]
+        
+        for bond in bond_can_form:
+            if (bond[0] == 17 and bond[1] in butane_carbond) or (bond[1] == 17 and bond[0] in butane_carbond):
+                bond_can_form.remove(bond)
 
         bond_can_break = [bond for bond in reactant_bonds
                               if bond[0] not in self.fixed_atom or bond[1] not in self.fixed_atom]
+        bond_can_break.remove((14, 17, 1))
+        bond_can_break.remove((17, 21, 1))
+
         # Generate products
         #bf_combinations = ((0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2))
         bf_combinations = ((3, 3),)
@@ -187,11 +195,11 @@ class Generate(object):
             return False
         else:
             for idx, i in enumerate(self.atoms):
-                if i == 6 and bond_type[idx] > 4: # use !=  or  >   need test
+                if i == 6 and bond_type[idx] != 4: # use !=  or  >   need test
                     return False
                 elif i == 8 and bond_type[idx] > 3: # use !=  or  >   need test
                     return False
-                elif i == 14 and bond_type[idx] > 5: # use !=  or  >   need test
+                elif i == 14 and bond_type[idx] != 4: # use !=  or  >   need test
                     return False
             return True
     
