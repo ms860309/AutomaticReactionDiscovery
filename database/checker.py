@@ -175,7 +175,7 @@ def check_ssm_content(target_path):
         with open(status_path, 'r') as f:
             f.seek(0, 2)
             fsize = f.tell()
-            f.seek(max(fsize - 1024, 0), 0)  # Read last 1 kB of file
+            f.seek(max(fsize - 4096, 0), 0)  # Read last 4 kB of file
             lines = f.readlines()
             
         for idx, i in enumerate(lines):
@@ -376,7 +376,7 @@ def check_ts_content(target_path):
     with open(ts_out_path, 'r') as f:
         f.seek(0, 2)
         fsize = f.tell()
-        f.seek(max(fsize - 6144, 0), 0)  # Read last 6 kB of file
+        f.seek(max(fsize - 8192, 0), 0)  # Read last 8 kB of file
         lines = f.readlines()
 
     for idx, i in enumerate(lines):
@@ -504,7 +504,7 @@ def check_irc_content(target_path, direction = 'forward'):
     with open(irc_output, 'r') as f:
         f.seek(0, 2)
         fsize = f.tell()
-        f.seek(max(fsize - 10240, 0), 0)  # Read last 10 kB of file
+        f.seek(max(fsize - 12280, 0), 0)  # Read last 12 kB of file
         lines = f.readlines()
 
     if lines[-2] == ' IRC backup failure\n' or lines[-2] == ' IRC failed final bisector step\n':
@@ -828,7 +828,7 @@ def check_irc_opt_content(dir_path, direction = 'forward'):
     with open(outputname, 'r') as f:
         f.seek(0, 2)
         fsize = f.tell()
-        f.seek(max(fsize - 4096, 0), 0)  # Read last  4kB of file
+        f.seek(max(fsize - 8192, 0), 0)  # Read last  8kB of file
         lines = f.readlines()
         
     if lines[-5] == '        *  Thank you very much for using Q-Chem.  Have a nice day.  *\n':
@@ -978,7 +978,7 @@ def check_opt_content(dir_path):
     with open(outputname, 'r') as f:
         f.seek(0, 2)
         fsize = f.tell()
-        f.seek(max(fsize - 8192, 0), 0)  # Read last  4kB of file
+        f.seek(max(fsize - 12288, 0), 0)  # Read last  4kB of file
         lines = f.readlines()
 
     for idx3, i in enumerate(lines):
@@ -1102,7 +1102,7 @@ def check_low_opt_content(dir_path):
     with open(outputname, 'r') as f:
         f.seek(0, 2)
         fsize = f.tell()
-        f.seek(max(fsize - 8192, 0), 0)  # Read last  8kB of file
+        f.seek(max(fsize - 12288, 0), 0)  # Read last  8kB of file
         lines = f.readlines()
 
     for idx3, i in enumerate(lines):
@@ -1363,12 +1363,15 @@ def check_bindind_cutoff():
         for target in targets:
             delta = (float(target['low_energy']) - float(qchem_energy)) * 627.5095
 
-            if target['Reactant'] == "initial reactant":
-                qm_collection.update_one(target, {"$set": {'check_binding_status': 'had checked', 'deltaH':delta}}, True)
-            elif delta > cutoff_energy:
+            if delta > cutoff_energy:
                 qm_collection.update_one(target, {"$set": {'check_binding_status': 'greater than cutoff', 'deltaH':delta}}, True)
-            else:
+            elif delta <= cutoff_energy:
                 qm_collection.update_one(target, {"$set": {'check_binding_status': 'smaller than cutoff', 'opt_status':'job_unrun', 'deltaH':delta}}, True)
+            elif target['Reactant'] == "initial reactant":
+                qm_collection.update_one(target, {"$set": {'check_binding_status': 'had checked', 'deltaH':delta}}, True)
+            else:
+                print('have unknow error')
+                raise
 
     return targets
 

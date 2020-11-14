@@ -11,7 +11,7 @@ binding_cutoff_select          starting             # Use the starting reactant 
 manual_bonds                   0                    # Manually specify bonds function (bonds file is 1-based)
 manual_cluster_bond            1                    # Manually defile cluster bonds, this onlt effct when manual_bonds != 1
 pre_opt                        1                    # After ARD generate products, optimizing them before SSM. (Set 1 in metal system, for organic system forcefield is good enough)
-bond_dissociation_cutoff       291                  # Bond dissociation energy cutoff in kcal/mol
+bond_dissociation_cutoff       350                  # Bond dissociation energy cutoff in kcal/mol
 use_inchi_key                  1                    # Use inchi key as a filter 
 constraint                     0                    # The index of constraint atom index (start from 0). eg. constraint forcefield
 fixed_atom                     1                    # fix some atom that can't be break or form
