@@ -70,7 +70,7 @@ class Mopac(object):
             self.finalize(start_time, 'mopac')
             return float(reactant), float(product), reactant_mol, product_mol
     
-    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 10.0):
+    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 6.0):
         start_time = time.time()
 
         # Initial optimization
@@ -121,7 +121,7 @@ class Mopac(object):
                 i_list = i.split()
                 atom = i_list[0] + " "
                 k = i_list[1:] + [""]
-                l = " 0 ".join(k)
+                l = " 1 ".join(k)
                 out = atom + l
                 product_geometry.append(out)
             product_geometry = "\n".join(product_geometry)
@@ -132,7 +132,7 @@ class Mopac(object):
                 i_list = i.split()
                 atom = i_list[0] + " "
                 k = i_list[1:] + [""]
-                l = " 0 ".join(k)
+                l = " 1 ".join(k)
                 out = atom + l
                 reactant_geometry.append(out)
             reactant_geometry = "\n".join(reactant_geometry)

@@ -5,11 +5,13 @@ from os import path
 sys.path.append(path.join(path.dirname(path.dirname( path.abspath(__file__))),'code/ard'))
 sys.path.append(path.join(path.dirname(path.dirname( path.abspath(__file__))),'code/mol_graph'))
 sys.path.append(path.join(path.dirname(path.dirname( path.abspath(__file__))),'database'))
+import shutil
 
 # local application imports
 import gen3D
 import pgen
 from gen3D import Molecule
+from subprocess import Popen, PIPE
 
 from openbabel import openbabel as ob
 from openbabel import pybel as pb
@@ -52,6 +54,60 @@ def extract_constraint_index(constraint):
     lines = eval(lines)
     return lines
 
+def mopac_get_H298(reactant, product, constraint, charge = 0, multiplicity = 'SINGLET'):
+    """
+    Create a directory folder called "tmp" for mopac calculation
+    Create a input file called "input.mop" for mopac calculation
+    """
+
+    tmpdir = os.path.join(os.path.dirname(os.getcwd()), 'tmp')
+    reactant_path = os.path.join(tmpdir, 'reactant.mop')
+    product_path = os.path.join(tmpdir, 'product.mop')
+
+    reac_geo, prod_geo = gen_geometry(reactant, product, constraint)
+    
+    if os.path.exists(tmpdir):
+        shutil.rmtree(tmpdir)
+    os.mkdir(tmpdir)
+    with open(reactant_path, 'w') as f:
+        f.write("NOSYM CHARGE={} {} {}\n\n".format(charge, multiplicity, 'PM7'))
+        f.write("\n{}".format(reac_geo))
+
+    runMopac(tmpdir, 'reactant.mop')
+    reactant = getHeatofFormation(tmpdir, 'reactant.out')
+
+    with open(product_path, 'w') as f:
+        f.write("NOSYM CHARGE={} {} {}\n\n".format(charge, multiplicity, 'PM7'))
+        f.write("\n{}".format(prod_geo))
+    runMopac(tmpdir, 'product.mop')
+    product = getHeatofFormation(tmpdir, 'product.out')
+    print(float(reactant))
+    print(float(product))
+    print('delta H is {}'.format(float(product) - float(reactant)))
+
+
+def getHeatofFormation(tmpdir, target = 'reactant.out'):
+    """
+    if Error return False, which HF may be 0.0
+    """
+    input_path = os.path.join(tmpdir, target)
+    with open(input_path, 'r') as f:
+        lines = f.readlines()
+    for idx, line in enumerate(lines):
+        if line.strip().startswith('FINAL HEAT OF FORMATION'):
+            break
+    string = lines[idx].split()
+    if string[0] == 'FINAL':
+        HeatofFormation = string[5]
+    else:
+        HeatofFormation = False
+    return HeatofFormation
+
+def runMopac(tmpdir, target = 'reactant.mop'):
+    input_path = os.path.join(tmpdir, target)
+    p = Popen(['mopac', input_path])
+    p.wait()
+
 def gen_geometry(reactant_mol, product_mol, constraint):
 
     reactant_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
@@ -65,10 +121,30 @@ def gen_geometry(reactant_mol, product_mol, constraint):
     reactant_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
     product_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
 
-    reactant = reactant_mol.toNode()
-    product = product_mol.toNode()
-    print(reactant_mol.toNode())
-    print(product_mol.toNode())
+    prod_geo = str(product_mol.toNode()).splitlines()
+    product_geometry = []
+    for i in prod_geo:
+        i_list = i.split()
+        atom = i_list[0] + " "
+        k = i_list[1:] + [""]
+        l = " 1 ".join(k)
+        out = atom + l
+        product_geometry.append(out)
+    product_geometry = "\n".join(product_geometry)
+
+    reac_geo = str(reactant_mol.toNode()).splitlines()
+    reactant_geometry = []
+    for i in reac_geo:
+        i_list = i.split()
+        atom = i_list[0] + " "
+        k = i_list[1:] + [""]
+        l = " 1 ".join(k)
+        out = atom + l
+        reactant_geometry.append(out)
+    reactant_geometry = "\n".join(reactant_geometry)
+
+    return reactant_geometry, product_geometry
+
 
 xyz_path = './reactant.xyz'
 constraint_path = './constraint.txt'
@@ -80,4 +156,4 @@ product_bonds = ((0, 1, 2), (0, 3, 1), (0, 4, 1), (1, 6, 1), (1, 7, 1), (2, 17, 
 product = gen3D.makeMolFromAtomsAndBonds(atoms, product_bonds, spin=reactant.spin)
 product.setCoordsFromMol(reactant)
 
-gen_geometry(reactant, product, constraint)
+mopac_get_H298(reactant, product, constraint)

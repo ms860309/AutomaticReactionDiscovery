@@ -669,8 +669,8 @@ class Arrange3D(object):
             disps_guess = np.array([0.0]*dof)
             result = minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
-                                       method='COBYLA',
-                                       options={'maxiter':1000, 'disp': False}) #, callback = callbackF, 'eps':1e-10
+                                       method='SLSQP',
+                                       options={'disp': False, 'eps':5e-5}) #, callback = callbackF, 'eps':1e-10
 
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
@@ -938,7 +938,7 @@ class Arrange3D(object):
             else:
                 val_d += np.abs(d)
 
-        val = 3 * val_b + val_d
+        val = 5 * val_b + val_d
         return val
         """
         if self.constraint != []:
