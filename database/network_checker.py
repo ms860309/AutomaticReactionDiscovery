@@ -454,8 +454,10 @@ def update_network_status():
                     }
         status_collection.update_one(target[0], {"$set": update_field}, True)
 
-check_ard_jobs()
 
+
+
+check_ard_jobs()
 
 qm_collection = db['qm_calculate_center']
 max_gen = qm_collection.find_one(sort=[("generations", -1)])

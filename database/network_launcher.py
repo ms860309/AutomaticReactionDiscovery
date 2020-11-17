@@ -50,11 +50,15 @@ def launch_ard_jobs():
         status_collection.insert_one({'status':'ARD had launched'})
     else:
         targets = select_ard_target()
+        use_irc_query = {'Reactant SMILES':'initial reactant'}
+        use_irc = list(qm_collection.find(use_irc_query))[0]['use_irc']
         for target in targets:
-            dir_path, gen_num, ard_ssm_equal, irc_equal = target['path'], target['generations'], target['ard_ssm_equal'], target['irc_equal']
+            if use_irc == '0':
+                dir_path, gen_num, ard_ssm_equal, irc_equal = target['path'], target['generations'], target['ard_ssm_equal'], None
+            else:
+                dir_path, gen_num, ard_ssm_equal, irc_equal = target['path'], target['generations'], target['ard_ssm_equal'], target['irc_equal']
             script_path = path.join(path.dirname(path.dirname(dir_path)), 'script')
             os.chdir(dir_path)
-
             if irc_equal == 'forward equal to reactant but reverse does not equal to product':
                 irc_path = path.join(dir_path, 'IRC/')
                 next_reactant = path.join(irc_path, 'reverse.xyz')

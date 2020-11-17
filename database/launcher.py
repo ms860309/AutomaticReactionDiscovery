@@ -52,7 +52,7 @@ def create_energy_sub_file(dir_path, Energy_dir_path, ncpus = 8, mpiprocs = 1, o
     energy_output_file = path.join(Energy_dir_path, 'energy.out')
     reactant_xyz_path = path.join(dir_path, 'reactant.xyz')
     base_dir_path = path.join(path.dirname(path.dirname(path.dirname(Energy_dir_path))), 'config')
-    energy_lot = path.join(base_dir_path, 'opt_sp.lot')
+    energy_lot = path.join(base_dir_path, 'opt_freq.lot')
 
     with open(energy_lot) as f:
         config = [line.strip() for line in f]
@@ -186,7 +186,7 @@ def launch_opt_jobs():
 
 def create_opt_input(dir_path, OPT_dir_path):
     base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(OPT_dir_path)))), 'config')
-    opt_lot = path.join(base_dir_path, 'opt.lot')
+    opt_lot = path.join(base_dir_path, 'opt_freq.lot')
     opt_input = path.join(OPT_dir_path, 'opt.in')
     reactant_path = path.join(dir_path, 'reactant.xyz')
     with open(opt_lot) as f:
@@ -333,7 +333,7 @@ def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 8, mpiprocs = 1, ompth
     ts_output_file = path.join(TS_dir_path, 'ts.out')
     subfile = path.join(TS_dir_path, 'cal_ts.job')
     base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(SSM_dir_path)))), 'config')
-    ts_lot = path.join(base_dir_path, 'freq_ts.lot')
+    ts_lot = path.join(base_dir_path, 'freq_ts_freq.lot')
 
     with open(ts_lot) as f:
         config = [line.strip() for line in f]

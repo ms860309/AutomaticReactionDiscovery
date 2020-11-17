@@ -95,13 +95,45 @@ class QChem(object):
                 return float(line.split()[-2]) / 627.5095  # Convert to Hartree
         else:
             raise QChemError(f'ZPE not found in {self.logfile}')
+    
+    def create_geo_file(self, file_path):
+        symobol, geometry = q.get_geometry()
+        natoms = len(symobol)
+        with open(file_path, 'w') as f:
+            f.write(str(natoms))
+            f.write('\n\n')
+            for atom, xyz in zip(symobol, geometry):
+                f.write('{}  {}  {}  {}\n'.format(atom, xyz[0], xyz[1], xyz[2]))
+    
+    def get_opt_cycle(self):
+        count = 0
+        for i in q.log:
+            if i == '   Searching for a Minimum':
+                count += 1
+        return count
 
 
-logfile='/mnt/d/irc/QDYIWPSSUWGGSS-UHFFFAOYSA-N_5/TS/ts.out'
-q = QChem(outputfile=logfile)
+"""
+logfile='/mnt/e/AZIFKHJMYTZRAK-ZBVLQZEBSA-N_2/OPT/opt.out'
+try:
+    q = QChem(outputfile=logfile)
+except:
+    print('error')
+energy = q.get_energy()
+print(energy)
+
+
 zpe = q.get_zpe()
 normal_mode = q.get_normal_modes()
 freq = q.get_frequencies()
-geometry = q.get_geometry()
+symobol, geometry = q.get_geometry()
 energy = q.get_energy()
-print(energy)
+natoms = len(symobol)
+"""
+"""
+with open('/mnt/e/tsget.xyz', 'w') as f:
+    f.write(str(natoms))
+    f.write('\n\n')
+    for atom, xyz in zip(symobol, geometry):
+        f.write('{}  {}  {}  {}\n'.format(atom, xyz[0], xyz[1], xyz[2]))
+"""

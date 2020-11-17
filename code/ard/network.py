@@ -48,7 +48,7 @@ class Network(object):
         self.count = 0
         self.preopt = kwargs['pre_opt']
         self.fixed_atom = kwargs['fixed_atom']
-        self.moac_reac = None
+        self.use_irc = kwargs['use_irc']
 
     def genNetwork(self, mol_object, use_inchi_key, nbreak, nform):
         """
@@ -121,7 +121,8 @@ class Network(object):
                                         'Product SMILES':mol.write('can').split()[0], 
                                         'path':dir_path, 
                                         'opt_status':'job_unrun',      # for rmg method use opt (not low opt)
-                                        'generations':self.generations
+                                        'generations':self.generations,
+                                        'use_irc':self.use_irc
                                         })
                 else:           
                     qm_collection.insert_one({
@@ -132,7 +133,8 @@ class Network(object):
                                         'Product SMILES':mol.write('can').split()[0], 
                                         'path':dir_path, 
                                         'ssm_status':'job_unrun',
-                                        'generations':self.generations
+                                        'generations':self.generations,
+                                        'use_irc':self.use_irc
                                         })
 
         if self.generations == 1:
@@ -144,7 +146,7 @@ class Network(object):
                 os.mkdir(subdir)
                 shutil.copyfile(reactant_path, new_reactant_path)
                 qm_collection.insert_one({
-                                        'Reactant': 'initial reactant',
+                                        'Reactant SMILES': 'initial reactant',
                                         'reactant_inchi_key':reactant_key,
                                         'low_opt_status':'job_unrun',
                                         'binding_cutoff_select':self.binding_cutoff_select,
@@ -204,7 +206,8 @@ class Network(object):
                                     'product_mopac_hf':H298_prod,
                                     'path':dir_path,
                                     'low_opt_status':'job_unrun',
-                                    'generations':self.generations
+                                    'generations':self.generations,
+                                    'use_irc':self.use_irc
                                     })
             else:
                 qm_collection.insert_one({
@@ -217,7 +220,8 @@ class Network(object):
                                     'product_mopac_hf':H298_prod,
                                     'path':dir_path,
                                     'ssm_status':'job_unrun',
-                                    'generations':self.generations
+                                    'generations':self.generations,
+                                    'use_irc':self.use_irc
                                     })    
             return 1
         self.logger.info('Delta H is {}, greater than threshold'.format(dH))

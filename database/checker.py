@@ -24,6 +24,7 @@ import os
 from os import path
 import sys
 from openbabel import pybel
+from qchem import QChem
 
 """
 Energy check.
@@ -79,11 +80,10 @@ def check_energy_content(rxn_path):
         return "job_aborted"
     else:
         try:
-            with open(energy_path, 'r') as f:
-                lines = f.readlines()
-                for line in lines:
-                    if line.strip().startswith('SCF   energy in the final basis set'):
-                        energy = float(line.split()[-1])
+            q = QChem(outputfile=energy_path)
+            energy = q.get_energy()
+            zpe = q.get_zpe()
+            energy += zpe
             return "job_success", energy
         except:
             return "job_fail", 0
@@ -113,11 +113,15 @@ def check_energy_jobs():
                 # if any difference update status
                 orig_status = target['energy_status']
                 if orig_status != new_status:
-                    update_field = {
-                                       'energy_status': new_status,
-                                       'reactant_scf_energy':energy, 
-                                       'barrier': 'None'
-                                   }
+                    if new_status == 'job_success':
+                        update_field = {
+                                        'energy_status': new_status,
+                                        'reactant_energy':energy
+                                    }
+                    else:
+                        update_field = {
+                                        'energy_status': new_status
+                                    }                       
                     qm_collection.update_one(target, {"$set": update_field}, True)
 
 """
@@ -308,20 +312,18 @@ def check_ssm_jobs():
         # if any difference update status
         orig_status = target['ssm_status']
         if orig_status != new_status:
-
             if new_status == 'job_success':
                 equal = ard_prod_and_ssm_prod_checker(target['path'])
                 if equal == 'equal':
                     update_field = {
                                     'ssm_status': new_status, "ts_status":"job_unrun", 'ard_ssm_equal':equal
                                 }
-                    qm_collection.update_one(target, {"$set": update_field}, True)
                 # if not equal the 'ts_status': 'job_unrun' is update on ard_prod_and_ssm_prod_checker fuction
             else:
                 update_field = {
                                 'ssm_status': new_status
                             }
-                qm_collection.update_one(target, {"$set": update_field}, True)
+            qm_collection.update_one(target, {"$set": update_field}, True)
 
 """
 TS check.
@@ -373,37 +375,20 @@ def check_ts_content(target_path):
     ts_out_path = path.join(ts_dir_path, 'ts.out')
     ts_geo_path = path.join(ts_dir_path, 'ts_geo.xyz')
 
-    with open(ts_out_path, 'r') as f:
-        f.seek(0, 2)
-        fsize = f.tell()
-        f.seek(max(fsize - 8192, 0), 0)  # Read last 8 kB of file
-        lines = f.readlines()
-
-    for idx, i in enumerate(lines):
-        if i.startswith(' **  OPTIMIZATION CONVERGED  **\n'):
-            break
-    for idx2, i in enumerate(lines):
-        if i.startswith('Z-matrix Print:\n'):
-            break
-    
-    if lines[idx] != ' **  OPTIMIZATION CONVERGED  **\n':
-        # here 0 is just let ts_energy do not error
-        return "job_fail", 0
-    else:
-        # generate geometry xyz file
-        geo = []
-        for i in lines[idx+5:idx2-1]:
-            atom = i.split()[1:]
-            geo.append('  '.join(atom))
-            
-        with open(ts_geo_path, 'w') as f:
-            f.write(str(len(geo)))
-            f.write('\n\n')
-            f.write('\n'.join(geo))
-        # get ts energy
-        ts_energy = lines[idx-4].split()[-1]
-
-        return "job_success", float(ts_energy)
+    try:
+        q = QChem(outputfile=ts_out_path)
+        freqs = q.get_frequencies()
+        nnegfreq = sum(1 for freq in freqs if freq < 0.0)
+        if nnegfreq != 1:
+            return "Have more than one imaginary frequency", 0.0
+        else:
+            energy = q.get_energy()
+            zpe = q.get_zpe()
+            ts_energy = energy + zpe
+            q.create_geo_file(ts_geo_path)
+            return "job_success", float(ts_energy)
+    except:
+        return "job_fail", 0.0
 
 def check_ts_jobs():
     """
@@ -432,15 +417,21 @@ def check_ts_jobs():
         orig_status = target['ts_status']
         if orig_status != new_status:
             if new_status == 'job_success':
-                update_field = {
-                                'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun'
-                                }
-                qm_collection.update_one(target, {"$set": update_field}, True)
+                reactant_energy = float(target['reactant_energy'])
+                barrier = (ts_energy - reactant_energy) * 627.5095
+                if target['use_irc'] == '0' :
+                    update_field = {
+                                    'ts_status': new_status, 'ts_energy':ts_energy, 'barrier':barrier, 'insert reaction':'need insert'
+                                    }
+                else:
+                    update_field = {
+                                    'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'barrier':barrier
+                                    }
             else:
                 update_field = {
                                 'ts_status': new_status
                             }
-                qm_collection.update_one(target, {"$set": update_field}, True)
+            qm_collection.update_one(target, {"$set": update_field}, True)
 
 """
 IRC check.
@@ -491,7 +482,7 @@ def check_irc_content(target_path, direction = 'forward'):
     reactant_path = path.join(target_path, 'reactant.xyz')
     irc_path = path.join(target_path, 'IRC/')
     base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(irc_path)))), 'config')
-    opt_lot = path.join(base_dir_path, 'opt.lot')
+    opt_lot = path.join(base_dir_path, 'opt_freq.lot')
     opt_name = '{}_opt.in'.format(direction)
     opt_in = path.join(irc_path, opt_name)
     irc_output = path.join(irc_path, 'irc_{}.out'.format(direction))
@@ -818,36 +809,13 @@ def check_irc_opt_content(dir_path, direction = 'forward'):
     irc_path = path.join(dir_path, "IRC")
     xyzname = '{}.xyz'.format(direction)
     output = path.join(irc_path, xyzname)
-    
-    with open(reactant_path, 'r') as f1:
-        lines = f1.readlines()
-    atom_number = int(lines[0])
-    
-    outputname = path.join(irc_path, '{}_opt.out'.format(direction))
-    
-    with open(outputname, 'r') as f:
-        f.seek(0, 2)
-        fsize = f.tell()
-        f.seek(max(fsize - 8192, 0), 0)  # Read last  8kB of file
-        lines = f.readlines()
-        
-    if lines[-5] == '        *  Thank you very much for using Q-Chem.  Have a nice day.  *\n':
-        for idx, i in enumerate(lines):
-            if i.startswith('                       Coordinates (Angstroms)\n'):
-                break
+    output_path = path.join(irc_path, '{}_opt.out'.format(direction))
 
-        geo = []
-        for i in lines[idx + 2 : idx + 2 + atom_number]:
-            atom = i.split()[1:]
-            geo.append('  '.join(atom))
-
-        with open(output, 'w') as f2:
-            f2.write(str(len(geo)))
-            f2.write('\n\n')
-            f2.write('\n'.join(geo))
-            
+    try:
+        q = QChem(outputfile = output_path)
+        q.create_geo_file(output)
         return 'job_success'
-    else:
+    except:
         return 'job_fail'
         
     
@@ -968,42 +936,18 @@ def check_opt_job_status(job_id):
 def check_opt_content(dir_path):
     reactant_path = os.path.join(dir_path, 'reactant.xyz')
     OPT_path = path.join(dir_path, "OPT")
-    
-    with open(reactant_path, 'r') as f1:
-        lines = f1.readlines()
-    atom_number = int(lines[0])
-    
-    outputname = path.join(OPT_path, 'opt.out')
-    
-    with open(outputname, 'r') as f:
-        f.seek(0, 2)
-        fsize = f.tell()
-        f.seek(max(fsize - 12288, 0), 0)  # Read last  4kB of file
-        lines = f.readlines()
+    output_path = path.join(OPT_path, 'opt.out')
 
-    for idx3, i in enumerate(lines):
-        if i.startswith('   Searching for a Minimum\n'):
-            break
-    opt_cycle = int(lines[idx3 + 2].split()[-1])
-
-    if lines[-5] == '        *  Thank you very much for using Q-Chem.  Have a nice day.  *\n':
-        for idx, i in enumerate(lines):
-            if i.startswith('                       Coordinates (Angstroms)\n'):
-                break
-
-        geo = []
-        for i in lines[idx + 2 : idx + 2 + atom_number]:
-            atom = i.split()[1:]
-            geo.append('  '.join(atom))
-
-        with open(reactant_path, 'w') as f2:
-            f2.write(str(len(geo)))
-            f2.write('\n\n')
-            f2.write('\n'.join(geo))
-            
-        return 'job_success', opt_cycle
-    else:
-        return 'job_fail', opt_cycle
+    try:
+        q = QChem(outputfile=output_path)
+        opt_cycle = q.get_opt_cycle
+        q.create_geo_file(reactant_path)
+        energy = q.get_energy()
+        zpe = q.get_zpe()
+        energy += zpe
+        return 'job_success', opt_cycle, energy
+    except:
+        return 'job_fail', opt_cycle, 0.0
 
 def check_opt_job():
     """
@@ -1023,7 +967,7 @@ def check_opt_job():
         new_status = check_opt_job_status(job_id)
         if new_status == "off_queue":
             # 3. check job content
-            new_status, opt_cycle = check_opt_content(target['path'])
+            new_status, opt_cycle, energy = check_opt_content(target['path'])
 
         # 4. check with original status which
         # should be job_launched or job_running
@@ -1032,7 +976,7 @@ def check_opt_job():
         if orig_status != new_status:
             if new_status == 'job_success':
                 update_field = {
-                                'opt_status': new_status, 'ssm_status': 'job_unrun', 'opt_iter':opt_cycle
+                                'opt_status': new_status, 'ssm_status': 'job_unrun', 'opt_iter':opt_cycle, 'reactant_energy':energy
                             }
             elif new_status == "job_running" or new_status == "job_queueing":
                 update_field = {
@@ -1092,47 +1036,18 @@ def check_low_opt_job_status(job_id):
 def check_low_opt_content(dir_path):
     reactant_path = os.path.join(dir_path, 'reactant.xyz')
     OPT_path = path.join(dir_path, "OPT")
-    
-    with open(reactant_path, 'r') as f1:
-        lines = f1.readlines()
-    atom_number = int(lines[0])
-    
-    outputname = path.join(OPT_path, 'low_opt.out')
-    
-    with open(outputname, 'r') as f:
-        f.seek(0, 2)
-        fsize = f.tell()
-        f.seek(max(fsize - 12288, 0), 0)  # Read last  8kB of file
-        lines = f.readlines()
+    output_path = path.join(OPT_path, 'low_opt.out')
 
-    for idx3, i in enumerate(lines):
-        if i.startswith('   Searching for a Minimum\n'):
-            break
-    opt_cycle = int(lines[idx3 + 2].split()[-1])
-
-    if lines[-5] == '        *  Thank you very much for using Q-Chem.  Have a nice day.  *\n':
-        for idx, i in enumerate(lines):
-            if i.startswith('                       Coordinates (Angstroms)\n'):
-                break
-
-        geo = []
-        for i in lines[idx + 2 : idx + 2 + atom_number]:
-            atom = i.split()[1:]
-            geo.append('  '.join(atom))
-
-        with open(reactant_path, 'w') as f2:
-            f2.write(str(len(geo)))
-            f2.write('\n\n')
-            f2.write('\n'.join(geo))
-
-        for idx2, i in enumerate(lines):
-            if i.startswith(' **  OPTIMIZATION CONVERGED  **\n'):
-                break
-
-        low_opt_energy = lines[idx2-4].split()[-1]
-        return 'job_success', float(low_opt_energy), opt_cycle
-    else:
-        return 'job_fail', float(0.0), opt_cycle
+    try:
+        q = QChem(outputfile=output_path)
+        opt_cycle = q.get_opt_cycle
+        q.create_geo_file(reactant_path)
+        energy = q.get_energy()
+        zpe = q.get_zpe()
+        energy += zpe
+        return 'job_success', opt_cycle, energy
+    except:
+        return 'job_fail', opt_cycle, 0.0
 
 def check_low_opt_job():
     """
@@ -1152,7 +1067,7 @@ def check_low_opt_job():
         new_status = check_opt_job_status(job_id)
         if new_status == "off_queue":
             # 3. check job content
-            new_status, energy, low_opt_iteration = check_low_opt_content(target['path'])
+            new_status, low_opt_cycle, energy = check_low_opt_content(target['path'])
 
         # 4. check with original status which
         # should be job_launched or job_running
@@ -1161,7 +1076,7 @@ def check_low_opt_job():
         if orig_status != new_status:
             if new_status == 'job_success':
                 update_field = {
-                                'low_opt_status': new_status, 'low_energy': energy, 'low_opt_iter':low_opt_iteration, 'check_binding_status': 'need check'
+                                'low_opt_status': new_status, 'low_energy': energy, 'low_opt_iter':low_opt_cycle, 'check_binding_status': 'need check'
                             }
             elif new_status == "job_running" or new_status == "job_queueing":
                 update_field = {
@@ -1169,38 +1084,9 @@ def check_low_opt_job():
                             }
             else:
                 update_field = {
-                                'low_opt_status': new_status, 'low_energy': energy, 'low_opt_iter':low_opt_iteration
+                                'low_opt_status': new_status, 'low_energy': energy, 'low_opt_iter':low_opt_cycle
                             }
             qm_collection.update_one(target, {"$set": update_field}, True)
-
-"""
-Barrier check.
-"""
-def select_barrier_target():
-    """
-    This method is to inform job checker which targets 
-    to check, which need meet one requirement:
-    1. status is job_launched or job_running
-    Returns a list of targe
-    """
-    qm_collection = db['qm_calculate_center']
-    query = {'barrier':
-                {"$in":
-                    ["None"]
-                }
-            }
-    targets = list(qm_collection.find(query))
-    return targets
-
-def update_barrier_information():
-    qm_collection = db['qm_calculate_center']
-    targets = select_barrier_target()
-    for target in targets:
-        reactant_energy = float(target['reactant_scf_energy'])
-        ts_energy = float(target['ts_energy'])
-        barrier = (ts_energy - reactant_energy) * 627.5095
-        update_field = {'barrier':barrier, 'insert reaction':"need insert"}
-        qm_collection.update_one(target, {"$set": update_field}, True)
 
 """
 After irc check, insert the reaction into reaction collection.
@@ -1275,6 +1161,8 @@ def insert_ard():
     qm_collection = db['qm_calculate_center']
     statistics_collection = db['statistics']
     reactions_collection = db['reactions']
+    use_irc_query = {'Reactant SMILES':'initial reactant'}
+    use_irc = list(qm_collection.find(use_irc_query))[0]['use_irc']
     energy_query = {"energy_status":
                     {"$in":
                         ["job_unrun", "job_launched", "job_running", "job_queueing"]
@@ -1310,7 +1198,10 @@ def insert_ard():
                         ["job_unrun", "opt_job_launched", "opt_job_running", "opt_job_queueing"]
                     }
                 }
-    not_finished_number = len(list(qm_collection.find(energy_query))) + len(list(qm_collection.find(ssm_query))) + len(list(qm_collection.find(ts_query))) + len(list(qm_collection.find(irc_query_1))) + len(list(qm_collection.find(irc_query_2))) + len(list(qm_collection.find(opt_query_1))) + len(list(qm_collection.find(opt_query_2)))
+    if use_irc == '0':
+        not_finished_number = len(list(qm_collection.find(energy_query))) + len(list(qm_collection.find(ssm_query))) + len(list(qm_collection.find(ts_query)))
+    else:
+        not_finished_number = len(list(qm_collection.find(energy_query))) + len(list(qm_collection.find(ssm_query))) + len(list(qm_collection.find(ts_query))) + len(list(qm_collection.find(irc_query_1))) + len(list(qm_collection.find(irc_query_2))) + len(list(qm_collection.find(opt_query_1))) + len(list(qm_collection.find(opt_query_2)))
     ard_had_add_number = qm_collection.count_documents({})
     ard_should_add_number = sum(statistics_collection.distinct("add how many products"))
     make_sure_not_check_again = reactions_collection.distinct("ard_status")
@@ -1346,7 +1237,7 @@ def check_bindind_cutoff():
     if len(targets) == 0:
         query = {'check_binding_status': 'need check'}
         targets = list(qm_collection.find(query))
-        cutoff_target = list(qm_collection.find({'Reactant':'initial reactant'}))
+        cutoff_target = list(qm_collection.find({'Reactant SMILES':'initial reactant'}))
         cutoff_energy = float(cutoff_target[0]['binding_mode_energy_cutoff'])
 
         if cutoff_target[0]['binding_cutoff_select'] == 'starting':
@@ -1367,7 +1258,7 @@ def check_bindind_cutoff():
                 qm_collection.update_one(target, {"$set": {'check_binding_status': 'greater than cutoff', 'deltaH':delta}}, True)
             elif delta <= cutoff_energy:
                 qm_collection.update_one(target, {"$set": {'check_binding_status': 'smaller than cutoff', 'opt_status':'job_unrun', 'deltaH':delta}}, True)
-            elif target['Reactant'] == "initial reactant":
+            elif target['Reactant SMILES'] == "initial reactant":
                 qm_collection.update_one(target, {"$set": {'check_binding_status': 'had checked', 'deltaH':delta}}, True)
             else:
                 print('have unknow error')
@@ -1386,6 +1277,5 @@ check_ts_jobs()
 check_irc_jobs()
 check_irc_equal()
 check_irc_opt_job()
-update_barrier_information()
 insert_reaction()
 insert_ard()

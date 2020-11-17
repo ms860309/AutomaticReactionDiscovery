@@ -39,3 +39,26 @@ $rem
 	WAVEFUNCTION_ANALYSIS     FALSE
 	XC_GRID                   1
 $end
+
+@@@
+
+$molecule
+read
+$end
+
+$rem
+	JOBTYPE                   FREQ
+	METHOD                    B3LYP
+	DFT_D                     D3_BJ
+	BASIS                     def2-SV(P)
+	ECP                       def2-ecp
+	SCF_ALGORITHM             DIIS
+	MAX_SCF_CYCLES            150
+	SCF_CONVERGENCE           8
+	SYM_IGNORE                TRUE
+	SYMMETRY                  FALSE
+	WAVEFUNCTION_ANALYSIS     FALSE
+	XC_GRID                   1
+$end
+
+@@@
