@@ -25,10 +25,11 @@ db = getattr(Connector(), 'db')
 # debug
 """
 qm_collection = db['qm_calculate_center']
-query = {'reactant_inchi_key':'OWCQMKVAAHGRRF-UHFFFAOYSA-N'}
+query = {'ts_status':'job_success'}
 a = list(qm_collection.find(query))
 for i in a:
-    print(i['reactant_mopac_hf'])
+    print(i['path'])
+    print(i['ts_energy'])
 
 
 qm_collection = db['qm_calculate_center']

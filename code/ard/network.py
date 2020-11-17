@@ -83,12 +83,10 @@ class Network(object):
                 H298_reac = self.get_mopac_H298(mol_object)
                 update_field = {'reactant_energy':H298_reac}
                 pool_collection.update_one(targets[0], {"$set": update_field}, True)
-                prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, reac_mol_copy, mol, add_bonds[prod_mols.index(mol)], break_bonds[prod_mols.index(mol)], self.logger, len(prod_mols))]
+                prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, reac_mol_copy, mol, add_bonds[prod_mols.index(mol)], break_bonds[prod_mols.index(mol)], len(prod_mols))]
             else:
-                query = [{'$match':{'reactant_inchi_key':reactant_key}},
-                        {'$group':{'_id':'$reactant_inchi_key', 'reactant_mopac_hf':{'$min':'$reactant_mopac_hf'}}}]
-                H298_reac = list(qm_collection.aggregate(query))[0]['reactant_mopac_hf']
-                prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, reac_mol_copy, mol, add_bonds[prod_mols.index(mol)], self.logger, len(prod_mols), H298_reac)]
+                H298_reac = targets[0]['reactant_energy']
+                prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, reac_mol_copy, mol, add_bonds[prod_mols.index(mol)], break_bonds[prod_mols.index(mol)], len(prod_mols), H298_reac)]
         else:
             self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))
             # Load thermo database and choose which libraries to search
@@ -172,9 +170,9 @@ class Network(object):
             return 1
         return 0
 
-    def filter_dh_mopac(self, reac_obj, reac_mol_copy, prod_mol, form_bonds, break_bonds, logger, total_prod_num, refH = None):
+    def filter_dh_mopac(self, reac_obj, reac_mol_copy, prod_mol, form_bonds, break_bonds, total_prod_num, refH = None):
         self.count += 1
-        mopac_object = Mopac(reac_obj, prod_mol, self.mopac_method, self.forcefield, self.constraintff_alg, form_bonds, logger, total_prod_num, self.count, self.constraint)
+        mopac_object = Mopac(reac_obj, prod_mol, self.mopac_method, self.forcefield, self.constraintff_alg, form_bonds, self.logger, total_prod_num, self.count, self.constraint)
         H298_reac, H298_prod, reactant, product = mopac_object.mopac_get_H298(reac_mol_copy)
 
         if H298_prod == False or H298_reac == False:
