@@ -121,6 +121,8 @@ def gen_geometry(reactant_mol, product_mol, constraint):
     reactant_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
     product_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
 
+    print(reactant_mol.toNode())
+
     prod_geo = str(product_mol.toNode()).splitlines()
     product_geometry = []
     for i in prod_geo:

@@ -70,7 +70,7 @@ class Mopac(object):
             self.finalize(start_time, 'mopac')
             return float(reactant), float(product), reactant_mol, product_mol
     
-    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 6.0):
+    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 4.0):
         start_time = time.time()
 
         # Initial optimization
@@ -89,10 +89,6 @@ class Mopac(object):
         if msg != '':
             print(msg)
 
-        # Check reactant expected forming bond length must smaller than 4 angstrom after arrange. Default = 4
-        dist = self.check_bond_length(reactant_mol, self.form_bonds) # return the maximum value in array
-        # After arrange to prevent openbabel use the previous product coordinates if it is isomorphic
-        # to the current one, even if it has different atom indices participating in the bonds.
         if self.constraint == None:
             ff.Setup(Hatom.OBMol)
             reactant_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
@@ -102,7 +98,12 @@ class Mopac(object):
         else:
             reactant_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
             product_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
-        
+
+        # Check reactant expected forming bond length must smaller than 4 angstrom after arrange. Default = 4
+        # After arrange to prevent openbabel use the previous product coordinates if it is isomorphic
+        # to the current one, even if it has different atom indices participating in the bonds.
+        dist = self.check_bond_length(reactant_mol, self.form_bonds) # return the maximum value in array
+
         if dist >= threshold:
             self.logger.info('Here is the {} product.'.format(self.num))
             self.logger.info('Form bonds: {}\nDistance: {}'.format(self.form_bonds, dist))

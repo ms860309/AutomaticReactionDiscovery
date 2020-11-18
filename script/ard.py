@@ -20,7 +20,7 @@ if __name__ == '__main__':
     from openbabel import pybel
 
     # local application imports
-    from main import ARD, readInput, readXYZ, extract_bonds, extract_constraint_index
+    from main import ARD, readInput, readXYZ, extract_bonds, extract_constraint_index, extract_fixed_atom_index
 
     #disable log
     RDLogger.DisableLog('rdApp.*')
@@ -31,11 +31,11 @@ if __name__ == '__main__':
     # Set up parser for reading the input filename from the command line
     parser = argparse.ArgumentParser(description='Automatic Reaction Discovery')
     parser.add_argument('file', type=str, metavar='infile', help='An input file describing the job options')
-    parser.add_argument('reactant', type=str, metavar='infile', help='An reactant xyz input file')
-    parser.add_argument('-bonds', type=str, help='Manual specify bonds', required=False)
-    parser.add_argument('-constraint', type=str, help='Manual specify constraint atom index (start from 0)', required=False)
-    parser.add_argument('-fixed_atom', type=str, help='Manual specify fixed atom index (start from 0)', required=False)
-    parser.add_argument('-generations',default=1, type=int, help='The network generation index', required=False)
+    parser.add_argument('reactant', default='reactant.xyz', type=str, metavar='infile', help='An reactant xyz input file')
+    parser.add_argument('-bonds', default='bonds.txt', type=str, help='Manual specify bonds, (If you want to manually add bonds, set manual_bonds as 0 and manual_cluster_bond as 1 then put the bond you want to add in bonds.txt)', required=False)
+    parser.add_argument('-constraint', default='constraint.txt', type=str, help='Manual specify constraint atom index (start from 0)', required=False)
+    parser.add_argument('-fixed_atom', default='fixed_atom.txt', type=str, help='Manual specify fixed atom index (start from 0)', required=False)
+    parser.add_argument('-generations', default=1, type=int, help='The network generation index', required=False)
     args = parser.parse_args()
 
     # Read input file
@@ -52,7 +52,7 @@ if __name__ == '__main__':
         kwargs['constraint_index'] = None
 
     if kwargs['fixed_atom'] == '1':
-        index = extract_constraint_index(args.fixed_atom)
+        index = extract_fixed_atom_index(args.fixed_atom)
         kwargs['fixed_atom'] = index
     else:
         kwargs['fixed_atom'] = None

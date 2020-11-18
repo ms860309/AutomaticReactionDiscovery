@@ -25,11 +25,10 @@ db = getattr(Connector(), 'db')
 # debug
 """
 qm_collection = db['qm_calculate_center']
-query = {'ts_status':'job_success'}
+query = {'low_opt_iter':156}
 a = list(qm_collection.find(query))
 for i in a:
-    print(i['path'])
-    print(i['ts_energy'])
+    print(i['ssm_status'])
 
 
 qm_collection = db['qm_calculate_center']

@@ -3,10 +3,10 @@ nbreak                         3                    # Maximum number of bonds to
 nform                          3                    # Maximum number of bonds to be formed
 forcefield                     UFF                  # The force field method
 constraintff_alg               SteepestDescent      # The force field algorithm  can use 'SteepestDescent' or 'ConjugateGradients'
-dH_cutoff                      30                   # Heat of reaction cutoff in kcal/mol
+dH_cutoff                      25                   # Heat of reaction cutoff in kcal/mol
 dH_cutoff_method               mopac                # rmg group additivity method or mopac could be choose
 mopac_method                   PM7             # The mopac calculation level of theory (PM6, PM7, etc..)
-binding_mode_energy_cutoff     10000000             # After arrange may generate many different binding mode reactant, using this cutoff to filter. (Only word woth mopac) unit:kcal/mol
+binding_mode_energy_cutoff     5.0             # After arrange may generate many different binding mode reactant, using this cutoff to filter. (Only work woth mopac) unit:kcal/mol
 binding_cutoff_select          starting             # Use the starting reactant mopac energy as ref or the lowest mopac reactant hf in database. option 'lowest' or 'starting'
 manual_bonds                   0                    # Manually specify bonds function (bonds file is 1-based)
 manual_cluster_bond            1                    # Manually defile cluster bonds, this onlt effct when manual_bonds != 1
@@ -14,5 +14,5 @@ pre_opt                        1                    # After ARD generate product
 bond_dissociation_cutoff       310                  # Bond dissociation energy cutoff in kcal/mol
 use_inchi_key                  1                    # Use inchi key as a filter 
 constraint                     0                    # The index of constraint atom index (start from 0). eg. constraint forcefield
-fixed_atom                     1                    # fix some atom that can't be break or form
+fixed_atom                     1                    # fix some atom that can't be break or form(bond_can_break: one of the atom should not in fixed_atom, )
 use_irc                        0                    # Use irc check or not (QChem irc is not robust, maybe ts job success and have only one imaginary frequency is enough)

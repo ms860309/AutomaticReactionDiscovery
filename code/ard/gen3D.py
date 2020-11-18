@@ -492,21 +492,20 @@ class Molecule(pybel.Molecule):
         for bond_1 in pybel.ob.OBMolBondIter(self.OBMol):
             if bond_1.IsRotor():
                 ref_1, ref_2 = bond_1.GetBeginAtomIdx() - 1, bond_1.GetEndAtomIdx() - 1
-                if (ref_1 not in constraint) or (ref_2 not in constraint):
-                    self.rotors.append((ref_1, ref_2))
-                    atom_in_rotor = [False] * natoms
-                    atom_in_rotor[ref_1] = True
-                    new_atom = True
+                self.rotors.append((ref_1, ref_2))
+                atom_in_rotor = [False] * natoms
+                atom_in_rotor[ref_1] = True
+                new_atom = True
 
-                    while new_atom:
-                        new_atom = False
-                        for bond_2 in pybel.ob.OBMolBondIter(self.OBMol):
-                            ref_3, ref_4 = bond_2.GetBeginAtomIdx() - 1, bond_2.GetEndAtomIdx() - 1
-                            if not (ref_1 == ref_3 and ref_2 == ref_4):
-                                if atom_in_rotor[ref_3] ^ atom_in_rotor[ref_4]:
-                                    atom_in_rotor[ref_3], atom_in_rotor[ref_4] = True, True
-                                    new_atom = True
-                    self.atom_in_rotor.append(atom_in_rotor)
+                while new_atom:
+                    new_atom = False
+                    for bond_2 in pybel.ob.OBMolBondIter(self.OBMol):
+                        ref_3, ref_4 = bond_2.GetBeginAtomIdx() - 1, bond_2.GetEndAtomIdx() - 1
+                        if not (ref_1 == ref_3 and ref_2 == ref_4):
+                            if atom_in_rotor[ref_3] ^ atom_in_rotor[ref_4]:
+                                atom_in_rotor[ref_3], atom_in_rotor[ref_4] = True, True
+                                new_atom = True
+                self.atom_in_rotor.append(atom_in_rotor)
 
     def detCloseAtoms(self, d):
         """
@@ -669,8 +668,8 @@ class Arrange3D(object):
             disps_guess = np.array([0.0]*dof)
             result = minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
-                                       method='SLSQP',
-                                       options={'disp': False, 'eps':5e-5}) #, callback = callbackF, 'eps':1e-10
+                                       method='COBYLA',
+                                       options={'disp': False}) #, callback = callbackF, 'eps':1e-10
 
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
@@ -864,10 +863,6 @@ class Arrange3D(object):
         """
         n = len(coords)
         centroid = coords.sum(axis=0) / n
-        if rotor[0] in self.constraint:
-            rotor = (rotor[1], rotor[0])
-        else:
-            rotor = (rotor[0], rotor[1])
         coords = self.translate(coords, -coords[rotor[0]])
         axis = coords[rotor[0]] - coords[rotor[1]]
         rot_mat = util.rotationMatrix(angle, axis)

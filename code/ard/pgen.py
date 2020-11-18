@@ -114,20 +114,21 @@ class Generate(object):
         for bonds in bonds_form_all:
             if bonds[0] not in self.fixed_atom and bonds[1] not in self.fixed_atom:
                 bond_can_form.append(bonds)
-        butane_carbond = [0,1,5,8]
-        
-        for bond in bond_can_form:
-            if (bond[0] == 17 and bond[1] in butane_carbond) or (bond[1] == 17 and bond[0] in butane_carbond):
-                bond_can_form.remove(bond)
+        # Remove the original C-H bond
+        for bonds in reactant_bonds:
+            if (self.atoms[bonds[0]] == 6 and self.atoms[bonds[1]] == 1) or (self.atoms[bonds[1]] == 6 and self.atoms[bonds[0]] == 1):
+                bond_can_form.remove(bonds)
+        for hydrogen in [2,3,4,6,7,9,10,11,12,13]:
+            for oxygen in [15,17,18]:
+                bond_can_form.append((hydrogen,oxygen,1))
 
         bond_can_break = [bond for bond in reactant_bonds
                               if bond[0] not in self.fixed_atom or bond[1] not in self.fixed_atom]
-        bond_can_break.remove((14, 17, 1))
-        bond_can_break.remove((17, 21, 1))
 
         # Generate products
         #bf_combinations = ((0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2))
-        bf_combinations = ((3, 3),)
+        bf_combinations = ((0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2), (0, 3), (1, 3), (2, 3), (3, 3), (3, 2), (3, 1), (3, 0))
+        #bf_combinations = ((3, 3),)
         for bf in bf_combinations:
             if bf[0] <= nbreak and bf[1] <= nform:
                 self._generateProductsHelper(
@@ -178,6 +179,7 @@ class Generate(object):
                             for i in form_bonds:
                                 if i[2] >= 2 and (i[0], i[1], i[2] - 1) in reactant_bonds:
                                         form_bonds.remove(i)
+                            #if (5,19,1) in form_bonds and (2,17,1) in form_bonds:
                             self.add_bonds.append(form_bonds)
                             self.break_bonds.append(break_bonds)
                             self.prod_mols.append(mol)
