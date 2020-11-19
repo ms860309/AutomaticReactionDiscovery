@@ -1,5 +1,1 @@
 -coordinate_type  TRIC
--CONV_TOL  0.001
--ADD_NODE_TOL 0.01
--linesearch  backtrack
--DQMAG_MAX 0.6

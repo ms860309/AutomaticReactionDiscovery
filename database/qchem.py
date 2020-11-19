@@ -97,7 +97,7 @@ class QChem(object):
             raise QChemError(f'ZPE not found in {self.logfile}')
     
     def create_geo_file(self, file_path):
-        symobol, geometry = q.get_geometry()
+        symobol, geometry = self.get_geometry()
         natoms = len(symobol)
         with open(file_path, 'w') as f:
             f.write(str(natoms))
@@ -107,7 +107,7 @@ class QChem(object):
     
     def get_opt_cycle(self):
         count = 0
-        for i in q.log:
+        for i in self.log:
             if i == '   Searching for a Minimum':
                 count += 1
         return count

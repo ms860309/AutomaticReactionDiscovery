@@ -379,8 +379,10 @@ def check_ts_content(target_path):
         q = QChem(outputfile=ts_out_path)
         freqs = q.get_frequencies()
         nnegfreq = sum(1 for freq in freqs if freq < 0.0)
-        if nnegfreq != 1:
+        if nnegfreq > 1:
             return "Have more than one imaginary frequency", 0.0
+        elif nnegfreq == 0:
+            return "All positive frequency", 0.0
         else:
             energy = q.get_energy()
             zpe = q.get_zpe()
@@ -940,14 +942,19 @@ def check_opt_content(dir_path):
 
     try:
         q = QChem(outputfile=output_path)
-        opt_cycle = q.get_opt_cycle
-        q.create_geo_file(reactant_path)
-        energy = q.get_energy()
-        zpe = q.get_zpe()
-        energy += zpe
-        return 'job_success', opt_cycle, energy
+        freqs = q.get_frequencies()
+        nnegfreq = sum(1 for freq in freqs if freq < 0.0)
+        if nnegfreq > 0:
+            return 'Have negative frequency', 0, 0.0
+        else:
+            opt_cycle = q.get_opt_cycle()
+            q.create_geo_file(reactant_path)
+            energy = q.get_energy()
+            zpe = q.get_zpe()
+            energy += zpe
+            return 'job_success', opt_cycle, energy
     except:
-        return 'job_fail', opt_cycle, 0.0
+        return 'job_fail', 0, 0.0
 
 def check_opt_job():
     """
@@ -1040,14 +1047,12 @@ def check_low_opt_content(dir_path):
 
     try:
         q = QChem(outputfile=output_path)
-        opt_cycle = q.get_opt_cycle
+        opt_cycle = q.get_opt_cycle()
         q.create_geo_file(reactant_path)
         energy = q.get_energy()
-        zpe = q.get_zpe()
-        energy += zpe
         return 'job_success', opt_cycle, energy
     except:
-        return 'job_fail', opt_cycle, 0.0
+        return 'job_fail', 0, 0.0
 
 def check_low_opt_job():
     """

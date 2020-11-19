@@ -104,7 +104,7 @@ def select_ssm_target():
 def launch_ssm_jobs():
     targets = select_ssm_target()
     
-    for target in targets:
+    for target in targets[:40]:
         SSM_dir_path = path.join(target, 'SSM/')
         os.mkdir(SSM_dir_path)
         os.chdir(SSM_dir_path)
@@ -120,7 +120,7 @@ def launch_ssm_jobs():
         # update status job_launched
         update_ssm_status(target, job_id)
         
-def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 8, mpiprocs = 1, ompthreads = 8):
+def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
     subfile = path.join(SSM_dir_path, 'cal_ssm.job')
     xyz_file = path.join(dir_path, 'reactant.xyz')
     isomers = path.join(dir_path, 'add_bonds.txt')
@@ -164,7 +164,6 @@ def select_opt_target():
 
 def launch_opt_jobs():
     targets = select_opt_target()
-    
     for target in targets:
         dir_path = target['path']
         OPT_dir_path = path.join(dir_path, 'OPT/')
@@ -237,7 +236,7 @@ def select_low_opt_target():
 def launch_low_opt_jobs():
     targets = select_low_opt_target()
     
-    for target in targets:
+    for target in targets[:100]:
         dir_path = target['path']
         OPT_dir_path = path.join(dir_path, 'OPT/')
         if not os.path.exists(OPT_dir_path):
@@ -274,7 +273,7 @@ def create_low_opt_input(dir_path, OPT_dir_path):
         for line in config:
             f.write(line + '\n')
 
-def create_low_opt_sub_file(dir_path, OPT_dir_path, ncpus = 8, mpiprocs = 1, ompthreads = 8):
+def create_low_opt_sub_file(dir_path, OPT_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
     subfile = path.join(OPT_dir_path, 'cal_low_opt.job')
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
@@ -557,8 +556,8 @@ def create_irc_opt_sub_file(irc_path, direction = 'forward', ncpus = 8, mpiprocs
 
 #launch_energy_jobs()
 #launch_ssm_jobs()
-#launch_low_opt_jobs()
-#launch_opt_jobs()
+launch_low_opt_jobs()
+launch_opt_jobs()
 #launch_ts_jobs()
 #launch_irc_jobs()
 #launch_irc_opt_jobs()

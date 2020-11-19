@@ -98,6 +98,32 @@ def print_information(generations):
                         [generations] 
                     }
                 }
+    low_opt_query_1 = {'$and': 
+                    [
+                    { "low_opt_status":
+                        {"$in":
+                        ["job_running", "job_queueing"]}
+                        },
+                    {'generations':generations}
+                    ]
+                }
+    low_opt_query_2 = {'$and': 
+                    [
+                    { "low_opt_status":
+                        {"$in":
+                        ["job_success"]}
+                        },
+                    {'generations':generations}
+                    ]
+                }
+    low_opt_query_3 = {'$and': 
+                    [
+                    { "low_opt_status":
+                        {"$in":['job_fail']}
+                        },
+                    {'generations':generations}
+                    ]
+                }
     opt_query_1 = {'$and': 
                     [
                     { "opt_status":
@@ -107,7 +133,6 @@ def print_information(generations):
                     {'generations':generations}
                     ]
                 }
-            
     opt_query_2 = {'$and': 
                     [
                     { "opt_status":
@@ -120,7 +145,7 @@ def print_information(generations):
     opt_query_3 = {'$and': 
                     [
                     { "opt_status":
-                        {"$in":['job_fail']}
+                        {"$in":['job_fail', 'Have negative frequency']}
                         },
                     {'generations':generations}
                     ]
@@ -175,7 +200,7 @@ def print_information(generations):
                     [
                     { "ts_status":
                         {"$in":
-                        ['job_fail']}
+                        ['job_fail', 'Have more than one imaginary frequency']}
                         },
                     {'generations':generations}
                     ]
@@ -330,6 +355,9 @@ def print_information(generations):
                     ]
                 }
     gen_targets = list(qm_collection.find(gen_query))
+    low_opt_targets_1 = list(qm_collection.find(low_opt_query_1))
+    low_opt_targets_2 = list(qm_collection.find(low_opt_query_2))
+    low_opt_targets_3 = list(qm_collection.find(low_opt_query_3))
     opt_targets_1 = list(qm_collection.find(opt_query_1))
     opt_targets_2 = list(qm_collection.find(opt_query_2))
     opt_targets_3 = list(qm_collection.find(opt_query_3))
@@ -366,9 +394,12 @@ def print_information(generations):
     print('Generations : {}'.format(generations))
     print('Reactant SMILES : {}'.format(smi))
     print('Nodes : {}'.format(len(gen_targets)))
-    print('{} nodes running or queueing pre-OPT'.format(len(opt_targets_1)))
-    print('{} nodes success in pre-OPT'.format(len(opt_targets_2)))
-    print('{} nodes fail in pre-OPT'.format(len(opt_targets_3)))
+    print('{} nodes running or queueing low_opt'.format(len(low_opt_targets_1)))
+    print('{} nodes success in low_opt'.format(len(low_opt_targets_2)))
+    print('{} nodes fail in low_opt'.format(len(low_opt_targets_3)))
+    print('{} nodes running or queueing OPT'.format(len(opt_targets_1)))
+    print('{} nodes success in OPT'.format(len(opt_targets_2)))
+    print('{} nodes fail in OPT'.format(len(opt_targets_3)))
     print('{} nodes running or queueing SSM'.format(len(ssm_targets_1)))
     print('{} nodes success in SSM'.format(len(ssm_targets_2)))
     print('{} nodes fail in SSM'.format(len(ssm_targets_3)))

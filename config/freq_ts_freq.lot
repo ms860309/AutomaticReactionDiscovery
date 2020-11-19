@@ -35,7 +35,7 @@ $rem
 	SCF_CONVERGENCE           8
 	SYM_IGNORE                TRUE
 	SYMMETRY                  FALSE
-	GEOM_OPT_MAX_CYCLES       300
+	GEOM_OPT_MAX_CYCLES       150
 	WAVEFUNCTION_ANALYSIS     FALSE
 	XC_GRID                   1
 $end
