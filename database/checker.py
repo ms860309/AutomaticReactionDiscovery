@@ -247,7 +247,8 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
                                 'path':new_path, 
                                 'ssm_status': 'job_success',                                # Though the reactant equal to product but TS maybe fine. The SSM somehow do not use constrained optimize in product
                                 'ard_ssm_equal':'ssm reactant equal to product',            # This is a special case but sometimes it will happen.
-                                'Product SMILES': prod_smi}
+                                'Product SMILES': prod_smi,
+                                "ts_status":"job_unrun"}                                    # If check ts and get the success maybe need to check irc but QChem's irc is not robust
                 qm_collection.update_one(i, {"$set": update_field}, True)
             else:
                 dirname = dir_check(path.dirname(i['path']), pyMol_1.write('inchiKey').strip(), num + 1)
@@ -318,12 +319,13 @@ def check_ssm_jobs():
                     update_field = {
                                     'ssm_status': new_status, "ts_status":"job_unrun", 'ard_ssm_equal':equal
                                 }
+                    qm_collection.update_one(target, {"$set": update_field}, True)
                 # if not equal the 'ts_status': 'job_unrun' is update on ard_prod_and_ssm_prod_checker fuction
             else:
                 update_field = {
                                 'ssm_status': new_status
                             }
-            qm_collection.update_one(target, {"$set": update_field}, True)
+                qm_collection.update_one(target, {"$set": update_field}, True)
 
 """
 TS check.
@@ -821,7 +823,7 @@ def check_irc_opt_content(dir_path, direction = 'forward'):
         return 'job_fail'
         
     
-def check_irc_opt_job():
+def check_irc_opt_jobs():
     """
     This method checks job with following steps:
     1. select jobs to check
@@ -956,7 +958,7 @@ def check_opt_content(dir_path):
     except:
         return 'job_fail', 0, 0.0
 
-def check_opt_job():
+def check_opt_jobs():
     """
     This method checks job with following steps:
     1. select jobs to check
@@ -1054,7 +1056,7 @@ def check_low_opt_content(dir_path):
     except:
         return 'job_fail', 0, 0.0
 
-def check_low_opt_job():
+def check_low_opt_jobs():
     """
     This method checks job with following steps:
     1. select jobs to check
@@ -1275,12 +1277,12 @@ def check_bindind_cutoff():
 
 check_energy_jobs()
 check_ssm_jobs()
-check_low_opt_job()
+check_low_opt_jobs()
 check_bindind_cutoff()
-check_opt_job()
+check_opt_jobs()
 check_ts_jobs()
 check_irc_jobs()
 check_irc_equal()
-check_irc_opt_job()
+check_irc_opt_jobs()
 insert_reaction()
 insert_ard()
