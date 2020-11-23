@@ -1209,11 +1209,11 @@ def insert_ard():
         not_finished_number = len(list(qm_collection.find(energy_query))) + len(list(qm_collection.find(ssm_query))) + len(list(qm_collection.find(ts_query)))
     else:
         not_finished_number = len(list(qm_collection.find(energy_query))) + len(list(qm_collection.find(ssm_query))) + len(list(qm_collection.find(ts_query))) + len(list(qm_collection.find(irc_query_1))) + len(list(qm_collection.find(irc_query_2))) + len(list(qm_collection.find(opt_query_1))) + len(list(qm_collection.find(opt_query_2)))
-    ard_had_add_number = qm_collection.count_documents({})
+    ard_had_add_number = qm_collection.count_documents({})  # Should -1 because the initial reactant
     ard_should_add_number = sum(statistics_collection.distinct("add how many products"))
     make_sure_not_check_again = reactions_collection.distinct("ard_status")
 
-    if int(not_finished_number) == 0 and int(ard_had_add_number) == int(ard_should_add_number) and make_sure_not_check_again == []:
+    if int(not_finished_number) == 0 and int(ard_had_add_number) -1 == int(ard_should_add_number) and make_sure_not_check_again == []:
         targets = list(reactions_collection.find({'unique':'new one'}))
         for target in targets:
             dirpath = target['path']

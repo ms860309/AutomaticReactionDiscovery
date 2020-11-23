@@ -68,7 +68,7 @@ class ARD(object):
         else:
             self.use_inchi_key = False
         log_level = logging.INFO
-        self.logger = util.initializeLog(log_level, os.path.join(os.getcwd(), 'ARD.log'), logname='main')
+        self.logger = util.initializeLog(log_level, os.path.join(os.path.dirname(kwargs['reactant_path']), 'ARD.log'), logname='main')
         self.initialize()
 
     def initialize(self):

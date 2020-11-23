@@ -13,7 +13,6 @@ $rem
 	SYM_IGNORE                TRUE
 	SYMMETRY                  FALSE
 	WAVEFUNCTION_ANALYSIS     FALSE
-	XC_GRID                   1
 $end
 
 @@@
@@ -28,16 +27,17 @@ $rem
 	DFT_D                     D3_BJ
 	BASIS                     def2-SV(P)
 	ECP                       def2-ecp
-	SCF_GUESS                 READ
-	GEOM_OPT_HESSIAN          READ
 	SCF_ALGORITHM             DIIS
 	MAX_SCF_CYCLES            150
 	SCF_CONVERGENCE           8
+	GEOM_OPT_MAX_CYCLES       100
+	GEOM_OPT_DMAX             50
+	SCF_GUESS                 READ
+	GEOM_OPT_HESSIAN          READ
+	GEOM_OPT_CHARAC           TRUE
 	SYM_IGNORE                TRUE
 	SYMMETRY                  FALSE
-	GEOM_OPT_MAX_CYCLES       150
 	WAVEFUNCTION_ANALYSIS     FALSE
-	XC_GRID                   1
 $end
 
 @@@
@@ -58,7 +58,4 @@ $rem
 	SYM_IGNORE                TRUE
 	SYMMETRY                  FALSE
 	WAVEFUNCTION_ANALYSIS     FALSE
-	XC_GRID                   1
 $end
-
-@@@

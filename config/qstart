@@ -10,7 +10,6 @@ SCF_CONVERGENCE 8
 WAVEFUNCTION_ANALYSIS FALSE
 SYMMETRY   FALSE
 SYM_IGNORE                TRUE
-XC_GRID                   1
 $end
 
 $molecule

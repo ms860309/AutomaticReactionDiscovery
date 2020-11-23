@@ -1,1 +1,3 @@
 -coordinate_type  TRIC
+-ADD_NODE_TOL     0.005
+-max_opt_steps    40

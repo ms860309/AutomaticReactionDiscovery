@@ -49,6 +49,7 @@ class Network(object):
         self.preopt = kwargs['pre_opt']
         self.fixed_atom = kwargs['fixed_atom']
         self.use_irc = kwargs['use_irc']
+        self.reactant_path = os.path.dirname(kwargs['reactant_path'])
 
     def genNetwork(self, mol_object, use_inchi_key, nbreak, nform):
         """
@@ -176,7 +177,7 @@ class Network(object):
     def filter_dh_mopac(self, reac_obj, reac_mol_copy, prod_mol, form_bonds, break_bonds, total_prod_num, refH = None):
         self.count += 1
         mopac_object = Mopac(reac_obj, prod_mol, self.mopac_method, self.forcefield, self.constraintff_alg, form_bonds, self.logger, total_prod_num, self.count, self.constraint)
-        H298_reac, H298_prod, reactant, product = mopac_object.mopac_get_H298(reac_mol_copy)
+        H298_reac, H298_prod, reactant, product = mopac_object.mopac_get_H298(reac_mol_copy, self.reactant_path)
 
         if H298_prod == False or H298_reac == False:
             return 0
@@ -230,7 +231,7 @@ class Network(object):
         return 0
 
     def get_mopac_H298(self, mol_object, charge = 0, multiplicity = 'SINGLET'):
-        tmpdir = os.path.join(os.path.dirname(os.getcwd()), 'tmp')
+        tmpdir = os.path.join(self.reactant_path, 'tmp')
         reactant_path = os.path.join(tmpdir, 'reactant.mop')
         if os.path.exists(tmpdir):
             shutil.rmtree(tmpdir)

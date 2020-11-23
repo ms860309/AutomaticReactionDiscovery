@@ -37,13 +37,13 @@ class Mopac(object):
         self.num = num
         self.constraint = constraint
 
-    def mopac_get_H298(self, reac_mol_copy, charge = 0, multiplicity = 'SINGLET'):
+    def mopac_get_H298(self, reac_mol_copy, reactant_path, charge = 0, multiplicity = 'SINGLET'):
         """
         Create a directory folder called "tmp" for mopac calculation
         Create a input file called "input.mop" for mopac calculation
         """
 
-        tmpdir = os.path.join(os.path.dirname(os.getcwd()), 'tmp')
+        tmpdir = os.path.join(reactant_path, 'tmp')
         reactant_path = os.path.join(tmpdir, 'reactant.mop')
         product_path = os.path.join(tmpdir, 'product.mop')
 
@@ -84,10 +84,13 @@ class Mopac(object):
             product_mol.gen3D(self.constraint, forcefield=self.forcefield, method = self.constraintff_alg, make3D=False)
 
         # Arrange
-        arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint)
-        msg = arrange3D.arrangeIn3D()
-        if msg != '':
-            print(msg)
+        try:  # Pass the more than 4 fragment situation
+            arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint)
+            msg = arrange3D.arrangeIn3D()
+            if msg != '':
+                print(msg)
+        except:
+            return False, False, False, False
 
         if self.constraint == None:
             ff.Setup(Hatom.OBMol)

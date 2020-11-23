@@ -13,7 +13,6 @@ $rem
 	SYM_IGNORE                TRUE
 	SYMMETRY                  FALSE
 	WAVEFUNCTION_ANALYSIS     FALSE
-	XC_GRID                   1
 $end
 
 @@@
@@ -42,7 +41,6 @@ $rem
 	symmetry   FALSE
 	sym_ignore   TRUE
 	print_input   TRUE
-	geom_opt_dmax   80
+	geom_opt_dmax   100
 	WAVEFUNCTION_ANALYSIS     FALSE
-	XC_GRID                   1
 $end
