@@ -640,7 +640,7 @@ class Arrange3D(object):
             mol.detRotors(self.constraint)
             mol.detCloseAtoms(d_intramol)
             self.dof_1 += len(mol.rotors)
-
+        
         for mol in mol_2.mols:
             mol.detRotors(self.constraint)
             mol.detCloseAtoms(d_intramol)

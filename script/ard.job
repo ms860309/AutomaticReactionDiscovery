@@ -1,9 +1,0 @@
-#!/usr/bin/bash
-#PBS -l select=1:ncpus=8:mpiprocs=1:ompthreads=8
-#PBS -q workq
-#PBS -j oe
-cd /home/jianyi/zeolite/AutomaticReactionDiscovery/script
-source ~/.bashrc
-conda activate rmg3
-python /home/jianyi/zeolite/AutomaticReactionDiscovery/script/ard.py /home/jianyi/zeolite/AutomaticReactionDiscovery/script/input.txt /home/jianyi/zeolite/AutomaticReactionDiscovery/script/reactant.xyz -bonds /home/jianyi/zeolite/AutomaticReactionDiscovery/script/bonds.txt -constraint /home/jianyi/zeolite/AutomaticReactionDiscovery/script/constraint.txt -fixed_atom /home/jianyi/zeolite/AutomaticReactionDiscovery/script/fixed_atom.txt -generations 1
-conda deactivate

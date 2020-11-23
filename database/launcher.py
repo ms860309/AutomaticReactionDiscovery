@@ -58,7 +58,7 @@ def create_energy_sub_file(dir_path, Energy_dir_path, ncpus = 8, mpiprocs = 1, o
         config = [line.strip() for line in f]
 
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS	-l	mem=4gb	\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}:mem=4gb\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(Energy_dir_path)
     nes1 = 'module load qchem'
     scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
@@ -104,7 +104,7 @@ def select_ssm_target():
 def launch_ssm_jobs():
     targets = select_ssm_target()
     
-    for target in targets[:40]:
+    for target in targets:
         SSM_dir_path = path.join(target, 'SSM/')
         os.mkdir(SSM_dir_path)
         os.chdir(SSM_dir_path)
@@ -128,7 +128,7 @@ def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 4, mpiprocs = 1, ompthre
     ssm_args = path.join(path.join(path.dirname(path.dirname(dir_path)), 'config'), 'ssm_argument')
 
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS	-l	mem=4gb	\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}:mem=4gb\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(SSM_dir_path)
     nes1 = 'module load qchem'
     # activate conda env is necessary because gsm install on the environment
@@ -204,7 +204,7 @@ def create_opt_input(dir_path, OPT_dir_path):
 def create_opt_sub_file(dir_path, OPT_dir_path, ncpus = 8, mpiprocs = 1, ompthreads = 8):
     subfile = path.join(OPT_dir_path, 'cal_opt.job')
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS	-l	mem=4gb	\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}:mem=4gb\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(OPT_dir_path)
     nes1 = 'module load qchem'
     nes2 = 'export QCSCRATCH=/tmp/$PBS_JOBID'
@@ -236,7 +236,7 @@ def select_low_opt_target():
 def launch_low_opt_jobs():
     targets = select_low_opt_target()
     
-    for target in targets[:100]:
+    for target in targets:
         dir_path = target['path']
         OPT_dir_path = path.join(dir_path, 'OPT/')
         if not os.path.exists(OPT_dir_path):
@@ -276,7 +276,7 @@ def create_low_opt_input(dir_path, OPT_dir_path):
 def create_low_opt_sub_file(dir_path, OPT_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
     subfile = path.join(OPT_dir_path, 'cal_low_opt.job')
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS	-l	mem=4gb	\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}:mem=4gb\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(OPT_dir_path)
     nes1 = 'module load qchem'
     nes2 = 'export QCSCRATCH=/tmp/$PBS_JOBID'
@@ -338,7 +338,7 @@ def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 8, mpiprocs = 1, ompth
         config = [line.strip() for line in f]
 
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS	-l	mem=4gb	\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}:mem=4gb\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(TS_dir_path)
     nes1 = 'module load qchem'
     scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
@@ -428,7 +428,7 @@ def create_irc_sub_file(TS_dir_path, IRC_dir_path, ncpus = 8, mpiprocs = 1, ompt
     irc_reverse_lot = path.join(base_dir_path, 'freq_irc_reverse.lot')
 
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS	-l	mem=4gb	\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}:mem=4gb\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(IRC_dir_path)
     nes1 = 'module load qchem'
     scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
@@ -541,7 +541,7 @@ def create_irc_opt_sub_file(irc_path, direction = 'forward', ncpus = 8, mpiprocs
     job_name = 'irc_{}_opt.job'.format(direction)
     subfile = path.join(irc_path, job_name)
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS	-l	mem=4gb	\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}:mem=4gb\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(irc_path)
     nes1 = 'module load qchem'
     nes2 = 'export QCSCRATCH=/tmp/$PBS_JOBID'

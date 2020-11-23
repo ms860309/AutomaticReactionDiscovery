@@ -192,8 +192,11 @@ class Network(object):
             self.logger.info('Delta H is {}, smaller than threshold'.format(dH))
             self.logger.info('Finished {}/{}'.format(self.count, total_prod_num))
 
+            reactant_output = os.path.join(self.reactant_path, '/tmp/reactant.out')
+            product_output = os.path.join(self.reactant_path, '/tmp/product.out')
+
             qm_collection = db['qm_calculate_center']
-            dir_path = self.output(reactant, product, form_bonds, break_bonds, prod_mol)
+            dir_path = self.output(reactant_output, product_output, form_bonds, break_bonds, prod_mol)
             reactant_key = reac_obj.write('inchiKey').strip()
             product_name = prod_mol.write('inchiKey').strip()
             self.logger.info('\nReactant inchi key: {}\nProduct inchi key: {}\nDirectory path: {}\n'.format(reactant_key, product_name, dir_path))
@@ -318,7 +321,7 @@ class Network(object):
         reactant_mol.setCoordsFromMol(reactant_mol_copy)
         return output_dir
 
-    def output(self, reactant_mol, product_mol, add_bonds, break_bonds, prod_mol, **kwargs):
+    def output(self, reactant_output, product_output, add_bonds, break_bonds, prod_mol, **kwargs):
         # Database
         qm_collection = db['qm_calculate_center']
 
@@ -331,9 +334,13 @@ class Network(object):
 
         output_dir = util.makeOutputSubdirectory(subdir, dirname)
         kwargs['output_dir'] = output_dir
+
+        rsymbol, rgeometry = self.get_mopac_opt_geometry(reactant_output)
+        psymbol, pgeometry = self.get_mopac_opt_geometry(product_output)
+
         #self.makeInputFile(reactant, product, **kwargs)
-        self.makeDrawFile(reactant_mol, 'reactant.xyz', **kwargs)
-        self.makeDrawFile(product_mol, 'product.xyz', **kwargs)
+        self.makeDrawFile(reactant_output, 'reactant.xyz', symbol=rsymbol, geometry=rgeometry, **kwargs)
+        self.makeDrawFile(product_output, 'product.xyz', symbol=psymbol, geometry=pgeometry, **kwargs)
         self.makeisomerFile(add_bonds, break_bonds, **kwargs)
         return output_dir
 
@@ -357,24 +364,32 @@ class Network(object):
         """
         Create input file for TS search and return path to file.
         """
-        path = os.path.join(kwargs['output_dir'], 'de_ssm_input.xyz')
+        output  = os.path.join(kwargs['output_dir'], 'de_ssm_input.xyz')
         nreac_atoms = len(reactant.getListOfAtoms())
         nproduct_atoms = len(product.getListOfAtoms())
 
-        with open(path, 'w') as f:
+        with open(output, 'w') as f:
             f.write('{}\n\n{}\n{}\n\n{}\n'.format(nreac_atoms, reactant, nproduct_atoms, product))
-        return path
+        return output 
 
     @staticmethod
-    def makeDrawFile(_input, filename = 'draw.xyz', **kwargs):
+    def makeDrawFile(_input, filename = 'draw.xyz', symbol = None, geometry = None, **kwargs):
         """
         Create input file for network drawing.
         """
-        path = os.path.join(kwargs['output_dir'], filename)
-        ninput_atoms = len(_input.getListOfAtoms())
+        output = os.path.join(kwargs['output_dir'], filename)
 
-        with open(path, 'w') as f:
-            f.write('{}\n\n{}'.format(ninput_atoms, _input))
+        if symbol is not None and geometry is not None:
+            natoms = len(symbol)
+            with open(output, 'w') as f:
+                f.write(str(natoms))
+                f.write('\n\n')
+                for atom, xyz in zip(symbol, geometry):
+                    f.write('{}  {}  {}  {}\n'.format(atom, xyz[0], xyz[1], xyz[2]))
+        else:
+            natoms = len(_input.getListOfAtoms())
+            with open(output, 'w') as f:
+                f.write('{}\n\n{}'.format(natoms, _input))
 
     @staticmethod
     def makeisomerFile(add_bonds, break_bonds, **kwargs):
@@ -382,9 +397,9 @@ class Network(object):
         Create input file(add which bonds) for Single ended String Method (SSM) calculation.
         only for break 2 form 2 if more then need modify
         """
-        path = os.path.join(kwargs['output_dir'], 'add_bonds.txt')
+        output = os.path.join(kwargs['output_dir'], 'add_bonds.txt')
 
-        with open(path, 'w') as f:
+        with open(output, 'w') as f:
             if len(add_bonds) != 0:
                 for i in add_bonds:
                     f.write('ADD {} {}\n'.format(i[0]+1,i[1]+1))
@@ -392,3 +407,20 @@ class Network(object):
                 for i in break_bonds:
                     f.write('BREAK {} {}\n'.format(i[0]+1,i[1]+1))
 
+    @staticmethod
+    def get_mopac_opt_geometry(output, **kwargs):
+        with open(output, 'r') as f:
+            log = f.read().splitlines()
+
+        iterable = reversed(range(len(log)))
+        for i in iterable:
+            line = log[i]
+            if '                             CARTESIAN COORDINATES' in line:
+                symbols, coords = [], []
+                for line in log[(i+2):]:
+                    if line != '':
+                        data = line.split()
+                        symbols.append(data[1])
+                        coords.append([float(c) for c in data[2:]])
+                    else:
+                        return symbols, np.array(coords)
