@@ -3,7 +3,7 @@ $end
 
 $rem
 	JOBTYPE OPT
-	METHOD  B3LYP
+	METHOD  B97-D3
 	DFT_D   D3_BJ
 	BASIS   def2-SV(P)
 	ECP     def2-ecp
@@ -23,7 +23,7 @@ $end
 
 $rem
 	JOBTYPE SP
-	METHOD  B3LYP
+	METHOD  B97-D3
 	DFT_D   D3_BJ
 	BASIS   def2-SV(P)
 	ECP     def2-ecp

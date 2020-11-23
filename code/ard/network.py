@@ -81,6 +81,22 @@ class Network(object):
             self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))
             reac_mol_copy = mol_object.copy()
             if self.generations == 1:
+                if self.preopt == '1':
+                    # Add low level opt of the initial reactant
+                    reactant_path = os.path.join(self.ard_path, 'reactant.xyz')
+                    subdir = os.path.join(os.path.join(os.path.dirname(self.ard_path), 'reactions'), 'initial_reactant')
+                    new_reactant_path = os.path.join(subdir, 'reactant.xyz')
+                    os.mkdir(subdir)
+                    shutil.copyfile(reactant_path, new_reactant_path)
+                    qm_collection.insert_one({
+                                            'Reactant SMILES': 'initial reactant',
+                                            'reactant_inchi_key':reactant_key,
+                                            'low_opt_status':'job_unrun',
+                                            'binding_cutoff_select':self.binding_cutoff_select,
+                                            'binding_mode_energy_cutoff':self.binding_mode_energy_cutoff,
+                                            'path':subdir,
+                                            'use_irc':self.use_irc})
+            if self.generations == 1:
                 H298_reac = self.get_mopac_H298(mol_object)
                 update_field = {'reactant_energy':H298_reac}
                 pool_collection.update_one(targets[0], {"$set": update_field}, True)
@@ -138,23 +154,6 @@ class Network(object):
                                         'use_irc':self.use_irc
                                         })
 
-        if self.generations == 1:
-            if self.preopt == '1':
-                # Add low level opt of the initial reactant
-                reactant_path = os.path.join(self.ard_path, 'reactant.xyz')
-                subdir = os.path.join(os.path.join(os.path.dirname(self.ard_path), 'reactions'), 'initial_reactant')
-                new_reactant_path = os.path.join(subdir, 'reactant.xyz')
-                os.mkdir(subdir)
-                shutil.copyfile(reactant_path, new_reactant_path)
-                qm_collection.insert_one({
-                                        'Reactant SMILES': 'initial reactant',
-                                        'reactant_inchi_key':reactant_key,
-                                        'low_opt_status':'job_unrun',
-                                        'binding_cutoff_select':self.binding_cutoff_select,
-                                        'binding_mode_energy_cutoff':self.binding_mode_energy_cutoff,
-                                        'path':subdir,
-                                        'use_irc':self.use_irc})
-
         # Generate geometry and insert to database
         statistics_collection.insert_one({
             'Reactant SMILES':mol_object.write('can').split()[0], 
@@ -192,8 +191,8 @@ class Network(object):
             self.logger.info('Delta H is {}, smaller than threshold'.format(dH))
             self.logger.info('Finished {}/{}'.format(self.count, total_prod_num))
 
-            reactant_output = os.path.join(self.reactant_path, '/tmp/reactant.out')
-            product_output = os.path.join(self.reactant_path, '/tmp/product.out')
+            reactant_output = os.path.join(self.reactant_path, 'tmp/reactant.out')
+            product_output = os.path.join(self.reactant_path, 'tmp/product.out')
 
             qm_collection = db['qm_calculate_center']
             dir_path = self.output(reactant_output, product_output, form_bonds, break_bonds, prod_mol)
