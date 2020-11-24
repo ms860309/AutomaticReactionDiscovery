@@ -12,7 +12,7 @@ import os
 
 #third party
 import numpy as np
-from scipy.optimize import minimize, basinhopping
+from scipy import optimize
 from scipy.spatial import distance_matrix
 from openbabel import pybel
 from openbabel import openbabel as ob
@@ -481,14 +481,14 @@ class Molecule(pybel.Molecule):
         else:
             self.mols_indices = tuple([atom] for atom in range(len(self.atoms)))
 
-    def detRotors(self, constraint):
+    def detRotors(self, constraint=None):
         """
         Determine the rotors and atoms in the rotors of the molecule.
         """
         self.rotors = []
         self.atom_in_rotor = []
-
         natoms = len(self.atoms)
+
         for bond_1 in pybel.ob.OBMolBondIter(self.OBMol):
             if bond_1.IsRotor():
                 ref_1, ref_2 = bond_1.GetBeginAtomIdx() - 1, bond_1.GetEndAtomIdx() - 1
@@ -505,6 +505,7 @@ class Molecule(pybel.Molecule):
                             if atom_in_rotor[ref_3] ^ atom_in_rotor[ref_4]:
                                 atom_in_rotor[ref_3], atom_in_rotor[ref_4] = True, True
                                 new_atom = True
+
                 self.atom_in_rotor.append(atom_in_rotor)
 
     def detCloseAtoms(self, d):
@@ -662,15 +663,32 @@ class Arrange3D(object):
         ret = ''
         dof = self.dof_1 + self.def_2
         if dof != 0:
+            
+            #a = self.mol_1
+            #b = self.nodes_1
             def callbackF(Xi):
                 print(self.objectiveFunction(Xi[:dof]))
+                """
+                coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, Xi[:self.dof_1])
+                with open('test.xyz', 'a') as f:
+                    for i in range(0, 2):
+                        b[i].coords = coords_1[i]
+                        a.mols[i].setCoordsFromMol(b[i].toPybelMol())
+                        f.write('{}\n\n{}\n'.format(str(36), str(a.toNode())))
+                """
 
             disps_guess = np.array([0.0]*dof)
-            result = minimize(self.objectiveFunction, disps_guess,
+            result = optimize.minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='COBYLA',
-                                       options={'disp': False}) #, callback = callbackF, 'eps':1e-10
-
+                                       options={'rhobeg': 0.5, 'maxiter': 1000, 'disp': False, 'catol': 0.001}) #, callback = callbackF, 'eps':1e-10
+            """
+            result = optimize.minimize(self.objectiveFunction, result.x,
+                                       constraints={'type': 'ineq', 'fun': self.constraintFunction},
+                                       method='SLSQP',
+                                       options={'maxiter': 1000, 'disp': False, 'ftol':0.1}, callback = callbackF) #, callback = callbackF, 'eps':1e-10
+            """
+            
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
                            str(result.status) + ':\n' + result.message + '\n')
@@ -920,7 +938,7 @@ class Arrange3D(object):
         b2 = self.calcBondLens(coords_2, self.bonds_2)
         d1 = self.calcDihedralAngs(coords_1, self.torsions_1)
         d2 = self.calcDihedralAngs(coords_2, self.torsions_2)
-        val_b, val_d, val_dist = 0.0, 0.0, 0.0
+        val_b, val_d = 0.0, 0.0
 
         for i in range(len(b1)):
             val_b += np.abs(b1[i]-b2[i])
@@ -933,6 +951,7 @@ class Arrange3D(object):
             else:
                 val_d += np.abs(d)
 
+        # The weight 5 for val_b is chosen arbitrarily
         val = 5 * val_b + val_d
         return val
         """

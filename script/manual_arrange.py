@@ -16,6 +16,8 @@ from subprocess import Popen, PIPE
 from openbabel import openbabel as ob
 from openbabel import pybel as pb
 
+import numpy as np
+
 def readXYZ(xyz, bonds = None):
     # extract molecule information from xyz
     mol = next(pb.readfile('xyz', xyz))
@@ -84,6 +86,25 @@ def mopac_get_H298(reactant, product, constraint, charge = 0, multiplicity = 'SI
     print(float(product))
     print('delta H is {}'.format(float(product) - float(reactant)))
 
+def check_bond_length(product, add_bonds):
+    """
+    Use reactant coordinate to check if the add bonds's bond length is too long.
+    Return a 'list of distance'.
+    """
+    coords = [atom.coords for atom in product]
+    atoms = tuple(atom.atomicnum for atom in product)
+    coords = [np.array(coords).reshape(len(atoms), 3)]
+
+    dist = []
+    for bond in add_bonds:
+        coord_vect_1 = coords[0][bond[0]]
+        coord_vect_2 = coords[0][bond[1]]
+        diff = coord_vect_1 - coord_vect_2
+        dist.append(np.linalg.norm(diff))
+        
+    if dist == []:
+        dist = [0]
+    return float(max(dist))
 
 def getHeatofFormation(tmpdir, target = 'reactant.out'):
     """
@@ -109,21 +130,20 @@ def runMopac(tmpdir, target = 'reactant.mop'):
 
 def gen_geometry(reactant_mol, product_mol, constraint):
 
-    reactant_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
-    product_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
+    reactant_mol.gen3D(constraint, forcefield='mmff94', method = 'SteepestDescent', make3D=False)
+    product_mol.gen3D(constraint, forcefield='mmff94', method = 'SteepestDescent', make3D=False)
 
     arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, constraint)
     msg = arrange3D.arrangeIn3D()
     if msg != '':
         print(msg)
 
-    reactant_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
-    product_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
+    reactant_mol.gen3D(constraint, forcefield='mmff94', method = 'SteepestDescent', make3D=False)
+    product_mol.gen3D(constraint, forcefield='mmff94', method = 'SteepestDescent', make3D=False)
 
-    print(reactant_mol.toNode())
-    print('-------')
-    print(product_mol.toNode())
-    raise
+    dist = check_bond_length(reactant_mol, ((2, 17, 1), (5, 19, 1)))
+    print(dist)
+
     prod_geo = str(product_mol.toNode()).splitlines()
     product_geometry = []
     for i in prod_geo:

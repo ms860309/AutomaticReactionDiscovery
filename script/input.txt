@@ -1,7 +1,7 @@
 reactant                       0                    # Reactant
 nbreak                         3                    # Maximum number of bonds to be broken
 nform                          3                    # Maximum number of bonds to be formed
-forcefield                     UFF                  # The force field method
+forcefield                     mmff94                  # The force field method
 constraintff_alg               SteepestDescent      # The force field algorithm  can use 'SteepestDescent' or 'ConjugateGradients'
 dH_cutoff                      25                   # Heat of reaction cutoff in kcal/mol
 dH_cutoff_method               mopac                # rmg group additivity method or mopac could be choose
