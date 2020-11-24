@@ -121,7 +121,9 @@ def gen_geometry(reactant_mol, product_mol, constraint):
     product_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
 
     print(reactant_mol.toNode())
-
+    print('-------')
+    print(product_mol.toNode())
+    raise
     prod_geo = str(product_mol.toNode()).splitlines()
     product_geometry = []
     for i in prod_geo:
@@ -149,11 +151,11 @@ def gen_geometry(reactant_mol, product_mol, constraint):
 
 xyz_path = './reactant.xyz'
 constraint_path = './constraint.txt'
-bonds = ((0, 1, 1), (0, 2, 1), (0, 3, 1), (0, 4, 1), (1, 5, 1), (1, 6, 1), (1, 7, 1), (5, 8, 1), (5, 9, 1), (5, 10, 1), (8, 11, 1), (8, 12, 1), (8, 13, 1))
+bonds = ((0, 1, 1), (0, 2, 1), (0, 3, 1), (0, 4, 1), (1, 5, 1), (1, 6, 1), (1, 7, 1), (5, 8, 1), (5, 9, 1), (5, 10, 1), (8, 11, 1), (8, 12, 1), (8, 13, 1), (14, 15, 1), (14, 16, 1), (14, 17, 1), (14, 18, 1), (15, 20, 1), (16, 22, 1), (17, 21, 1), (18, 19, 1), (18, 23, 1), (20, 24, 1), (20, 25, 1), (20, 26, 1), (21, 27, 1), (21, 28, 1), (21, 30, 1), (22, 29, 1), (22, 31, 1), (22, 34, 1), (23, 32, 1), (23, 33, 1), (23, 35, 1))
 constraint = extract_constraint_index(constraint_path)
 reactant = readXYZ(xyz_path, bonds=bonds)
 atoms = tuple(atom.atomicnum for atom in reactant)
-product_bonds = ((0, 1, 1), (0, 2, 1), (0, 3, 1), (0, 4, 1), (1, 6, 1), (1, 7, 1), (5, 8, 2), (5, 9, 1), (5, 10, 1), (8, 11, 1), (8, 12, 1), (1, 13, 1))
+product_bonds = ((0, 3, 1), (0, 4, 1), (1, 6, 1), (1, 7, 1), (5, 8, 1), (5, 9, 1), (5, 10, 1), (8, 11, 1), (8, 12, 1), (8, 13, 1), (14, 15, 1), (14, 16, 1), (14, 17, 1), (14, 18, 1), (15, 20, 1), (16, 22, 1), (17, 21, 1), (18, 23, 1), (20, 24, 1), (20, 25, 1), (20, 26, 1), (21, 27, 1), (21, 28, 1), (21, 30, 1), (22, 29, 1), (22, 31, 1), (22, 34, 1), (23, 32, 1), (23, 33, 1), (23, 35, 1), (2, 17, 1), (5, 19, 1), (0, 1, 2))
 product = gen3D.makeMolFromAtomsAndBonds(atoms, product_bonds, spin=reactant.spin)
 product.setCoordsFromMol(reactant)
 
