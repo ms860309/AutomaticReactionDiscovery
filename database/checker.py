@@ -1375,11 +1375,12 @@ def check_bindind_cutoff():
 
 
 
-check_energy_jobs()
+#check_energy_jobs()
 check_ssm_jobs(refine = True)  # If the ssm perform by orca with xtb GFN2-xtb, then refine the TS is a good choice.  Get a better initial guess
 check_low_opt_jobs()
 check_bindind_cutoff()
 check_opt_jobs()
+check_ts_refine_jobs()
 check_ts_jobs()
 #check_irc_jobs()
 #check_irc_equal()

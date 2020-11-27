@@ -339,7 +339,7 @@ def select_ts_refine_target():
     selected_targets = [target['path'] for target in targets]
     return selected_targets
 
-def launch_ts_refine_jobs()
+def launch_ts_refine_jobs():
     targets = select_ts_refine_target()
     
     for target in targets:
@@ -673,7 +673,7 @@ def create_irc_opt_sub_file(irc_path, direction = 'forward', ncpus = 4, mpiprocs
 #launch_ssm_jobs(level_of_theory='ORCA')
 launch_low_opt_jobs()
 launch_opt_jobs()
-launch_ts_refine_jobs()
+#launch_ts_refine_jobs()
 #launch_ts_jobs()
 #launch_irc_jobs()
 #launch_irc_opt_jobs()
