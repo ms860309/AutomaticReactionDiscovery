@@ -86,6 +86,7 @@ class Network(object):
                     reactant_path = os.path.join(self.ard_path, 'reactant.xyz')
                     subdir = os.path.join(os.path.join(os.path.dirname(self.ard_path), 'reactions'), 'initial_reactant')
                     new_reactant_path = os.path.join(subdir, 'reactant.xyz')
+                    os.mkdir(os.path.join(os.path.dirname(self.ard_path), 'reactions'))
                     os.mkdir(subdir)
                     shutil.copyfile(reactant_path, new_reactant_path)
                     qm_collection.insert_one({

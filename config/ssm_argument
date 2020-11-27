@@ -1,3 +1,4 @@
 -coordinate_type  TRIC
--ADD_NODE_TOL     0.005
--max_opt_steps    40
+-DQMAG_MAX  0.6
+-ADD_NODE_TOL 0.05
+-max_opt_steps 50

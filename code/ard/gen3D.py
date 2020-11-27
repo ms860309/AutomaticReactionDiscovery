@@ -681,7 +681,7 @@ class Arrange3D(object):
             result = optimize.minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='COBYLA',
-                                       options={'rhobeg': 0.5, 'maxiter': 1000, 'disp': False, 'catol': 0.001}) #, callback = callbackF, 'eps':1e-10
+                                       options={'maxiter': 1000, 'disp': False}) #, callback = callbackF, 'eps':1e-10
             """
             result = optimize.minimize(self.objectiveFunction, result.x,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},

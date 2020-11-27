@@ -222,7 +222,7 @@ def generate_ssm_product_xyz(target_path):
     with open(parent_ssm_product_path,'w') as q:
         q.write('{}\n{}'.format(lines[idx-1], ''.join(lines[idx+1:])))
 
-def ard_prod_and_ssm_prod_checker(rxn_dir):
+def ard_prod_and_ssm_prod_checker(rxn_dir, refine = False):
     # Use ssm product xyz to check whether ssm prod equal to ard product
     # If equal, insert the inchi key into products pool
     # If not equal, use ssm product as the product and insert inchi key into products pool
@@ -242,26 +242,44 @@ def ard_prod_and_ssm_prod_checker(rxn_dir):
                 new_path = path.join(path.dirname(i['path']), dirname)
                 os.rename(rxn_dir, new_path)
                 prod_smi = pyMol_1.write('can').split()[0]
-                update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
-                                'initial_dir_name':rxn_dir, 
-                                'path':new_path, 
-                                'ssm_status': 'job_success',                                # Though the reactant equal to product but TS maybe fine. The SSM somehow do not use constrained optimize in product
-                                'ard_ssm_equal':'ssm reactant equal to product',            # This is a special case but sometimes it will happen.
-                                'Product SMILES': prod_smi,
-                                "ts_status":"job_unrun"}                                    # If check ts and get the success maybe need to check irc but QChem's irc is not robust
+                if refine:
+                    update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
+                                    'initial_dir_name':rxn_dir, 
+                                    'path':new_path, 
+                                    'ssm_status': 'job_success',                                # Though the reactant equal to product but TS maybe fine. The SSM somehow do not use constrained optimize in product
+                                    'ard_ssm_equal':'ssm reactant equal to product',            # This is a special case but sometimes it will happen.
+                                    'Product SMILES': prod_smi,
+                                    "ts_refine_status":"job_unrun"}                                    # If check ts and get the success maybe need to check irc but QChem's irc is not robust
+                else:
+                    update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
+                                    'initial_dir_name':rxn_dir, 
+                                    'path':new_path, 
+                                    'ssm_status': 'job_success',                               
+                                    'ard_ssm_equal':'ssm reactant equal to product',            
+                                    'Product SMILES': prod_smi,
+                                    "ts_status":"job_unrun"}                                    
                 qm_collection.update_one(i, {"$set": update_field}, True)
             else:
                 dirname = dir_check(path.dirname(i['path']), pyMol_1.write('inchiKey').strip(), num + 1)
                 new_path = path.join(path.dirname(i['path']), dirname)
                 os.rename(rxn_dir, new_path)
                 prod_smi = pyMol_1.write('can').split()[0]
-                update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
-                                'initial_dir_name':rxn_dir, 
-                                'path':new_path, 
-                                'ssm_status': 'job_success', 
-                                "ts_status":"job_unrun", 
-                                'ard_ssm_equal':'not_equal',
-                                'Product SMILES': prod_smi}
+                if refine:
+                    update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
+                                    'initial_dir_name':rxn_dir, 
+                                    'path':new_path, 
+                                    'ssm_status': 'job_success', 
+                                    "ts_refine_status":"job_unrun", 
+                                    'ard_ssm_equal':'not_equal',
+                                    'Product SMILES': prod_smi}
+                else:
+                    update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
+                                    'initial_dir_name':rxn_dir, 
+                                    'path':new_path, 
+                                    'ssm_status': 'job_success', 
+                                    "ts_status":"job_unrun", 
+                                    'ard_ssm_equal':'not_equal',
+                                    'Product SMILES': prod_smi}
                 qm_collection.update_one(i, {"$set": update_field}, True)
         return 'not_equal'
     else:
@@ -286,7 +304,7 @@ def xyz_to_pyMol(xyz):
     mol = next(pybel.readfile('xyz', xyz))
     return mol
 
-def check_ssm_jobs():
+def check_ssm_jobs(refine = False):
     """
     This method checks job with following steps:
     1. select jobs to check
@@ -314,17 +332,99 @@ def check_ssm_jobs():
         orig_status = target['ssm_status']
         if orig_status != new_status:
             if new_status == 'job_success':
-                equal = ard_prod_and_ssm_prod_checker(target['path'])
+                equal = ard_prod_and_ssm_prod_checker(target['path'], refine = refine)
                 if equal == 'equal':
-                    update_field = {
-                                    'ssm_status': new_status, "ts_status":"job_unrun", 'ard_ssm_equal':equal
-                                }
+                    if refine:
+                        update_field = {
+                                        'ssm_status': new_status, "ts_refine_status":"job_unrun", 'ard_ssm_equal':equal
+                                    }
+                    else:
+                        update_field = {
+                                        'ssm_status': new_status, "ts_status":"job_unrun", 'ard_ssm_equal':equal
+                                    }      
                     qm_collection.update_one(target, {"$set": update_field}, True)
                 # if not equal the 'ts_status': 'job_unrun' is update on ard_prod_and_ssm_prod_checker fuction
             else:
                 update_field = {
                                 'ssm_status': new_status
                             }
+                qm_collection.update_one(target, {"$set": update_field}, True)
+
+"""
+TS refine check
+Only update whether job is finished. (Do not check in converge or fail ...)
+"""
+
+def select_ts_refine_target():
+    """
+    This method is to inform job checker which targets 
+    to check, which need meet one requirement:
+    1. status is job_launched or job_running
+    Returns a list of targe
+    """
+    qm_collection = db['qm_calculate_center']
+    reg_query = {"ts_refine_status":
+                    {"$in": 
+                        ["job_launched", "job_running", "job_queueing"] 
+                    }
+                }
+    targets = list(qm_collection.find(reg_query))
+
+    return targets
+
+def check_ts_refine_job_status(job_id):
+    """
+    This method checks pbs status of a job given job_id
+    Returns off_queue or job_launched or job_running
+    """
+    commands = ['qstat', '-f', job_id]
+    process = subprocess.Popen(commands,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    if "Unknown Job Id" in stderr.decode():
+        return "off_queue"
+
+    # in pbs stdout is byte, so we need to decode it at first.
+    stdout = stdout.decode().strip().split()
+    idx = stdout.index('job_state')
+    if stdout[idx+2] == 'R':
+        return "job_running"
+    elif stdout[idx+2] == 'Q':
+        return "job_queueing"
+    else:
+        return "job_launched"
+
+
+def check_ts_refine_jobs():
+    """
+    This method checks job with following steps:
+    1. select jobs to check
+    2. check the job pbs-status, e.g., qstat -f "job_id"
+    3. check job content
+    4. update with new status
+    """
+    # 1. select jobs to check
+    targets = select_ts_refine_target()
+
+    qm_collection = db['qm_calculate_center']
+    # 2. check the job pbs status
+    for target in targets:
+        job_id = target['ts_refine_jobid']
+        # 2. check the job pbs status
+        new_status = check_ts_refine_job_status(job_id)
+        if new_status == "off_queue":
+            update_field = {
+                            'ts_status': 'job_unrun'
+                            }
+            qm_collection.update_one(target, {"$set": update_field}, True)
+        else:
+            orig_status = target['ts_refine_status']
+            if orig_status != new_status:
+                update_field = {
+                                'ts_refine_status': new_status
+                                }
                 qm_collection.update_one(target, {"$set": update_field}, True)
 
 """
@@ -1276,13 +1376,13 @@ def check_bindind_cutoff():
 
 
 check_energy_jobs()
-check_ssm_jobs()
+check_ssm_jobs(refine = True)  # If the ssm perform by orca with xtb GFN2-xtb, then refine the TS is a good choice.  Get a better initial guess
 check_low_opt_jobs()
 check_bindind_cutoff()
 check_opt_jobs()
 check_ts_jobs()
-check_irc_jobs()
-check_irc_equal()
-check_irc_opt_jobs()
+#check_irc_jobs()
+#check_irc_equal()
+#check_irc_opt_jobs()
 insert_reaction()
 insert_ard()

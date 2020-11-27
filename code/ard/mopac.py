@@ -121,22 +121,28 @@ class Mopac(object):
             self.logger.info('Form bonds: {}\nDistance: {}'.format(self.form_bonds, dist))    
             prod_geo = str(product_mol.toNode()).splitlines()
             product_geometry = []
-            for i in prod_geo:
+            for idx, i in enumerate(prod_geo):
                 i_list = i.split()
                 atom = i_list[0] + " "
                 k = i_list[1:] + [""]
-                l = " 1 ".join(k)
+                if idx in self.constraint:
+                    l = " 0 ".join(k)
+                else:
+                    l = " 1 ".join(k)
                 out = atom + l
                 product_geometry.append(out)
             product_geometry = "\n".join(product_geometry)
 
             reac_geo = str(reactant_mol.toNode()).splitlines()
             reactant_geometry = []
-            for i in reac_geo:
+            for idx, i in enumerate(reac_geo):
                 i_list = i.split()
                 atom = i_list[0] + " "
                 k = i_list[1:] + [""]
-                l = " 1 ".join(k)
+                if idx in self.constraint:
+                    l = " 0 ".join(k)
+                else:
+                    l = " 1 ".join(k)
                 out = atom + l
                 reactant_geometry.append(out)
             reactant_geometry = "\n".join(reactant_geometry)

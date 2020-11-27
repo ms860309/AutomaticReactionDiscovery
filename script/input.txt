@@ -1,12 +1,12 @@
 reactant                       0                    # Reactant
 nbreak                         3                    # Maximum number of bonds to be broken
 nform                          3                    # Maximum number of bonds to be formed
-forcefield                     mmff94                  # The force field method
+forcefield                     uff                  # The force field method
 constraintff_alg               SteepestDescent      # The force field algorithm  can use 'SteepestDescent' or 'ConjugateGradients'
 dH_cutoff                      25                   # Heat of reaction cutoff in kcal/mol
 dH_cutoff_method               mopac                # rmg group additivity method or mopac could be choose
 mopac_method                   PM7             # The mopac calculation level of theory (PM6, PM7, etc..)
-binding_mode_energy_cutoff     4.0             # After arrange may generate many different binding mode reactant, using this cutoff to filter. (Only work woth mopac) unit:kcal/mol
+binding_mode_energy_cutoff     5.0             # After arrange may generate many different binding mode reactant, using this cutoff to filter. (Only work woth mopac) unit:kcal/mol
 binding_cutoff_select          starting             # Use the starting reactant mopac energy as ref or the lowest mopac reactant hf in database. option 'lowest' or 'starting'
 manual_bonds                   0                    # Manually specify bonds function (bonds file is 1-based)
 manual_cluster_bond            1                    # Manually defile cluster bonds, this onlt effct when manual_bonds != 1

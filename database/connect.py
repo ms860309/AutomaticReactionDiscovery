@@ -11,7 +11,7 @@ class Connector(object):
         #self.server = 'mongodb://localhost:27017/'
         #self.mongo_db = mongo_db
         self.client = self.connect()
-        self.db = self.client['zeolite_2']
+        self.db = self.client['zeolite_orca_xtb']
 
     def connect(self):
         client = MongoClient(self.server, serverSelectionTimeoutMS=2000)
@@ -25,13 +25,10 @@ db = getattr(Connector(), 'db')
 # debug
 """
 qm_collection = db['qm_calculate_center']
-query = {'generations':1}
+query = {'low_opt_status':"job_success"}
 a = list(qm_collection.find(query))
 for i in a:
-    if i['low_opt_status'] == 'job_success':
-        print(i['deltaH'])
-    else:
-        print(0)
+    print(i['low_energy'])
 
 
 qm_collection = db['qm_calculate_center']

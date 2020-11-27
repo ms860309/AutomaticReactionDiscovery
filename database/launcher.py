@@ -46,7 +46,7 @@ def launch_energy_jobs():
         # update status job_launched
         update_energy_status(target, job_id)
 
-def create_energy_sub_file(dir_path, Energy_dir_path, ncpus = 8, mpiprocs = 1, ompthreads = 8):
+def create_energy_sub_file(dir_path, Energy_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
     subfile = path.join(Energy_dir_path, 'cal_E.job')
     energy_input_file = path.join(Energy_dir_path, 'energy.in')
     energy_output_file = path.join(Energy_dir_path, 'energy.out')
@@ -58,7 +58,7 @@ def create_energy_sub_file(dir_path, Energy_dir_path, ncpus = 8, mpiprocs = 1, o
         config = [line.strip() for line in f]
 
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}:mem=4gb\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(Energy_dir_path)
     nes1 = 'module load qchem'
     scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
@@ -101,15 +101,17 @@ def select_ssm_target():
     selected_targets = [target['path'] for target in targets]
     return selected_targets
 
-def launch_ssm_jobs():
+def launch_ssm_jobs(level_of_theory='QCHEM'):
     targets = select_ssm_target()
     
     for target in targets:
         SSM_dir_path = path.join(target, 'SSM/')
         os.mkdir(SSM_dir_path)
         os.chdir(SSM_dir_path)
-            
-        subfile = create_ssm_sub_file(target, SSM_dir_path)
+        if level_of_theory.upper() == 'QCHEM':
+            subfile = create_qchem_ssm_sub_file(target, SSM_dir_path)
+        elif level_of_theory == 'ORCA':
+            subfile = create_orca_ssm_sub_file(target, SSM_dir_path)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -120,21 +122,24 @@ def launch_ssm_jobs():
         # update status job_launched
         update_ssm_status(target, job_id)
         
-def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
-    subfile = path.join(SSM_dir_path, 'cal_ssm.job')
+def create_qchem_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
+    subfile = path.join(SSM_dir_path, 'qchem_ssm.job')
     xyz_file = path.join(dir_path, 'reactant.xyz')
     isomers = path.join(dir_path, 'add_bonds.txt')
-    lot_inp_file = path.join(path.join(path.dirname(path.dirname(dir_path)), 'config'), 'qstart')
+    lot_inp_file = path.join(path.join(path.dirname(path.dirname(dir_path)), 'config'), 'qchem_qstart')
     ssm_args = path.join(path.join(path.dirname(path.dirname(dir_path)), 'config'), 'ssm_argument')
-
+    frozen_file = path.join(path.join(path.dirname(path.dirname(dir_path)), 'config'), 'frozen.txt')
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}:mem=4gb\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(SSM_dir_path)
     nes1 = 'module load qchem'
     # activate conda env is necessary because gsm install on the environment
     nes2 = 'source ~/.bashrc\nconda activate rmg3'
     scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
-    command = 'gsm -xyzfile {} -mode SE_GSM -package QChem -isomers {} -lot_inp_file {} '.format(xyz_file, isomers, lot_inp_file)    
+    if os.path.exists(frozen_file):
+        command = 'gsm -xyzfile {} -mode SE_GSM -package Orca -isomers {} -lot_inp_file {} -frozen_coord_idx_file {} '.format(xyz_file, isomers, lot_inp_file, frozen_file)
+    else:
+        command = 'gsm -xyzfile {} -mode SE_GSM -package Orca -isomers {} -lot_inp_file {} '.format(xyz_file, isomers, lot_inp_file)
     with open(ssm_args, 'r') as f:
         lines = f.read().splitlines()
     command = command + ' '.join(lines) + ' > status.log 2>&1 '
@@ -142,7 +147,33 @@ def create_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 4, mpiprocs = 1, ompthre
     with open(subfile, 'w') as f:
         f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, nes2, scratch, command, clean_scratch))
     return subfile
-    
+
+def create_orca_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
+    subfile = path.join(SSM_dir_path, 'orca_ssm.job')
+    xyz_file = path.join(dir_path, 'reactant.xyz')
+    isomers = path.join(dir_path, 'add_bonds.txt')
+    lot_inp_file = path.join(path.join(path.dirname(path.dirname(dir_path)), 'config'), 'orca_qstart')
+    ssm_args = path.join(path.join(path.dirname(path.dirname(dir_path)), 'config'), 'ssm_argument')
+    frozen_file = path.join(path.join(path.dirname(path.dirname(dir_path)), 'config'), 'frozen.txt')
+    shell = '#!/usr/bin/bash'
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    target_path = 'cd {}'.format(SSM_dir_path)
+    # activate conda env is necessary because gsm install on the environment
+    nes2 = 'source ~/.bashrc\nconda activate rmg3'
+    scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
+    if os.path.exists(frozen_file):
+        command = 'gsm -xyzfile {} -mode SE_GSM -package Orca -isomers {} -lot_inp_file {} -frozen_coord_idx_file {} '.format(xyz_file, isomers, lot_inp_file, frozen_file)
+    else:
+        command = 'gsm -xyzfile {} -mode SE_GSM -package Orca -isomers {} -lot_inp_file {} '.format(xyz_file, isomers, lot_inp_file)
+      
+    with open(ssm_args, 'r') as f:
+        lines = f.read().splitlines()
+    command = command + ' '.join(lines) + ' > status.log 2>&1 '
+    clean_scratch = 'rm -r $QCSCRATCH'
+    with open(subfile, 'w') as f:
+        f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes2, scratch, command, clean_scratch))
+    return subfile
+
 def update_ssm_status(target, job_id):
     collect = db['qm_calculate_center']
     reg_query = {"path":target}
@@ -201,10 +232,10 @@ def create_opt_input(dir_path, OPT_dir_path):
         for line in config:
             f.write(line + '\n')
 
-def create_opt_sub_file(dir_path, OPT_dir_path, ncpus = 8, mpiprocs = 1, ompthreads = 8):
+def create_opt_sub_file(dir_path, OPT_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
     subfile = path.join(OPT_dir_path, 'cal_opt.job')
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}:mem=4gb\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(OPT_dir_path)
     nes1 = 'module load qchem'
     nes2 = 'export QCSCRATCH=/tmp/$PBS_JOBID'
@@ -276,7 +307,7 @@ def create_low_opt_input(dir_path, OPT_dir_path):
 def create_low_opt_sub_file(dir_path, OPT_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
     subfile = path.join(OPT_dir_path, 'cal_low_opt.job')
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}:mem=4gb\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(OPT_dir_path)
     nes1 = 'module load qchem'
     nes2 = 'export QCSCRATCH=/tmp/$PBS_JOBID'
@@ -291,6 +322,83 @@ def update_low_opt_status(target, job_id):
     collect = db['qm_calculate_center']
     update_field = {"low_opt_status":"job_launched", "low_opt_jobid":job_id}
     collect.update_one(target, {"$set": update_field}, True)
+
+"""
+Submmit TS refine calculation job
+1. select unrun job
+2. push unrun job to qchem
+3. update status "job_launched"
+Here refine is not to get a high level TS.
+It's just for ORCA with xtb GFN2-xtb level of theory SSM. To get a better TS initial guess
+"""
+
+def select_ts_refine_target():
+    qm_collection = db['qm_calculate_center']
+    reg_query = {"ts_refine_status":"job_unrun"}
+    targets = list(qm_collection.find(reg_query))
+    selected_targets = [target['path'] for target in targets]
+    return selected_targets
+
+def launch_ts_refine_jobs()
+    targets = select_ts_refine_target()
+    
+    for target in targets:
+        TS_dir_path = path.join(target, 'TS/')
+        os.mkdir(TS_dir_path)
+        os.chdir(TS_dir_path)
+            
+        SSM_dir_path = path.join(target, 'SSM/')
+        subfile = create_ts_refine_sub_file(SSM_dir_path, TS_dir_path)
+        cmd = 'qsub {}'.format(subfile)
+        process = subprocess.Popen([cmd],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, shell = True)
+        stdout, stderr = process.communicate()
+        # get job id from stdout, e.g., "106849.h81"
+        job_id = stdout.decode().replace("\n", "")
+        # update status job_launched
+        update_ts_refine_status(target, job_id)
+        
+def create_ts_refine_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
+    tsnode_path = path.join(SSM_dir_path, 'TSnode.xyz')
+    ts_input_file = path.join(TS_dir_path, 'ts_refine.in')
+    ts_output_file = path.join(TS_dir_path, 'ts_refine.out')
+    subfile = path.join(TS_dir_path, 'orca_ts_refine.job')
+    base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(SSM_dir_path)))), 'config')
+    ts_lot = path.join(base_dir_path, 'refine_ts')
+
+    with open(ts_lot) as f:
+        config = [line.strip() for line in f]
+
+    shell = '#!/usr/bin/bash'
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe\nsource ~/.bashrc\n'.format(ncpus, mpiprocs, ompthreads)
+    scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\ncp $PBS_O_WORKDIR/ts_refine.in $QCSCRATCH/\ncd $QCSCRATCH\n'
+    command = '$orcadir/orca $QCSCRATCH/ts_refine.in >> $PBS_O_WORKDIR/ts_refine.out'
+    copy_the_refine_xyz = 'cp $QCSCRATCH/ts_refine.xyz $PBS_O_WORKDIR'
+    clean_scratch = 'rm -r $QCSCRATCH'
+    
+    with open(tsnode_path, 'r') as f1:
+        lines = f1.read().splitlines()
+    with open(ts_input_file, 'w') as f2:
+        for i, text in enumerate(config):
+            if text.startswith('$molecule'):
+                cblock = lines[2:]
+                cblock.insert(0, '0  1')
+                config[(i+1):(i+1)] = cblock
+                break
+        for line in config:
+            f2.write(line + '\n')
+    with open(subfile, 'w') as f:
+        f.write('{}\n{}\n{}\n{}\n{}\n{}\n'.format(shell, pbs_setting, scratch, command, copy_the_refine_xyz, clean_scratch))
+        
+    return subfile
+    
+
+def update_ts_refine_status(target, job_id):
+    qm_collection = db['qm_calculate_center']
+    reg_query = {"path":target}
+    update_field = {"ts_refine_status":"job_launched", "ts_refine_jobid":job_id}
+    qm_collection.update_one(reg_query, {"$set": update_field}, True)
 
 """
 Submmit TS calculation job
@@ -311,8 +419,11 @@ def launch_ts_jobs():
     
     for target in targets:
         TS_dir_path = path.join(target, 'TS/')
-        os.mkdir(TS_dir_path)
-        os.chdir(TS_dir_path)
+        if os.path.exists(TS_dir_path):
+            os.chdir(TS_dir_path)
+        else:
+            os.mkdir(TS_dir_path)
+            os.chdir(TS_dir_path)
             
         SSM_dir_path = path.join(target, 'SSM/')
         subfile = create_ts_sub_file(SSM_dir_path, TS_dir_path)
@@ -326,11 +437,15 @@ def launch_ts_jobs():
         # update status job_launched
         update_ts_status(target, job_id)
         
-def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 8, mpiprocs = 1, ompthreads = 8):
-    tsnode_path = path.join(SSM_dir_path, 'TSnode.xyz')
+def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
+    refine_path = path.join(TS_dir_path, 'ts_refine.xyz')
+    if os.path.exists(refine_path):
+        tsnode_path = refine_path
+    else:
+        tsnode_path = path.join(SSM_dir_path, 'TSnode.xyz')
     ts_input_file = path.join(TS_dir_path, 'ts.in')
     ts_output_file = path.join(TS_dir_path, 'ts.out')
-    subfile = path.join(TS_dir_path, 'cal_ts.job')
+    subfile = path.join(TS_dir_path, 'qchem_ts.job')
     base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(SSM_dir_path)))), 'config')
     ts_lot = path.join(base_dir_path, 'freq_ts_freq.lot')
 
@@ -338,7 +453,7 @@ def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 8, mpiprocs = 1, ompth
         config = [line.strip() for line in f]
 
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}:mem=4gb\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(TS_dir_path)
     nes1 = 'module load qchem'
     scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
@@ -412,7 +527,7 @@ def launch_irc_jobs():
         # update status job_launched
         update_irc_status(target, job_id, direction = 'reverse')
         
-def create_irc_sub_file(TS_dir_path, IRC_dir_path, ncpus = 8, mpiprocs = 1, ompthreads = 8):
+def create_irc_sub_file(TS_dir_path, IRC_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
     ts_geo_path = path.join(TS_dir_path, 'ts_geo.xyz')
     
     irc_forward_input_file = path.join(IRC_dir_path, 'irc_forward.in')
@@ -428,7 +543,7 @@ def create_irc_sub_file(TS_dir_path, IRC_dir_path, ncpus = 8, mpiprocs = 1, ompt
     irc_reverse_lot = path.join(base_dir_path, 'freq_irc_reverse.lot')
 
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}:mem=4gb\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(IRC_dir_path)
     nes1 = 'module load qchem'
     scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
@@ -537,11 +652,11 @@ def update_irc_opt_status(target, job_id, direction):
     qm_collection.update_one(reg_query, {"$set": update_field}, True)
     
 
-def create_irc_opt_sub_file(irc_path, direction = 'forward', ncpus = 8, mpiprocs = 1, ompthreads = 8):
+def create_irc_opt_sub_file(irc_path, direction = 'forward', ncpus = 4, mpiprocs = 1, ompthreads = 4):
     job_name = 'irc_{}_opt.job'.format(direction)
     subfile = path.join(irc_path, job_name)
     shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}:mem=4gb\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(irc_path)
     nes1 = 'module load qchem'
     nes2 = 'export QCSCRATCH=/tmp/$PBS_JOBID'
@@ -555,9 +670,10 @@ def create_irc_opt_sub_file(irc_path, direction = 'forward', ncpus = 8, mpiprocs
     return subfile
 
 #launch_energy_jobs()
-#launch_ssm_jobs()
+#launch_ssm_jobs(level_of_theory='ORCA')
 launch_low_opt_jobs()
 launch_opt_jobs()
+launch_ts_refine_jobs()
 #launch_ts_jobs()
 #launch_irc_jobs()
 #launch_irc_opt_jobs()

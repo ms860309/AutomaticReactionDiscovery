@@ -3,7 +3,7 @@ $end
 
 $rem
 	JOBTYPE                   FREQ
-	METHOD                    B97-D3
+	METHOD                    B3LYP
 	DFT_D                     D3_BJ
 	BASIS                     def2-SV(P)
 	ECP                       def2-ecp
@@ -23,7 +23,7 @@ $end
 
 $rem
 	JOBTYPE RPATH
-	METHOD                    B97-D3
+	METHOD                    B3LYP
 	DFT_D                     D3_BJ
 	BASIS                     def2-SV(P)
 	ECP                       def2-ecp

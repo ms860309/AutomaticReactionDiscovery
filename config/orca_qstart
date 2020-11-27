@@ -1,0 +1,7 @@
+! XTB2 ENGRAD PAL4 TIGHTSCF
+
+%scf
+maxiter 350
+end
+
+
