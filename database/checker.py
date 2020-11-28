@@ -1083,9 +1083,13 @@ def check_opt_jobs():
         # if any difference update status
         orig_status = target['opt_status']
         if orig_status != new_status:
-            if new_status == 'job_success':
+            if new_status == 'job_success' and target['Reactant SMILES'] != 'initial reactant':
                 update_field = {
                                 'opt_status': new_status, 'ssm_status': 'job_unrun', 'opt_iter':opt_cycle, 'reactant_energy':energy
+                            }
+            elif new_status == 'job_success' and target['Reactant SMILES'] = 'initial reactant':
+                update_field = {
+                                'opt_status': new_status, 'opt_iter':opt_cycle, 'reactant_energy':energy
                             }
             elif new_status == "job_running" or new_status == "job_queueing":
                 update_field = {
@@ -1378,7 +1382,7 @@ def check_bindind_cutoff():
 #check_energy_jobs()
 check_ssm_jobs(refine = True)  # If the ssm perform by orca with xtb GFN2-xtb, then refine the TS is a good choice.  Get a better initial guess
 check_low_opt_jobs()
-check_bindind_cutoff()
+#check_bindind_cutoff()
 check_opt_jobs()
 check_ts_refine_jobs()
 check_ts_jobs()

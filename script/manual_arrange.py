@@ -130,38 +130,43 @@ def runMopac(tmpdir, target = 'reactant.mop'):
 
 def gen_geometry(reactant_mol, product_mol, constraint):
 
-    reactant_mol.gen3D(constraint, forcefield='mmff94', method = 'SteepestDescent', make3D=False)
-    product_mol.gen3D(constraint, forcefield='mmff94', method = 'SteepestDescent', make3D=False)
+    reactant_mol.gen3D(constraint, forcefield='uff', method = 'ConjugateGradients', make3D=False)
+    product_mol.gen3D(constraint, forcefield='uff', method = 'ConjugateGradients', make3D=False)
 
     arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, constraint)
     msg = arrange3D.arrangeIn3D()
     if msg != '':
         print(msg)
 
-    reactant_mol.gen3D(constraint, forcefield='mmff94', method = 'SteepestDescent', make3D=False)
-    product_mol.gen3D(constraint, forcefield='mmff94', method = 'SteepestDescent', make3D=False)
+    reactant_mol.gen3D(constraint, forcefield='uff', method = 'ConjugateGradients', make3D=False)
+    product_mol.gen3D(constraint, forcefield='uff', method = 'ConjugateGradients', make3D=False)
 
     dist = check_bond_length(reactant_mol, ((2, 17, 1), (5, 19, 1)))
     print(dist)
-
     prod_geo = str(product_mol.toNode()).splitlines()
     product_geometry = []
-    for i in prod_geo:
+    for idx, i in enumerate(prod_geo):
         i_list = i.split()
         atom = i_list[0] + " "
         k = i_list[1:] + [""]
-        l = " 1 ".join(k)
+        if idx in constraint:
+            l = " 0 ".join(k)
+        else:
+            l = " 1 ".join(k)
         out = atom + l
         product_geometry.append(out)
     product_geometry = "\n".join(product_geometry)
 
     reac_geo = str(reactant_mol.toNode()).splitlines()
     reactant_geometry = []
-    for i in reac_geo:
+    for idx, i in enumerate(reac_geo):
         i_list = i.split()
         atom = i_list[0] + " "
         k = i_list[1:] + [""]
-        l = " 1 ".join(k)
+        if idx in constraint:
+            l = " 0 ".join(k)
+        else:
+            l = " 1 ".join(k)
         out = atom + l
         reactant_geometry.append(out)
     reactant_geometry = "\n".join(reactant_geometry)
