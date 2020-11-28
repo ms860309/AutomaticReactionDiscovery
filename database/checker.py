@@ -1087,7 +1087,7 @@ def check_opt_jobs():
                 update_field = {
                                 'opt_status': new_status, 'ssm_status': 'job_unrun', 'opt_iter':opt_cycle, 'reactant_energy':energy
                             }
-            elif new_status == 'job_success' and target['Reactant SMILES'] = 'initial reactant':
+            elif new_status == 'job_success' and target['Reactant SMILES'] == 'initial reactant':
                 update_field = {
                                 'opt_status': new_status, 'opt_iter':opt_cycle, 'reactant_energy':energy
                             }

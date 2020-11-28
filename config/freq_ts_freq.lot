@@ -5,8 +5,7 @@ $rem
 	JOBTYPE                   FREQ
 	METHOD                    B3LYP
 	DFT_D                     D3_BJ
-	BASIS                     def2-SV(P)
-	ECP                       def2-ecp
+	BASIS                     def2-SVP
 	SCF_ALGORITHM             DIIS
 	MAX_SCF_CYCLES            150
 	SCF_CONVERGENCE           8
@@ -47,12 +46,11 @@ $rem
 	JOBTYPE                   TS
 	METHOD 					  B3LYP
 	DFT_D                     D3_BJ
-	BASIS                     def2-SV(P)
-	ECP                       def2-ecp
+	BASIS                     def2-SVP
 	SCF_ALGORITHM             DIIS
 	MAX_SCF_CYCLES            150
 	SCF_CONVERGENCE           8
-	GEOM_OPT_MAX_CYCLES       100
+	GEOM_OPT_MAX_CYCLES       300
 	GEOM_OPT_DMAX             50
 	SCF_GUESS                 READ
 	GEOM_OPT_HESSIAN          READ
@@ -72,8 +70,7 @@ $rem
 	JOBTYPE                   FREQ
 	METHOD                    B3LYP
 	DFT_D                     D3_BJ
-	BASIS                     def2-SV(P)
-	ECP                       def2-ecp
+	BASIS                     def2-SVP
 	SCF_ALGORITHM             DIIS
 	MAX_SCF_CYCLES            150
 	SCF_CONVERGENCE           8

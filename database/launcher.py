@@ -195,7 +195,7 @@ def select_opt_target():
 
 def launch_opt_jobs():
     targets = select_opt_target()
-    for target in targets:
+    for target in targets[:100]:
         dir_path = target['path']
         OPT_dir_path = path.join(dir_path, 'OPT/')
         if not os.path.exists(OPT_dir_path):
@@ -267,7 +267,7 @@ def select_low_opt_target():
 def launch_low_opt_jobs():
     targets = select_low_opt_target()
     
-    for target in targets:
+    for target in targets[:100]:
         dir_path = target['path']
         OPT_dir_path = path.join(dir_path, 'OPT/')
         if not os.path.exists(OPT_dir_path):
@@ -362,7 +362,7 @@ def launch_ts_refine_jobs():
 def create_ts_refine_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
     tsnode_path = path.join(SSM_dir_path, 'TSnode.xyz')
     ts_input_file = path.join(TS_dir_path, 'ts_refine.in')
-    ts_output_file = path.join(TS_dir_path, 'ts_refine.out')
+    #ts_output_file = path.join(TS_dir_path, 'ts_refine.out')
     subfile = path.join(TS_dir_path, 'orca_ts_refine.job')
     base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(SSM_dir_path)))), 'config')
     ts_lot = path.join(base_dir_path, 'refine_ts')

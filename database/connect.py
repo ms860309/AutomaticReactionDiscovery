@@ -30,7 +30,6 @@ a = list(qm_collection.find(query))
 for i in a:
     print(i['low_energy'])
 
-
 qm_collection = db['qm_calculate_center']
 query = [{'$match':{'reactant_inchi_key':'OWCQMKVAAHGRRF-UHFFFAOYSA-N'}},
             {'$group':{'_id':'$reactant_inchi_key', 'reactant_mopac_hf':{'$min':'$reactant_mopac_hf'}}}]
