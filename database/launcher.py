@@ -101,10 +101,10 @@ def select_ssm_target():
     selected_targets = [target['path'] for target in targets]
     return selected_targets
 
-def launch_ssm_jobs(level_of_theory='QCHEM'):
+def launch_ssm_jobs(num = 100, level_of_theory='QCHEM'):
     targets = select_ssm_target()
     
-    for target in targets:
+    for target in targets[:num]:
         SSM_dir_path = path.join(target, 'SSM/')
         os.mkdir(SSM_dir_path)
         os.chdir(SSM_dir_path)
@@ -193,9 +193,9 @@ def select_opt_target():
     targets = list(qm_collection.find(reg_query))
     return targets
 
-def launch_opt_jobs():
+def launch_opt_jobs(num=100):
     targets = select_opt_target()
-    for target in targets[:100]:
+    for target in targets[:num]:
         dir_path = target['path']
         OPT_dir_path = path.join(dir_path, 'OPT/')
         if not os.path.exists(OPT_dir_path):
@@ -264,10 +264,10 @@ def select_low_opt_target():
     targets = list(qm_collection.find(reg_query))
     return targets
 
-def launch_low_opt_jobs():
+def launch_low_opt_jobs(num=100):
     targets = select_low_opt_target()
     
-    for target in targets[:100]:
+    for target in targets[:num]:
         dir_path = target['path']
         OPT_dir_path = path.join(dir_path, 'OPT/')
         if not os.path.exists(OPT_dir_path):
@@ -339,10 +339,10 @@ def select_ts_refine_target():
     selected_targets = [target['path'] for target in targets]
     return selected_targets
 
-def launch_ts_refine_jobs():
+def launch_ts_refine_jobs(num=100):
     targets = select_ts_refine_target()
     
-    for target in targets:
+    for target in targets[:num]:
         TS_dir_path = path.join(target, 'TS/')
         os.mkdir(TS_dir_path)
         os.chdir(TS_dir_path)
@@ -380,14 +380,12 @@ def create_ts_refine_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1
     with open(tsnode_path, 'r') as f1:
         lines = f1.read().splitlines()
     with open(ts_input_file, 'w') as f2:
-        for i, text in enumerate(config):
-            if text.startswith('$molecule'):
-                cblock = lines[2:]
-                cblock.insert(0, '0  1')
-                config[(i+1):(i+1)] = cblock
-                break
         for line in config:
             f2.write(line + '\n')
+        f2.write('*xyz 0 1\n')
+        for line in lines[2:]:
+            f2.write(line + '\n')
+        f2.write('*')
     with open(subfile, 'w') as f:
         f.write('{}\n{}\n{}\n{}\n{}\n{}\n'.format(shell, pbs_setting, scratch, command, copy_the_refine_xyz, clean_scratch))
         
@@ -414,10 +412,10 @@ def select_ts_target():
     selected_targets = [target['path'] for target in targets]
     return selected_targets
 
-def launch_ts_jobs():
+def launch_ts_jobs(num=100):
     targets = select_ts_target()
     
-    for target in targets:
+    for target in targets[:100]:
         TS_dir_path = path.join(target, 'TS/')
         if os.path.exists(TS_dir_path):
             os.chdir(TS_dir_path)
@@ -670,10 +668,10 @@ def create_irc_opt_sub_file(irc_path, direction = 'forward', ncpus = 4, mpiprocs
     return subfile
 
 #launch_energy_jobs()
-#launch_ssm_jobs(level_of_theory='ORCA')
-launch_low_opt_jobs()
-launch_opt_jobs()
-#launch_ts_refine_jobs()
-#launch_ts_jobs()
+#launch_ssm_jobs(num = 100, level_of_theory='ORCA')
+launch_low_opt_jobs(num=100)
+launch_opt_jobs(num=100)
+#launch_ts_refine_jobs(num=100)
+#launch_ts_jobs(num=100)
 #launch_irc_jobs()
 #launch_irc_opt_jobs()

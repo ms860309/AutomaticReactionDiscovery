@@ -416,7 +416,7 @@ def check_ts_refine_jobs():
         new_status = check_ts_refine_job_status(job_id)
         if new_status == "off_queue":
             update_field = {
-                            'ts_status': 'job_unrun'
+                            'ts_status': 'job_unrun', 'ts_refine_status': 'job_success'
                             }
             qm_collection.update_one(target, {"$set": update_field}, True)
         else:
