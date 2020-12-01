@@ -521,8 +521,11 @@ def check_ts_jobs():
         orig_status = target['ts_status']
         if orig_status != new_status:
             if new_status == 'job_success':
-                reactant_energy = float(target['reactant_energy'])
-                barrier = (ts_energy - reactant_energy) * 627.5095
+                try:
+                    reactant_energy = float(target['reactant_energy'])
+                    barrier = (ts_energy - reactant_energy) * 627.5095
+                except:
+                    barrier = 'do not have reactant_energy'
                 if target['use_irc'] == '0' :
                     update_field = {
                                     'ts_status': new_status, 'ts_energy':ts_energy, 'barrier':barrier, 'insert reaction':'need insert'
@@ -1315,17 +1318,21 @@ def insert_ard():
         not_finished_number = len(list(qm_collection.find(energy_query))) + len(list(qm_collection.find(ssm_query))) + len(list(qm_collection.find(ts_query))) + len(list(qm_collection.find(irc_query_1))) + len(list(qm_collection.find(irc_query_2))) + len(list(qm_collection.find(opt_query_1))) + len(list(qm_collection.find(opt_query_2)))
     ard_had_add_number = qm_collection.count_documents({})  # Should -1 because the initial reactant
     ard_should_add_number = sum(statistics_collection.distinct("add how many products"))
-    make_sure_not_check_again = reactions_collection.distinct("ard_status")
 
-    if int(not_finished_number) == 0 and int(ard_had_add_number) -1 == int(ard_should_add_number) and make_sure_not_check_again == []:
+    if int(not_finished_number) == 0 and int(ard_had_add_number) -1 == int(ard_should_add_number):
         targets = list(reactions_collection.find({'unique':'new one'}))
         for target in targets:
-            dirpath = target['path']
-            ard_qm_target = list(qm_collection.find({'path':dirpath}))[0]
-            update_field_for_qm_target = {'ard_status':'job_unrun'}
-            update_field_for_reaction_target = {'ard_status':'aleady insert to qm'}
-            qm_collection.update_one(ard_qm_target, {"$set": update_field_for_qm_target}, True)
-            reactions_collection.update_one(target, {"$set": update_field_for_reaction_target}, True)
+            try:
+                ard_stauts = target['ard_status']
+                if ard_stauts == 'aleady insert to qm':
+                    continue
+            except:
+                dirpath = target['path']
+                ard_qm_target = list(qm_collection.find({'path':dirpath}))[0]
+                update_field_for_qm_target = {'ard_status':'job_unrun'}
+                update_field_for_reaction_target = {'ard_status':'aleady insert to qm'}
+                qm_collection.update_one(ard_qm_target, {"$set": update_field_for_qm_target}, True)
+                reactions_collection.update_one(target, {"$set": update_field_for_reaction_target}, True)
 
 
 """
