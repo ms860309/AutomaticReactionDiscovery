@@ -81,14 +81,14 @@ class Network(object):
             self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))
             reac_mol_copy = mol_object.copy()
             if self.generations == 1:
+                # Add low level opt of the initial reactant
+                reactant_path = os.path.join(self.ard_path, 'reactant.xyz')
+                subdir = os.path.join(os.path.join(os.path.dirname(self.ard_path), 'reactions'), 'initial_reactant')
+                new_reactant_path = os.path.join(subdir, 'reactant.xyz')
+                os.mkdir(os.path.join(os.path.dirname(self.ard_path), 'reactions'))
+                os.mkdir(subdir)
+                shutil.copyfile(reactant_path, new_reactant_path)
                 if self.preopt == '1':
-                    # Add low level opt of the initial reactant
-                    reactant_path = os.path.join(self.ard_path, 'reactant.xyz')
-                    subdir = os.path.join(os.path.join(os.path.dirname(self.ard_path), 'reactions'), 'initial_reactant')
-                    new_reactant_path = os.path.join(subdir, 'reactant.xyz')
-                    os.mkdir(os.path.join(os.path.dirname(self.ard_path), 'reactions'))
-                    os.mkdir(subdir)
-                    shutil.copyfile(reactant_path, new_reactant_path)
                     qm_collection.insert_one({
                                             'Reactant SMILES': 'initial reactant',
                                             'reactant_inchi_key':reactant_key,
@@ -97,6 +97,14 @@ class Network(object):
                                             'binding_mode_energy_cutoff':self.binding_mode_energy_cutoff,
                                             'path':subdir,
                                             'use_irc':self.use_irc})
+                else:
+                    qm_collection.insert_one({
+                                            'Reactant SMILES': 'initial reactant',
+                                            'reactant_inchi_key':reactant_key,
+                                            'binding_cutoff_select':self.binding_cutoff_select,
+                                            'binding_mode_energy_cutoff':self.binding_mode_energy_cutoff,
+                                            'path':subdir,
+                                            'use_irc':self.use_irc})               
             if self.generations == 1:
                 H298_reac = self.get_mopac_H298(mol_object)
                 update_field = {'reactant_energy':H298_reac}

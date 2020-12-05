@@ -651,8 +651,9 @@ class Arrange3D(object):
         # Convert mols to nodes and center molecules
         self.nodes_1 = [mol.toNode() for mol in self.mol_1.mols]
         self.nodes_2 = [mol.toNode() for mol in self.mol_2.mols]
-        self.setInitialPositions(self.nodes_1)
-        self.setInitialPositions(self.nodes_2)
+
+        #self.setInitialPositions(self.nodes_1)
+        #self.setInitialPositions(self.nodes_2)
 
     def arrangeIn3D(self):
         """
@@ -677,7 +678,7 @@ class Arrange3D(object):
                         a.mols[i].setCoordsFromMol(b[i].toPybelMol())
                         f.write('{}\n\n{}\n'.format(str(36), str(a.toNode())))
                 """
-            
+
             disps_guess = np.array([0.0]*dof)
             """
             result = optimize.minimize(self.objectiveFunction, disps_guess,
@@ -688,15 +689,14 @@ class Arrange3D(object):
             result = optimize.minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
-                                       options={'maxiter': 1000, 'disp': False, 'ftol':0.1}) #, callback = callbackF, 'eps':1e-10
+                                       options={'maxiter': 1000, 'disp': False, 'ftol':0.1}, callback = callbackF) #, callback = callbackF, 'eps':1e-10
             
             
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
                            str(result.status) + ':\n' + result.message + '\n')
                 ret = message
-            print(result.x[:self.dof_1])
-            print(result.x[self.dof_1:])
+
             coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, result.x[:self.dof_1])
             coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, result.x[self.dof_1:])
 
@@ -775,6 +775,7 @@ class Arrange3D(object):
             t2 = np.array([0.0, -y, 0.0])
             t3 = np.array([x, -y, 0.0])
             disp += [t1] + [t2] + [t3]
+
         for i in range(1, nmols):
             nodes[i].translate(disp[i - 1])
 

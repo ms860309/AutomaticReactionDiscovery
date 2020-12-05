@@ -130,16 +130,16 @@ def runMopac(tmpdir, target = 'reactant.mop'):
 
 def gen_geometry(reactant_mol, product_mol, constraint):
 
-    reactant_mol.gen3D(constraint, forcefield='uff', method = 'ConjugateGradients', make3D=False)
-    product_mol.gen3D(constraint, forcefield='uff', method = 'ConjugateGradients', make3D=False)
-
+    reactant_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
+    product_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
+    
     arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, constraint)
     msg = arrange3D.arrangeIn3D()
     if msg != '':
         print(msg)
 
-    reactant_mol.gen3D(constraint, forcefield='uff', method = 'ConjugateGradients', make3D=False)
-    product_mol.gen3D(constraint, forcefield='uff', method = 'ConjugateGradients', make3D=False)
+    reactant_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
+    product_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
 
     dist = check_bond_length(reactant_mol, ((2, 17, 1), (5, 19, 1)))
     print(dist)
