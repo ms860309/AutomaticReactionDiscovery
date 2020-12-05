@@ -667,6 +667,87 @@ def create_irc_opt_sub_file(irc_path, direction = 'forward', ncpus = 4, mpiprocs
         f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, nes2, nes3, nes4, nes5))
     return subfile
 
+"""
+Some manually test
+"""
+def select_targets():
+    reaction_collection = db['reactions']
+    query = {"barrier_energy":"do not have reactant_energy"}
+    targets = list(reaction_collection.find(query))
+    selected_targets = [target['path'] for target in targets]
+    return selected_targets
+
+def launch_jobs():
+    targets = select_targets()
+    
+    for target in targets:
+        SP_dir_path = path.join(target, 'SP/')
+        if path.exists(SP_dir_path):
+            shutil.rmtree(SP_dir_path)
+        os.mkdir(SP_dir_path)
+        os.chdir(SP_dir_path)
+            
+        TS_dir_path = path.join(target, 'TS/')
+        subfile = create_sub_file(SP_dir_path, TS_dir_path)
+        cmd = 'qsub {}'.format(subfile)
+        process = subprocess.Popen([cmd],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, shell = True)
+        stdout, stderr = process.communicate()
+        # get job id from stdout, e.g., "106849.h81"
+        job_id = stdout.decode().replace("\n", "")
+        # update status job_launched
+        update_status(target, job_id)
+        
+def create_sub_file(SP_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
+    qchem_ts_path = path.join(TS_dir_path, 'ts_geo.xyz')
+    xtb_ts_path = path.join(TS_dir_path, 'ts_refine.xyz')
+
+    subfile = path.join(SP_dir_path, 'sp.job')
+    qchem_sp = path.join(SP_dir_path, 'qchem_sp.in')
+    xtb_sp = path.join(SP_dir_path, 'xtb_sp.in')
+
+
+    shell = '#!/usr/bin/bash'
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
+    target_path = 'cd {}'.format(SP_dir_path)
+    nes1 = 'module load qchem'
+    scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
+    command1 = 'qchem -nt {} qchem_sp.in qchem_sp.out'.format(ncpus)
+    command2 = 'qchem -nt {} xtb_sp.in xtb_sp.out'.format(ncpus)
+    clean_scratch = 'rm -r $QCSCRATCH'
+    
+    with open(qchem_ts_path, 'r') as f1:
+        lines = f1.read().splitlines()
+    with open(qchem_sp, 'w') as f2:
+        f2.write('$molecule\n0 1\n')
+        for line in lines[2:]:
+            f2.write(line+ '\n')
+        f2.write('\n$end\n\n')
+        f2.write('\n$rem\n\nJOBTYPE SP\nMETHOD  B3LYP\nDFT_D   D3_BJ\nBASIS   def2-SVP\nSCF_ALGORITHM DIIS\nMAX_SCF_CYCLES 150\nSCF_CONVERGENCE 8\nSYM_IGNORE TRUE\nSYMMETRY FALSE\nWAVEFUNCTION_ANALYSIS FALSE\n$end\n')
+
+    with open(xtb_ts_path, 'r') as f1:
+        lines = f1.read().splitlines()
+    with open(xtb_sp, 'w') as f2:
+        f2.write('$molecule\n0 1\n')
+        for line in lines[2:]:
+            f2.write(line+ '\n')
+        f2.write('\n$end\n\n')
+        f2.write('\n$rem\n\nJOBTYPE SP\nMETHOD  B3LYP\nDFT_D   D3_BJ\nBASIS   def2-SVP\nSCF_ALGORITHM DIIS\nMAX_SCF_CYCLES 150\nSCF_CONVERGENCE 8\nSYM_IGNORE TRUE\nSYMMETRY FALSE\nWAVEFUNCTION_ANALYSIS FALSE\n$end\n')
+
+    with open(subfile, 'w') as f:
+        f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, scratch, command1, command2, clean_scratch))
+        
+    return subfile
+    
+
+def update_status(target, job_id):
+    reaction_collection = db['reactions']
+    reg_query = {"path":target}
+    update_field = {"sp_status":"job_launched", "sp_jobid":job_id}
+    reaction_collection.update_one(reg_query, {"$set": update_field}, True)
+
+
 #launch_energy_jobs()
 #launch_ssm_jobs(num = 100, level_of_theory='ORCA')
 launch_low_opt_jobs(num=100)
@@ -675,3 +756,9 @@ launch_opt_jobs(num=100)
 #launch_ts_jobs(num=100)
 #launch_irc_jobs()
 #launch_irc_opt_jobs()
+
+#launch_jobs() # For manual test
+
+
+
+

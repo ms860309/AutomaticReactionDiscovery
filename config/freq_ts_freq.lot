@@ -20,6 +20,27 @@ $molecule
 read
 $end
 
+$opt
+FIXED
+21 XYZ
+22 XYZ
+23 XYZ
+24 XYZ
+25 XYZ
+26 XYZ
+27 XYZ
+28 XYZ
+29 XYZ
+30 XYZ
+31 XYZ
+32 XYZ
+33 XYZ
+34 XYZ
+35 XYZ
+36 XYZ
+ENDFIXED
+$end
+
 $rem
 	JOBTYPE                   TS
 	METHOD 					  B3LYP
@@ -32,7 +53,6 @@ $rem
 	GEOM_OPT_DMAX             50
 	SCF_GUESS                 READ
 	GEOM_OPT_HESSIAN          READ
-	GEOM_OPT_CHARAC           TRUE
 	SYM_IGNORE                TRUE
 	SYMMETRY                  FALSE
 	WAVEFUNCTION_ANALYSIS     FALSE

@@ -4,5 +4,19 @@
 Calc_Hess true # Calculate Hessian in the beginning
 NumHess true # Request numerical Hessian (analytical not available)
 Recalc_Hess 5  # Recalculate the Hessian every 5 steps
+Constraints
+{B 20 24 C}
+{B 20 25 C}
+{B 20 26 C}
+{B 21 27 C}
+{B 21 28 C}
+{B 21 30 C}
+{B 22 29 C}
+{B 22 31 C}
+{B 22 34 C}
+{B 23 32 C}
+{B 23 33 C}
+{B 23 35 C}
+end
 end
 

@@ -481,7 +481,7 @@ class Molecule(pybel.Molecule):
         else:
             self.mols_indices = tuple([atom] for atom in range(len(self.atoms)))
 
-    def detRotors(self, constraint=None):
+    def detRotors(self, mols_indices, constraint=None):
         """
         Determine the rotors and atoms in the rotors of the molecule.
         """
@@ -492,21 +492,22 @@ class Molecule(pybel.Molecule):
         for bond_1 in pybel.ob.OBMolBondIter(self.OBMol):
             if bond_1.IsRotor():
                 ref_1, ref_2 = bond_1.GetBeginAtomIdx() - 1, bond_1.GetEndAtomIdx() - 1
-                self.rotors.append((ref_1, ref_2))
-                atom_in_rotor = [False] * natoms
-                atom_in_rotor[ref_1] = True
-                new_atom = True
+                if mols_indices[ref_1] not in constraint and mols_indices[ref_2] not in constraint:
+                    self.rotors.append((ref_1, ref_2))
+                    atom_in_rotor = [False] * natoms
+                    atom_in_rotor[ref_1] = True
+                    new_atom = True
 
-                while new_atom:
-                    new_atom = False
-                    for bond_2 in pybel.ob.OBMolBondIter(self.OBMol):
-                        ref_3, ref_4 = bond_2.GetBeginAtomIdx() - 1, bond_2.GetEndAtomIdx() - 1
-                        if not (ref_1 == ref_3 and ref_2 == ref_4):
-                            if atom_in_rotor[ref_3] ^ atom_in_rotor[ref_4]:
-                                atom_in_rotor[ref_3], atom_in_rotor[ref_4] = True, True
-                                new_atom = True
+                    while new_atom:
+                        new_atom = False
+                        for bond_2 in pybel.ob.OBMolBondIter(self.OBMol):
+                            ref_3, ref_4 = bond_2.GetBeginAtomIdx() - 1, bond_2.GetEndAtomIdx() - 1
+                            if not (ref_1 == ref_3 and ref_2 == ref_4):
+                                if atom_in_rotor[ref_3] ^ atom_in_rotor[ref_4]:
+                                    atom_in_rotor[ref_3], atom_in_rotor[ref_4] = True, True
+                                    new_atom = True
 
-                self.atom_in_rotor.append(atom_in_rotor)
+                    self.atom_in_rotor.append(atom_in_rotor)
 
     def detCloseAtoms(self, d):
         """
@@ -637,13 +638,13 @@ class Arrange3D(object):
         # Determine rotors and connectivity in molecules
         self.dof_1, self.def_2 = 6 * (len(self.mol_1.mols) - 1), 6 * (len(self.mol_2.mols) - 1)
 
-        for mol in mol_1.mols:
-            mol.detRotors(self.constraint)
+        for idx, mol in enumerate(mol_1.mols):
+            mol.detRotors(mol.mols_indices[idx], self.constraint)
             mol.detCloseAtoms(d_intramol)
             self.dof_1 += len(mol.rotors)
-        
-        for mol in mol_2.mols:
-            mol.detRotors(self.constraint)
+
+        for idx, mol in enumerate(mol_2.mols):
+            mol.detRotors(mol.mols_indices[idx], self.constraint)
             mol.detCloseAtoms(d_intramol)
             self.def_2 += len(mol.rotors)
 
@@ -663,7 +664,7 @@ class Arrange3D(object):
         ret = ''
         dof = self.dof_1 + self.def_2
         if dof != 0:
-            
+
             #a = self.mol_1
             #b = self.nodes_1
             def callbackF(Xi):
@@ -676,24 +677,26 @@ class Arrange3D(object):
                         a.mols[i].setCoordsFromMol(b[i].toPybelMol())
                         f.write('{}\n\n{}\n'.format(str(36), str(a.toNode())))
                 """
-
+            
             disps_guess = np.array([0.0]*dof)
+            """
             result = optimize.minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='COBYLA',
                                        options={'disp': False}) #, callback = callbackF, 'eps':1e-10
             """
-            result = optimize.minimize(self.objectiveFunction, result.x,
+            result = optimize.minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
-                                       options={'maxiter': 1000, 'disp': False, 'ftol':0.1}, callback = callbackF) #, callback = callbackF, 'eps':1e-10
-            """
+                                       options={'maxiter': 1000, 'disp': False, 'ftol':0.1}) #, callback = callbackF, 'eps':1e-10
+            
             
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
                            str(result.status) + ':\n' + result.message + '\n')
                 ret = message
-
+            print(result.x[:self.dof_1])
+            print(result.x[self.dof_1:])
             coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, result.x[:self.dof_1])
             coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, result.x[self.dof_1:])
 
