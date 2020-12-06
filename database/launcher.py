@@ -749,11 +749,11 @@ def update_status(target, job_id):
 
 
 #launch_energy_jobs()
-#launch_ssm_jobs(num = 100, level_of_theory='ORCA')
-launch_low_opt_jobs(num=100)
-launch_opt_jobs(num=100)
-#launch_ts_refine_jobs(num=100)
-#launch_ts_jobs(num=100)
+launch_ssm_jobs(num = 100, level_of_theory='ORCA')
+#launch_low_opt_jobs(num=100)
+#launch_opt_jobs(num=100)
+launch_ts_refine_jobs(num=100)
+launch_ts_jobs(num=100)
 #launch_irc_jobs()
 #launch_irc_opt_jobs()
 

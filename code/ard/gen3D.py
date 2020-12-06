@@ -332,7 +332,7 @@ class Molecule(pybel.Molecule):
         self.separateMol()
 
         # Generate 3D geometries separately
-        if len(self.mols) > 1:
+        if len(self.mols) > 1 and constraint == None:
             for mol in self.mols:
                 is_hydrogen_mol = len(mol.atoms) == 2 and all(a.OBAtom.GetAtomicNum() == 1 for a in mol)
                 is_oxygen_mol = len(mol.atoms) == 2 and all(a.OBAtom.GetAtomicNum() == 8 for a in mol)
@@ -651,9 +651,8 @@ class Arrange3D(object):
         # Convert mols to nodes and center molecules
         self.nodes_1 = [mol.toNode() for mol in self.mol_1.mols]
         self.nodes_2 = [mol.toNode() for mol in self.mol_2.mols]
-
-        #self.setInitialPositions(self.nodes_1)
-        #self.setInitialPositions(self.nodes_2)
+        self.setInitialPositions(self.nodes_1)
+        self.setInitialPositions(self.nodes_2)
 
     def arrangeIn3D(self):
         """
@@ -689,7 +688,7 @@ class Arrange3D(object):
             result = optimize.minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
-                                       options={'maxiter': 1000, 'disp': False, 'ftol':0.1}, callback = callbackF) #, callback = callbackF, 'eps':1e-10
+                                       options={'maxiter': 1000, 'disp': False, 'ftol':0.01}) #, callback = callbackF, 'eps':1e-10
             
             
             if not result.success:

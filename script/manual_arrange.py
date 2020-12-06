@@ -132,7 +132,7 @@ def gen_geometry(reactant_mol, product_mol, constraint):
 
     reactant_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
     product_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
-    
+
     arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, constraint)
     msg = arrange3D.arrangeIn3D()
     if msg != '':
