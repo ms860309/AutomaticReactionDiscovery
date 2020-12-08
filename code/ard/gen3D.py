@@ -492,7 +492,7 @@ class Molecule(pybel.Molecule):
         for bond_1 in pybel.ob.OBMolBondIter(self.OBMol):
             if bond_1.IsRotor():
                 ref_1, ref_2 = bond_1.GetBeginAtomIdx() - 1, bond_1.GetEndAtomIdx() - 1
-                if mols_indices[ref_1] not in constraint and mols_indices[ref_2] not in constraint:
+                if mols_indices[ref_1] not in constraint or mols_indices[ref_2] not in constraint:
                     self.rotors.append((ref_1, ref_2))
                     atom_in_rotor = [False] * natoms
                     atom_in_rotor[ref_1] = True
@@ -941,7 +941,7 @@ class Arrange3D(object):
         b2 = self.calcBondLens(coords_2, self.bonds_2)
         d1 = self.calcDihedralAngs(coords_1, self.torsions_1)
         d2 = self.calcDihedralAngs(coords_2, self.torsions_2)
-        val_b, val_d = 0.0, 0.0
+        val_b, val_d, val_dist = 0.0, 0.0, 0.0
 
         for i in range(len(b1)):
             val_b += np.abs(b1[i]-b2[i])
@@ -953,7 +953,7 @@ class Arrange3D(object):
                 val_d += np.abs(d + 2 * np.pi)
             else:
                 val_d += np.abs(d)
-
+        """
         # The weight 5 for val_b is chosen arbitrarily
         val = 5 * val_b + val_d
         return val
@@ -980,9 +980,9 @@ class Arrange3D(object):
             val = 5 * val_b + 2 * val_d + val_dist
             return val
         else:
-            val = 5 * val_b + 2 * val_d
+            val = 5 * val_b + val_d
             return val
-        """
+        
 
     def constraintFunction(self, disps):
         """
