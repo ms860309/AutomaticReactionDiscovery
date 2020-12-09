@@ -11,7 +11,7 @@ class Connector(object):
         #self.server = 'mongodb://localhost:27017/'
         #self.mongo_db = mongo_db
         self.client = self.connect()
-        self.db = self.client['zeolite_orca_xtb_loose_constraint']
+        self.db = self.client['zeolite_orca_xtb']
 
     def connect(self):
         client = MongoClient(self.server, serverSelectionTimeoutMS=2000)

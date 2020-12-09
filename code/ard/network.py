@@ -19,9 +19,8 @@ import util
 from quantum import QuantumError
 from node import Node
 from pgen import Generate
-import mopac
 from mopac import Mopac
-
+from xtb import XTB
 
 #database
 from connect import db
@@ -77,7 +76,7 @@ class Network(object):
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds
         # Filter reactions based on standard heat of reaction  delta H
-        if self.method == "mopac":
+        if self.method.lower() == 'mopac':
             self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))
             reac_mol_copy = mol_object.copy()
             if self.generations == 1:
@@ -113,6 +112,42 @@ class Network(object):
             else:
                 H298_reac = targets[0]['reactant_energy']
                 prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_mopac(mol_object, reac_mol_copy, mol, add_bonds[prod_mols.index(mol)], break_bonds[prod_mols.index(mol)], len(prod_mols), H298_reac)]
+        elif self.method.lower() == 'xtb':
+            self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))
+            reac_mol_copy = mol_object.copy()
+            if self.generations == 1:
+                # Add low level opt of the initial reactant
+                reactant_path = os.path.join(self.ard_path, 'reactant.xyz')
+                subdir = os.path.join(os.path.join(os.path.dirname(self.ard_path), 'reactions'), 'initial_reactant')
+                new_reactant_path = os.path.join(subdir, 'reactant.xyz')
+                os.mkdir(os.path.join(os.path.dirname(self.ard_path), 'reactions'))
+                os.mkdir(subdir)
+                shutil.copyfile(reactant_path, new_reactant_path)
+                if self.preopt == '1':
+                    qm_collection.insert_one({
+                                            'Reactant SMILES': 'initial reactant',
+                                            'reactant_inchi_key':reactant_key,
+                                            'low_opt_status':'job_unrun',
+                                            'binding_cutoff_select':self.binding_cutoff_select,
+                                            'binding_mode_energy_cutoff':self.binding_mode_energy_cutoff,
+                                            'path':subdir,
+                                            'use_irc':self.use_irc})
+                else:
+                    qm_collection.insert_one({
+                                            'Reactant SMILES': 'initial reactant',
+                                            'reactant_inchi_key':reactant_key,
+                                            'binding_cutoff_select':self.binding_cutoff_select,
+                                            'binding_mode_energy_cutoff':self.binding_mode_energy_cutoff,
+                                            'path':subdir,
+                                            'use_irc':self.use_irc})               
+            if self.generations == 1:
+                H298_reac = self.get_xtb_H298(mol_object)
+                update_field = {'reactant_energy':H298_reac}
+                pool_collection.update_one(targets[0], {"$set": update_field}, True)
+                prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_xtb(mol_object, reac_mol_copy, mol, add_bonds[prod_mols.index(mol)], break_bonds[prod_mols.index(mol)], len(prod_mols))]
+            else:
+                H298_reac = targets[0]['reactant_energy']
+                prod_mols_filtered = [mol for mol in prod_mols if self.filter_dh_xtb(mol_object, reac_mol_copy, mol, add_bonds[prod_mols.index(mol)], break_bonds[prod_mols.index(mol)], len(prod_mols), H298_reac)]
         else:
             self.logger.info('Now use {} to filter the delta H of reactions....\n'.format(self.method))
             # Load thermo database and choose which libraries to search
@@ -130,7 +165,7 @@ class Network(object):
 
         self.logger.info('After delta H filter {} product remain.\n'.format(len(prod_mols_filtered)))
         
-        if self.method != "mopac":
+        if self.method.lower() != 'mopac' or self.method.lower() != 'xtb':
             self.logger.info('Generate geometry........\n')
             for mol in prod_mols_filtered:
                 index = prod_mols.index(mol)
@@ -185,7 +220,7 @@ class Network(object):
     def filter_dh_mopac(self, reac_obj, reac_mol_copy, prod_mol, form_bonds, break_bonds, total_prod_num, refH = None):
         self.count += 1
         mopac_object = Mopac(reac_obj, prod_mol, self.mopac_method, self.forcefield, self.constraintff_alg, form_bonds, self.logger, total_prod_num, self.count, self.constraint)
-        H298_reac, H298_prod, reactant, product = mopac_object.mopac_get_H298(reac_mol_copy, self.reactant_path)
+        H298_reac, H298_prod = mopac_object.mopac_get_H298(reac_mol_copy, self.reactant_path)
 
         if H298_prod == False or H298_reac == False:
             return 0
@@ -204,7 +239,7 @@ class Network(object):
             product_output = os.path.join(self.reactant_path, 'tmp/product.out')
 
             qm_collection = db['qm_calculate_center']
-            dir_path = self.output(reactant_output, product_output, form_bonds, break_bonds, prod_mol)
+            dir_path = self.mopac_output(reactant_output, product_output, form_bonds, break_bonds, prod_mol)
             reactant_key = reac_obj.write('inchiKey').strip()
             product_name = prod_mol.write('inchiKey').strip()
             self.logger.info('\nReactant inchi key: {}\nProduct inchi key: {}\nDirectory path: {}\n'.format(reactant_key, product_name, dir_path))
@@ -241,6 +276,65 @@ class Network(object):
         self.logger.info('Finished {}/{}\n'.format(self.count, total_prod_num))
         return 0
 
+    def filter_dh_xtb(self, reac_obj, reac_mol_copy, prod_mol, form_bonds, break_bonds, total_prod_num, refH = None):
+        self.count += 1
+        xtb_object = XTB(reac_obj, prod_mol, self.forcefield, self.constraintff_alg, form_bonds, self.logger, total_prod_num, self.count, self.constraint)
+        H298_reac, H298_prod = xtb_object.xtb_get_H298(reac_mol_copy, self.reactant_path)
+
+        if H298_prod == False or H298_reac == False:
+            return 0
+        self.logger.info('Product energy calculate by xtb is {} Eh and reactant is {} Eh'.format(H298_prod, H298_reac))
+        if refH:
+            self.logger.info('In the {} generations, reactant hf use {} instead.'.format(self.generations, refH))
+            dH = (H298_prod - refH) * 627.5095   #convert Eh to kcal/mol
+        else:
+            dH = (H298_prod - H298_reac) * 627.5095
+
+        if dH < self.dh_cutoff:
+            self.logger.info('Delta H is {}, smaller than threshold'.format(dH))
+            self.logger.info('Finished {}/{}'.format(self.count, total_prod_num))
+
+            reactant_output = os.path.join(self.reactant_path, 'tmp/reactant.xyz')
+            product_output = os.path.join(self.reactant_path, 'tmp/product.xyz')
+
+            qm_collection = db['qm_calculate_center']
+            dir_path = self.xtb_output(reactant_output, product_output, form_bonds, break_bonds, prod_mol)
+            reactant_key = reac_obj.write('inchiKey').strip()
+            product_name = prod_mol.write('inchiKey').strip()
+            self.logger.info('\nReactant inchi key: {}\nProduct inchi key: {}\nDirectory path: {}\n'.format(reactant_key, product_name, dir_path))
+            if self.preopt == '1':
+                qm_collection.insert_one({
+                                    'reaction': [reactant_key, product_name], 
+                                    'Reactant SMILES':reac_obj.write('can').split()[0], 
+                                    'reactant_inchi_key':reactant_key, 
+                                    'product_inchi_key':product_name, 
+                                    'Product SMILES':prod_mol.write('can').split()[0],
+                                    'reactant_xtb_hf':H298_reac,
+                                    'product_xtb_hf':H298_prod,
+                                    'path':dir_path,
+                                    'low_opt_status':'job_unrun',
+                                    'generations':self.generations,
+                                    'use_irc':self.use_irc
+                                    })
+            else:
+                qm_collection.insert_one({
+                                    'reaction': [reactant_key, product_name], 
+                                    'Reactant SMILES':reac_obj.write('can').split()[0], 
+                                    'reactant_inchi_key':reactant_key, 
+                                    'product_inchi_key':product_name, 
+                                    'Product SMILES':prod_mol.write('can').split()[0],
+                                    'reactant_xtb_hf':H298_reac,
+                                    'product_xtb_hf':H298_prod,
+                                    'path':dir_path,
+                                    'ssm_status':'job_unrun',
+                                    'generations':self.generations,
+                                    'use_irc':self.use_irc
+                                    })    
+            return 1
+        self.logger.info('Delta H is {}, greater than threshold'.format(dH))
+        self.logger.info('Finished {}/{}\n'.format(self.count, total_prod_num))
+        return 0
+
     def get_mopac_H298(self, mol_object, charge = 0, multiplicity = 'SINGLET'):
         tmpdir = os.path.join(self.reactant_path, 'tmp')
         reactant_path = os.path.join(tmpdir, 'reactant.mop')
@@ -254,7 +348,13 @@ class Network(object):
             i_list = i.split()
             atom = i_list[0] + " "
             k = i_list[1:] + [""]
-            l = " 0 ".join(k)
+            if not self.constraint:
+                l = " 1 ".join(k)
+            else:
+                if idx in self.constraint:
+                    l = " 0 ".join(k)
+                else:
+                    l = " 1 ".join(k)
             out = atom + l
             reactant_geometry.append(out)
         reactant_geometry = "\n".join(reactant_geometry)
@@ -264,6 +364,18 @@ class Network(object):
             f.write("\n{}".format(reactant_geometry))
         mopac.runMopac(tmpdir, 'reactant.mop')
         mol_hf = mopac.getHeatofFormation(tmpdir, 'reactant.out')
+        return float(mol_hf)
+
+    def get_xtb_H298(self, mol_object):
+        tmpdir = os.path.join(self.reactant_path, 'tmp')
+        reactant_path = os.path.join(tmpdir, 'reactant.xyz')
+        if os.path.exists(tmpdir):
+            shutil.rmtree(tmpdir)
+        os.mkdir(tmpdir)
+        
+        shutil.copyfile(os.path.join(self.ard_path, 'reactant.xyz'), reactant_path)
+        self.runXTB(tmpdir, 'reactant.xyz')
+        mol_hf = self.getE(tmpdir, 'reactant.xyz')
         return float(mol_hf)
 
     def unique_key_filterIsomorphic_itself(self, base):
@@ -322,14 +434,14 @@ class Network(object):
         output_dir = util.makeOutputSubdirectory(subdir, dirname)
         kwargs['output_dir'] = output_dir
         #self.makeInputFile(reactant, product, **kwargs)
-        self.makeDrawFile(reactant, 'reactant.xyz', **kwargs)
-        self.makeDrawFile(product, 'product.xyz', **kwargs)
+        self.makeCalFile(reactant, 'reactant.xyz', **kwargs)
+        self.makeCalFile(product, 'product.xyz', **kwargs)
         self.makeisomerFile(add_bonds, break_bonds, **kwargs)
 
         reactant_mol.setCoordsFromMol(reactant_mol_copy)
         return output_dir
 
-    def output(self, reactant_output, product_output, add_bonds, break_bonds, prod_mol, **kwargs):
+    def mopac_output(self, reactant_output, product_output, add_bonds, break_bonds, prod_mol, **kwargs):
         # Database
         qm_collection = db['qm_calculate_center']
 
@@ -347,8 +459,27 @@ class Network(object):
         psymbol, pgeometry = self.get_mopac_opt_geometry(product_output)
 
         #self.makeInputFile(reactant, product, **kwargs)
-        self.makeDrawFile(reactant_output, 'reactant.xyz', symbol=rsymbol, geometry=rgeometry, **kwargs)
-        self.makeDrawFile(product_output, 'product.xyz', symbol=psymbol, geometry=pgeometry, **kwargs)
+        self.makeCalFile(reactant_output, 'reactant.xyz', symbol=rsymbol, geometry=rgeometry, **kwargs)
+        self.makeCalFile(product_output, 'product.xyz', symbol=psymbol, geometry=pgeometry, **kwargs)
+        self.makeisomerFile(add_bonds, break_bonds, **kwargs)
+        return output_dir
+
+    def xtb_output(self, reactant_output, product_output, add_bonds, break_bonds, prod_mol, **kwargs):
+        # Database
+        qm_collection = db['qm_calculate_center']
+
+        subdir = os.path.join(os.path.dirname(self.ard_path), 'reactions')
+        if not os.path.exists(subdir):
+            os.mkdir(subdir)
+        b_dirname = prod_mol.write('inchiKey').strip()
+        targets = list(qm_collection.find({'product_inchi_key':b_dirname}))
+        dirname = self.dir_check(subdir, b_dirname, len(targets) + 1)
+
+        output_dir = util.makeOutputSubdirectory(subdir, dirname)
+        kwargs['output_dir'] = output_dir
+
+        shutil.copyfile(reactant_output, os.path.join('output_dir', 'reactant.xyz'))
+        shutil.copyfile(product_output, os.path.join('output_dir', 'product.xyz'))
         self.makeisomerFile(add_bonds, break_bonds, **kwargs)
         return output_dir
 
@@ -381,7 +512,7 @@ class Network(object):
         return output 
 
     @staticmethod
-    def makeDrawFile(_input, filename = 'draw.xyz', symbol = None, geometry = None, **kwargs):
+    def makeCalFile(_input, filename = 'draw.xyz', symbol = None, geometry = None, **kwargs):
         """
         Create input file for network drawing.
         """
@@ -432,3 +563,27 @@ class Network(object):
                         coords.append([float(c) for c in data[2:]])
                     else:
                         return symbols, np.array(coords)
+
+    def getE(self, tmpdir, target = 'reactant.xyz'):
+        """
+        Here the energy is Eh (hartree)
+        """
+        input_path = os.path.join(tmpdir, target)
+        with open(input_path, 'r') as f:
+            lines = f.readlines()
+        HeatofFormation = lines[1].strip().split()[1]
+        return HeatofFormation
+
+    def runXTB(self, tmpdir, target = 'reactant.xyz'):
+        input_path = os.path.join(tmpdir, target)
+        outname = '{}.out'.format(target.split('.')[1])
+        output_path = os.path.join(tmpdir, 'xtbopt.xyz')
+        new_output_path = os.path.join(tmpdir, outname)
+        if self.constraint == None:
+            p = Popen(['xtb --opt ', input_path])
+            p.wait()
+            os.rename(output_path, new_output_path)
+        else:
+            p = Popen(['xtb --opt --input constraint.inp ', input_path])
+            p.wait()
+            os.rename(output_path, new_output_path)
