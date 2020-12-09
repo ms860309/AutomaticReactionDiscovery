@@ -2,7 +2,7 @@ $rem
 	JOBTYPE OPT
 	METHOD  B3LYP
 	DFT_D   D3_BJ
-	BASIS   def2-SVP
+	BASIS   def2-SV(P)
 	SCF_ALGORITHM DIIS
 	MAX_SCF_CYCLES 150
 	SCF_CONVERGENCE 8
@@ -26,7 +26,7 @@ $rem
 	JOBTYPE                   FREQ
 	METHOD 					  B3LYP
 	DFT_D                     D3_BJ
-	BASIS                     def2-SVP
+	BASIS                     def2-SV(P)
 	SCF_GUESS                 READ
 	SCF_ALGORITHM             DIIS
 	MAX_SCF_CYCLES            150

@@ -2,7 +2,7 @@ $rem
 JOBTYPE                   FORCE
 METHOD                    B3LYP
 DFT_D                     D3_BJ
-BASIS                     def2-SVP
+BASIS                     def2-SV(P)
 SCF_ALGORITHM diis
 SCF_MAX_CYCLES 150
 SCF_CONVERGENCE 8
