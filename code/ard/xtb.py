@@ -54,6 +54,7 @@ class XTB(object):
             if os.path.exists(tmpdir):
                 shutil.rmtree(tmpdir)
             os.mkdir(tmpdir)
+            os.chdir(tmpdir)
             with open(reactant_path, 'w') as f:
                 f.write(str(len(str(reac_geo).splitlines())))
                 f.write('\n\n')
@@ -169,14 +170,15 @@ class XTB(object):
 
     def runXTB(self, tmpdir, target = 'reactant.xyz'):
         input_path = os.path.join(tmpdir, target)
-        outname = '{}.out'.format(target.split('.')[1])
+        outname = '{}.xyz'.format(target.split('.')[0])
         output_path = os.path.join(tmpdir, 'xtbopt.xyz')
+        constraint_path = os.path.join(os.path.dirname(tmpdir), 'constraint.inp')
         new_output_path = os.path.join(tmpdir, outname)
         if self.constraint == None:
             p = Popen(['xtb --opt ', input_path])
             p.wait()
             os.rename(output_path, new_output_path)
         else:
-            p = Popen(['xtb --opt --input constraint.inp ', input_path])
+            p = Popen(['xtb', '--opt', '--input', constraint_path, input_path])
             p.wait()
             os.rename(output_path, new_output_path)

@@ -372,6 +372,7 @@ class Network(object):
         if os.path.exists(tmpdir):
             shutil.rmtree(tmpdir)
         os.mkdir(tmpdir)
+        os.chdir(tmpdir)
         
         shutil.copyfile(os.path.join(self.ard_path, 'reactant.xyz'), reactant_path)
         self.runXTB(tmpdir, 'reactant.xyz')
@@ -478,8 +479,8 @@ class Network(object):
         output_dir = util.makeOutputSubdirectory(subdir, dirname)
         kwargs['output_dir'] = output_dir
 
-        shutil.copyfile(reactant_output, os.path.join('output_dir', 'reactant.xyz'))
-        shutil.copyfile(product_output, os.path.join('output_dir', 'product.xyz'))
+        shutil.copyfile(reactant_output, os.path.join(output_dir, 'reactant.xyz'))
+        shutil.copyfile(product_output, os.path.join(output_dir, 'product.xyz'))
         self.makeisomerFile(add_bonds, break_bonds, **kwargs)
         return output_dir
 
@@ -576,14 +577,15 @@ class Network(object):
 
     def runXTB(self, tmpdir, target = 'reactant.xyz'):
         input_path = os.path.join(tmpdir, target)
-        outname = '{}.out'.format(target.split('.')[1])
+        outname = '{}.xyz'.format(target.split('.')[0])
         output_path = os.path.join(tmpdir, 'xtbopt.xyz')
         new_output_path = os.path.join(tmpdir, outname)
+        constraint_path = os.path.join(os.path.dirname(tmpdir), 'constraint.inp')
         if self.constraint == None:
             p = Popen(['xtb --opt ', input_path])
             p.wait()
             os.rename(output_path, new_output_path)
         else:
-            p = Popen(['xtb --opt --input constraint.inp ', input_path])
+            p = Popen(['xtb', '--opt', '--input', constraint_path, input_path])
             p.wait()
             os.rename(output_path, new_output_path)
