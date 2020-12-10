@@ -375,8 +375,11 @@ class Network(object):
         os.chdir(tmpdir)
         
         shutil.copyfile(os.path.join(self.ard_path, 'reactant.xyz'), reactant_path)
-        self.runXTB(tmpdir, 'reactant.xyz')
-        mol_hf = self.getE(tmpdir, 'reactant.xyz')
+        try:
+            self.runXTB(tmpdir, 'reactant.xyz')
+            mol_hf = self.getE(tmpdir, 'reactant.xyz')
+        except:
+            raise Exception('The initial reactant energy calculation by xtb is fail.')
         return float(mol_hf)
 
     def unique_key_filterIsomorphic_itself(self, base):

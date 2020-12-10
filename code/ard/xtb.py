@@ -61,16 +61,22 @@ class XTB(object):
                 f.write('{}'.format(reac_geo))
 
             start_time = time.time()
-            self.runXTB(tmpdir, 'reactant.xyz')
-            reactant_energy = self.getE(tmpdir, 'reactant.xyz')
+            try:
+                self.runXTB(tmpdir, 'reactant.xyz')
+                reactant_energy = self.getE(tmpdir, 'reactant.xyz')
+            except:
+                return False, False
 
             with open(product_path, 'w') as f:
                 f.write(str(len(str(prod_geo).splitlines())))
                 f.write('\n\n')
                 f.write('{}'.format(prod_geo))
-            self.runXTB(tmpdir, 'product.xyz')
-            product_energy = self.getE(tmpdir, 'product.xyz')
-
+            try:
+                self.runXTB(tmpdir, 'product.xyz')
+                product_energy = self.getE(tmpdir, 'product.xyz')
+            except:
+                return False, False
+                
             self.finalize(start_time, 'XTB')
             return float(reactant_energy), float(product_energy)
     
