@@ -165,7 +165,7 @@ class Network(object):
 
         self.logger.info('After delta H filter {} product remain.\n'.format(len(prod_mols_filtered)))
         
-        if self.method.lower() != 'mopac' or self.method.lower() != 'xtb':
+        if self.method.lower() != 'mopac' and self.method.lower() != 'xtb':
             self.logger.info('Generate geometry........\n')
             for mol in prod_mols_filtered:
                 index = prod_mols.index(mol)
