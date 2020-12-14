@@ -518,11 +518,11 @@ def create_irc_sub_file(TS_dir_path, IRC_dir_path, ncpus = 4, mpiprocs = 1, ompt
     ts_geo_path = path.join(TS_dir_path, 'ts_geo.xyz')
     irc_input_file = path.join(IRC_dir_path, 'pysisyphus_irc.yaml')
     subfile = path.join(IRC_dir_path, 'irc.job')
-
+    new_ts_geo_path = path.join(IRC_dir_path, 'ts_geo.xyz')
     base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(IRC_dir_path)))), 'config')
     irc_lot = path.join(base_dir_path, 'pysisyphus_irc.yaml')
     copyfile(irc_lot, irc_input_file)
-
+    copyfile(ts_geo_path, new_ts_geo_path)
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(IRC_dir_path)
