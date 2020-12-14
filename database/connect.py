@@ -11,7 +11,7 @@ class Connector(object):
         #self.server = 'mongodb://localhost:27017/'
         #self.mongo_db = mongo_db
         self.client = self.connect()
-        self.db = self.client['zeolite_orca_xtb']
+        self.db = self.client['all_xtb']
 
     def connect(self):
         client = MongoClient(self.server, serverSelectionTimeoutMS=2000)
@@ -38,13 +38,9 @@ print(a)
 
 
 qm_collection = db['qm_calculate_center']
-query = {'ssm_status':'job_fail'}
+query = {'barrier':'do not have reactant_energy'}
 targets = list(qm_collection.find(query))
 for target in targets:
-    dir_path = target['path']
-    ssm_path = os.path.join(dir_path, 'SSM')
-    if os.path.exists(ssm_path):
-        shutil.rmtree(ssm_path)
-    update_field = {'ssm_status':"job_unrun"}
-    qm_collection.update_one(target, {"$unset": {'ssm_jobid':""}, "$set": update_field}, True)
+    update_field = {'energy_status':"job_unrun"}
+    qm_collection.update_one(target, {"$set": update_field}, True)
 """

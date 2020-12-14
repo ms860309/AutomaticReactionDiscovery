@@ -105,24 +105,23 @@ def check_energy_jobs():
         job_id = target['energy_jobid']
         new_status = check_energy_job_status(job_id)
         if new_status == "off_queue":
-                # 3. check job content
-                new_status, energy = check_energy_content(target['path'])
-
-                # 4. check with original status which
-                # should be job_launched or job_running
-                # if any difference update status
-                orig_status = target['energy_status']
-                if orig_status != new_status:
-                    if new_status == 'job_success':
-                        update_field = {
-                                        'energy_status': new_status,
-                                        'reactant_energy':energy
-                                    }
-                    else:
-                        update_field = {
-                                        'energy_status': new_status
-                                    }                       
-                    qm_collection.update_one(target, {"$set": update_field}, True)
+            # 3. check job content
+            new_status, energy = check_energy_content(target['path'])
+        # 4. check with original status which
+        # should be job_launched or job_running
+        # if any difference update status
+        orig_status = target['energy_status']
+        if orig_status != new_status:
+            if new_status == 'job_success':
+                update_field = {
+                                'energy_status': new_status,
+                                'reactant_energy':energy
+                            }
+            else:
+                update_field = {
+                                'energy_status': new_status
+                            }                       
+            qm_collection.update_one(target, {"$set": update_field}, True)
 
 """
 SSM check.
@@ -526,14 +525,24 @@ def check_ts_jobs():
                     barrier = (ts_energy - reactant_energy) * 627.5095
                 except:
                     barrier = 'do not have reactant_energy'
-                if target['use_irc'] == '0' :
-                    update_field = {
-                                    'ts_status': new_status, 'ts_energy':ts_energy, 'barrier':barrier, 'insert reaction':'need insert'
-                                    }
+                if target['use_irc'] == '0':
+                    if barrier == 'do not have reactant_energy':
+                        update_field = {
+                                        'ts_status': new_status, 'ts_energy':ts_energy, 'energy_stauts':'job_unrun'
+                                        }
+                    else:
+                        update_field = {
+                                        'ts_status': new_status, 'ts_energy':ts_energy, 'barrier':barrier, 'insert reaction':'need insert'
+                                        }    
                 else:
-                    update_field = {
-                                    'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'barrier':barrier
-                                    }
+                    if barrier == 'do not have reactant_energy':
+                        update_field = {
+                                        'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'energy_stauts':'job_unrun'
+                                        }
+                    else:
+                        update_field = {
+                                        'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'barrier':barrier
+                                        }
             else:
                 update_field = {
                                 'ts_status': new_status
@@ -1384,9 +1393,56 @@ def check_bindind_cutoff():
 
     return targets
 
+"""
+Check barrier which do not have reactant energy
+"""
+
+def select_barrier_target():
+    """
+    This method is to inform job checker which targets 
+    to check, which need meet one requirement:
+    1. status is job_launched or job_running
+    Returns a list of targe
+    """
+
+    qm_collection = db['qm_calculate_center']
+    query = {'$and': 
+                    [
+                    { "energy_stauts":
+                        {"$in":
+                        ['job_success']}},
+                    {'barrier':
+                        {'$in':
+                            ['do not have reactant_energy']}}
+                    ]
+                }
+    targets = list(qm_collection.find(query))
+    return targets
+
+def check_barrier():
+    """
+    This method checks job with following steps:
+    1. select jobs to check
+    2. check the job pbs-status, e.g., qstat -f "job_id"
+    3. check job content
+    4. update with new status
+    """
+    # 1. select jobs to check
+    targets = select_barrier_target()
+
+    qm_collection = db['qm_calculate_center']
+    # 2. check the job pbs status
+    for target in targets:
+        reactant_energy = float(target['reactant_energy'])
+        ts_energy = float(target['ts_energy'])
+        barrier = (ts_energy - reactant_energy) * 627.5095
+        update_field = {
+                        'barrier':barrier
+                        }
+        qm_collection.update_one(target, {"$set": update_field}, True)
 
 
-#check_energy_jobs()
+check_energy_jobs()
 check_ssm_jobs(refine = True)  # If the ssm perform by orca with xtb GFN2-xtb, then refine the TS is a good choice.  Get a better initial guess
 #check_low_opt_jobs()
 #check_bindind_cutoff()
@@ -1396,5 +1452,6 @@ check_ts_jobs()
 #check_irc_jobs()
 #check_irc_equal()
 #check_irc_opt_jobs()
+check_barrier()
 insert_reaction()
 insert_ard()

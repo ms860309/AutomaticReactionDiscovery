@@ -21,9 +21,13 @@ class QChem(object):
         else:
             with open(outputfile) as f:
                 self.log = f.read().splitlines()
-                for line in self.log:
-                    if 'fatal error' in line:
-                        raise QChemError(f'Q-Chem job {outputfile} had an error!')
+                result = True
+                if ' **  OPTIMIZATION CONVERGED  **' not in self.log:
+                    result = False
+                if not result:
+                    for line in self.log:
+                        if 'fatal error' in line:
+                            raise QChemError(f'Q-Chem job {outputfile} had an error!')
 
     def get_energy(self, first=False):
         if first:

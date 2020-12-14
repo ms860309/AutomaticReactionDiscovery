@@ -748,7 +748,7 @@ def update_status(target, job_id):
     reaction_collection.update_one(reg_query, {"$set": update_field}, True)
 
 
-#launch_energy_jobs()
+launch_energy_jobs()
 launch_ssm_jobs(num = 100, level_of_theory='ORCA')
 #launch_low_opt_jobs(num=100)
 #launch_opt_jobs(num=100)
