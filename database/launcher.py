@@ -16,12 +16,12 @@ Submmit energy calculation job
 """
 def select_calE_target():
     qm_collection = db['qm_calculate_center']
-    reg_query = {"energy_status":"job_unrun"}
-    targets = list(qm_collection.find(reg_query))
+    query = {"energy_status":"job_unrun"}
+    targets = list(qm_collection.find(query))
     selected_targets = [target['path'] for target in targets]
     return selected_targets
 
-def launch_energy_jobs():
+def launch_energy_jobs(ncpus = 4, mpiprocs = 1, ompthreads = 4):
     targets = select_calE_target()
     
     for target in targets:
@@ -34,7 +34,7 @@ def launch_energy_jobs():
             os.mkdir(Energy_dir_path)
             os.chdir(Energy_dir_path)
             
-        subfile = create_energy_sub_file(target, Energy_dir_path)
+        subfile = create_energy_sub_file(target, Energy_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
         
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
@@ -83,9 +83,9 @@ def create_energy_sub_file(dir_path, Energy_dir_path, ncpus = 4, mpiprocs = 1, o
     
 def update_energy_status(target, job_id):
     qm_collection = db['qm_calculate_center']
-    reg_query = {"path":target}
+    query = {"path":target}
     update_field = {"energy_status":"job_launched", "energy_jobid":job_id}
-    qm_collection.update_one(reg_query, {"$set": update_field}, True)
+    qm_collection.update_one(query, {"$set": update_field}, True)
     
 """
 Submmit SSM calculation job
@@ -96,12 +96,12 @@ Submmit SSM calculation job
     
 def select_ssm_target():
     qm_collection = db['qm_calculate_center']
-    reg_query = {"ssm_status":"job_unrun"}
-    targets = list(qm_collection.find(reg_query))
+    query = {"ssm_status":"job_unrun"}
+    targets = list(qm_collection.find(query))
     selected_targets = [target['path'] for target in targets]
     return selected_targets
 
-def launch_ssm_jobs(num = 100, level_of_theory='QCHEM'):
+def launch_ssm_jobs(num = 100, level_of_theory='QCHEM', ncpus = 4, mpiprocs = 1, ompthreads = 4):
     targets = select_ssm_target()
     
     for target in targets[:num]:
@@ -109,7 +109,7 @@ def launch_ssm_jobs(num = 100, level_of_theory='QCHEM'):
         os.mkdir(SSM_dir_path)
         os.chdir(SSM_dir_path)
         if level_of_theory.upper() == 'QCHEM':
-            subfile = create_qchem_ssm_sub_file(target, SSM_dir_path)
+            subfile = create_qchem_ssm_sub_file(target, SSM_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
         elif level_of_theory == 'ORCA':
             subfile = create_orca_ssm_sub_file(target, SSM_dir_path)
         cmd = 'qsub {}'.format(subfile)
@@ -176,9 +176,9 @@ def create_orca_ssm_sub_file(dir_path, SSM_dir_path, ncpus = 4, mpiprocs = 1, om
 
 def update_ssm_status(target, job_id):
     collect = db['qm_calculate_center']
-    reg_query = {"path":target}
+    query = {"path":target}
     update_field = {"ssm_status":"job_launched", "ssm_jobid":job_id}
-    collect.update_one(reg_query, {"$set": update_field}, True)
+    collect.update_one(query, {"$set": update_field}, True)
 
 """
 Submmit OPT calculation job
@@ -189,11 +189,11 @@ Submmit OPT calculation job
     
 def select_opt_target():
     qm_collection = db['qm_calculate_center']
-    reg_query = {"opt_status":"job_unrun"}
-    targets = list(qm_collection.find(reg_query))
+    query = {"opt_status":"job_unrun"}
+    targets = list(qm_collection.find(query))
     return targets
 
-def launch_opt_jobs(num=100):
+def launch_opt_jobs(num=100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
     targets = select_opt_target()
     for target in targets[:num]:
         dir_path = target['path']
@@ -203,7 +203,7 @@ def launch_opt_jobs(num=100):
         os.chdir(OPT_dir_path)
         
         create_opt_input(dir_path, OPT_dir_path)
-        subfile = create_opt_sub_file(dir_path, OPT_dir_path)
+        subfile = create_opt_sub_file(dir_path, OPT_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -260,11 +260,11 @@ Submmit Low level OPT calculation job
     
 def select_low_opt_target():
     qm_collection = db['qm_calculate_center']
-    reg_query = {"low_opt_status":"job_unrun"}
-    targets = list(qm_collection.find(reg_query))
+    query = {"low_opt_status":"job_unrun"}
+    targets = list(qm_collection.find(query))
     return targets
 
-def launch_low_opt_jobs(num=100):
+def launch_low_opt_jobs(num=100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
     targets = select_low_opt_target()
     
     for target in targets[:num]:
@@ -275,7 +275,7 @@ def launch_low_opt_jobs(num=100):
         os.chdir(OPT_dir_path)
         
         create_low_opt_input(dir_path, OPT_dir_path)
-        subfile = create_low_opt_sub_file(dir_path, OPT_dir_path)
+        subfile = create_low_opt_sub_file(dir_path, OPT_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -334,12 +334,12 @@ It's just for ORCA with xtb GFN2-xtb level of theory SSM. To get a better TS ini
 
 def select_ts_refine_target():
     qm_collection = db['qm_calculate_center']
-    reg_query = {"ts_refine_status":"job_unrun"}
-    targets = list(qm_collection.find(reg_query))
+    query = {"ts_refine_status":"job_unrun"}
+    targets = list(qm_collection.find(query))
     selected_targets = [target['path'] for target in targets]
     return selected_targets
 
-def launch_ts_refine_jobs(num=100):
+def launch_ts_refine_jobs(num=100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
     targets = select_ts_refine_target()
     
     for target in targets[:num]:
@@ -348,7 +348,7 @@ def launch_ts_refine_jobs(num=100):
         os.chdir(TS_dir_path)
             
         SSM_dir_path = path.join(target, 'SSM/')
-        subfile = create_ts_refine_sub_file(SSM_dir_path, TS_dir_path)
+        subfile = create_ts_refine_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -394,9 +394,9 @@ def create_ts_refine_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1
 
 def update_ts_refine_status(target, job_id):
     qm_collection = db['qm_calculate_center']
-    reg_query = {"path":target}
+    query = {"path":target}
     update_field = {"ts_refine_status":"job_launched", "ts_refine_jobid":job_id}
-    qm_collection.update_one(reg_query, {"$set": update_field}, True)
+    qm_collection.update_one(query, {"$set": update_field}, True)
 
 """
 Submmit TS calculation job
@@ -407,12 +407,12 @@ Submmit TS calculation job
     
 def select_ts_target():
     qm_collection = db['qm_calculate_center']
-    reg_query = {"ts_status":"job_unrun"}
-    targets = list(qm_collection.find(reg_query))
+    query = {"ts_status":"job_unrun"}
+    targets = list(qm_collection.find(query))
     selected_targets = [target['path'] for target in targets]
     return selected_targets
 
-def launch_ts_jobs(num=100):
+def launch_ts_jobs(num=100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
     targets = select_ts_target()
     
     for target in targets[:100]:
@@ -424,7 +424,7 @@ def launch_ts_jobs(num=100):
             os.chdir(TS_dir_path)
             
         SSM_dir_path = path.join(target, 'SSM/')
-        subfile = create_ts_sub_file(SSM_dir_path, TS_dir_path)
+        subfile = create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -477,9 +477,9 @@ def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompth
 
 def update_ts_status(target, job_id):
     qm_collection = db['qm_calculate_center']
-    reg_query = {"path":target}
+    query = {"path":target}
     update_field = {"ts_status":"job_launched", "ts_jobid":job_id}
-    qm_collection.update_one(reg_query, {"$set": update_field}, True)
+    qm_collection.update_one(query, {"$set": update_field}, True)
     
 """
 Submmit IRC(Intrinsic Reaction Coordinate, in Qchem called 'rpath') calculation job
@@ -490,107 +490,57 @@ Submmit IRC(Intrinsic Reaction Coordinate, in Qchem called 'rpath') calculation 
     
 def select_irc_target():
     qm_collection = db['qm_calculate_center']
-    reg_query = {"irc_status":"job_unrun"}
-    targets = list(qm_collection.find(reg_query))
+    query = {"irc_status":"job_unrun"}
+    targets = list(qm_collection.find(query))
     selected_targets = [target['path'] for target in targets]
     return selected_targets
 
-def launch_irc_jobs():
+def launch_irc_jobs(ncpus = 4, mpiprocs = 1, ompthreads = 4):
     targets = select_irc_target()
-    
     for target in targets:
         IRC_dir_path = path.join(target, 'IRC/')
         os.mkdir(IRC_dir_path)
         os.chdir(IRC_dir_path)
-            
+
         TS_dir_path = path.join(target, 'TS/')
-        subfile_1,  subfile_2= create_irc_sub_file(TS_dir_path, IRC_dir_path)
-        cmd_1 = 'qsub {}'.format(subfile_1)
-        process_1 = subprocess.Popen([cmd_1],
+        subfile = create_irc_sub_file(TS_dir_path, IRC_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+        cmd = 'qsub {}'.format(subfile)
+        process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, shell = True)
-        stdout, stderr = process_1.communicate()
+        stdout, stderr = process.communicate()
         # get job id from stdout, e.g., "106849.h81"
         job_id = stdout.decode().replace("\n", "")
         # update status job_launched
-        update_irc_status(target, job_id, direction = 'forward')
-        
-        cmd_2 = 'qsub {}'.format(subfile_2)
-        process_2 = subprocess.Popen([cmd_2],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, shell = True)
-        stdout, stderr = process_2.communicate()
-        # get job id from stdout, e.g., "106849.h81"
-        job_id = stdout.decode().replace("\n", "")
-        # update status job_launched
-        update_irc_status(target, job_id, direction = 'reverse')
+        update_irc_status(target, job_id)
         
 def create_irc_sub_file(TS_dir_path, IRC_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
     ts_geo_path = path.join(TS_dir_path, 'ts_geo.xyz')
-    
-    irc_forward_input_file = path.join(IRC_dir_path, 'irc_forward.in')
-    irc_reverse_input_file = path.join(IRC_dir_path, 'irc_reverse.in')
-    irc_forward_output_file = path.join(IRC_dir_path, 'irc_forward.out')
-    irc_reverse_output_file = path.join(IRC_dir_path, 'irc_reverse.out')
-
-    subfile_1 = path.join(IRC_dir_path, 'cal_irc_forward.job')
-    subfile_2 = path.join(IRC_dir_path, 'cal_irc_reverse.job')
+    irc_input_file = path.join(IRC_dir_path, 'pysisyphus_irc.yaml')
+    subfile = path.join(IRC_dir_path, 'irc.job')
 
     base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(IRC_dir_path)))), 'config')
-    irc_forward_lot = path.join(base_dir_path, 'freq_irc_forward.lot')
-    irc_reverse_lot = path.join(base_dir_path, 'freq_irc_reverse.lot')
+    irc_lot = path.join(base_dir_path, 'pysisyphus_irc.yaml')
+    copyfile(irc_lot, irc_input_file)
 
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(IRC_dir_path)
-    nes1 = 'module load qchem'
-    scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
-    command_1 = 'qchem -nt {} {} {}'.format(ncpus, irc_forward_input_file, irc_forward_output_file)
-    command_2 = 'qchem -nt {} {} {}'.format(ncpus, irc_reverse_input_file, irc_reverse_output_file)
-    clean_scratch = 'rm -r $QCSCRATCH'
-    
-    with open(irc_forward_lot) as f:
-        forward_config = [line.strip() for line in f]
-    with open(irc_reverse_lot) as f:
-        reverse_config = [line.strip() for line in f]
+    nes = 'source ~/.bashrc\nconda activate rmg3'
+    command = 'pysis pysisyphus_irc.yaml'
+    deactivate = 'conda deactivate'
 
-    with open(ts_geo_path, 'r') as f1:
-        lines = f1.read().splitlines()
-
-    with open(irc_forward_input_file, 'w') as f2:
-        for i, text in enumerate(forward_config):
-            if text.startswith('$molecule'):
-                cblock = lines[2:]
-                cblock.insert(0, '0  1')
-                forward_config[(i+1):(i+1)] = cblock
-                break
-        for line in forward_config:
-            f2.write(line + '\n')
-    with open(irc_reverse_input_file, 'w') as f2:
-        for i, text in enumerate(reverse_config):
-            if text.startswith('$molecule'):
-                cblock = lines[2:]
-                cblock.insert(0, '0  1')
-                reverse_config[(i+1):(i+1)] = cblock
-                break
-        for line in reverse_config:
-            f2.write(line + '\n')
-
-    with open(subfile_1, 'w') as f:
-        f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, scratch, command_1, clean_scratch))
-    with open(subfile_2, 'w') as f:
-        f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, scratch, command_2, clean_scratch))
+    with open(subfile, 'w') as f:
+        f.write('{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes, command, deactivate))
             
-    return subfile_1, subfile_2
+    return subfile
     
 
-def update_irc_status(target, job_id, direction):
+def update_irc_status(target, job_id):
     qm_collection = db['qm_calculate_center']
-    reg_query = {"path":target}
-    irc_status = 'irc_{}_status'.format(str(direction))
-    irc_jobid = 'irc_{}_jobid'.format(str(direction))
-    update_field = {irc_status:"job_launched", irc_jobid:job_id}
-    qm_collection.update_one(reg_query, {"$unset": {'irc_status':""}, "$set": update_field}, True)
+    query = {"path":target}
+    update_field = {'irc_status':'job_launched', 'irc_jobid':job_id}
+    qm_collection.update_one(query, {"$set": update_field}, True)
 
 """
 Submmit opt job which is from irc
@@ -599,22 +549,28 @@ Submmit opt job which is from irc
 3. update status "job_launched"
 """
 
-def select_irc_opt_target(direction = 'forward'):
+def select_irc_opt_target():
     
     qm_collection = db['qm_calculate_center']
-    irc_opt_status = 'opt_{}_status'.format(direction)
-    reg_query = {irc_opt_status:"job_unrun"}
-    targets = list(qm_collection.find(reg_query))
+    query = {'irc_opt_status':"job_unrun"}
+    targets = list(qm_collection.find(query))
     selected_targets = [target['path'] for target in targets]
     return selected_targets
 
-def launch_irc_opt_jobs():
+def launch_irc_opt_jobs(ncpus = 4, mpiprocs = 1, ompthreads = 4):
     
-    targets = select_irc_opt_target(direction = 'forward')
+    targets = select_irc_opt_target()
     for target in targets:
         IRC_dir_path = path.join(target, 'IRC/')
         os.chdir(IRC_dir_path)
-        subfile = create_irc_opt_sub_file(IRC_dir_path, direction = 'forward')
+
+        irc_equal = target['irc_equal']
+        if irc_equal == 'forward equal to reactant and reverse equal to product':
+            target_mol = path.join(IRC_dir_path, 'finished_last.xyz')
+        elif irc_equal == 'reverse equal to reactant and forward equal to product':
+            target_mol = path.join(IRC_dir_path, 'finished_first.xyz')
+
+        subfile = create_irc_opt_sub_file(IRC_dir_path, target_mol, ncpus = 4, mpiprocs = 1, ompthreads = 4)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -623,49 +579,44 @@ def launch_irc_opt_jobs():
         # get job id from stdout, e.g., "106849.h81"
         job_id = stdout.decode().replace("\n", "")
         # update status job_launched
-        update_irc_opt_status(target, job_id, direction = 'forward')
-        
-    targets = select_irc_opt_target(direction = 'reverse')
-    for target in targets:
-        IRC_dir_path = path.join(target, 'IRC/')
-        os.chdir(IRC_dir_path)
-        subfile = create_irc_opt_sub_file(IRC_dir_path, direction = 'reverse')
-        cmd = 'qsub {}'.format(subfile)
-        process = subprocess.Popen([cmd],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, shell = True)
-        stdout, stderr = process.communicate()
-        # get job id from stdout, e.g., "106849.h81"
-        job_id = stdout.decode().replace("\n", "")
-        # update status job_launched
-        update_irc_opt_status(target, job_id, direction = 'reverse')
+        update_irc_opt_status(target, job_id)
 
+def create_irc_opt_sub_file(irc_path, target_mol, ncpus = 4, mpiprocs = 1, ompthreads = 4):
+    base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(irc_path)))), 'config')
+    irc_opt_lot = path.join(base_dir_path, 'irc_opt_freq.lot')
+    irc_opt_input = path.join(irc_path, 'low_opt.in')
+    subfile = path.join(irc_path, 'irc_opt.job')
 
-def update_irc_opt_status(target, job_id, direction):
-    qm_collection = db['qm_calculate_center']
-    reg_query = {"path":target}
-    irc_opt_status = 'opt_{}_status'.format(direction)
-    irc_opt_jobid = 'irc_{}_opt_jobid'.format(str(direction))
-    update_field = {irc_opt_status:"opt_job_launched", irc_opt_jobid:job_id}
-    qm_collection.update_one(reg_query, {"$set": update_field}, True)
-    
+    with open(irc_opt_lot) as f:
+        config = [line.strip() for line in f]
+    with open(target_mol) as f:
+        lines = f.read().split('\n')
+        geo = [line for line in lines[2:]]
+    with open(irc_opt_input, 'w') as f:
+        f.write('$molecule\n{} {}\n'.format(0, 1))
+        f.write('\n'.join(geo))
+        f.write('\n')
+        f.write('$end\n\n')
+        for line in config:
+            f.write(line + '\n')
 
-def create_irc_opt_sub_file(irc_path, direction = 'forward', ncpus = 4, mpiprocs = 1, ompthreads = 4):
-    job_name = 'irc_{}_opt.job'.format(direction)
-    subfile = path.join(irc_path, job_name)
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(irc_path)
     nes1 = 'module load qchem'
     nes2 = 'export QCSCRATCH=/tmp/$PBS_JOBID'
     nes3 = 'mkdir -p $QCSCRATCH'
-    inputname = '{}_opt.in'.format(direction)
-    outputname = '{}_opt.out'.format(direction)
-    nes4 = 'qchem -nt {} {} {}'.format(ncpus, inputname, outputname)
+    nes4 = 'qchem -nt {} irc_opt.in irc_opt.out'.format(ncpus)
     nes5 = 'rm -r $QCSCRATCH'
     with open(subfile, 'w') as f:
         f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, nes2, nes3, nes4, nes5))
+
     return subfile
+
+def update_irc_opt_status(target, job_id):
+    qm_collection = db['qm_calculate_center']
+    update_field = {'irc_opt_status':"job_launched", 'irc_opt_jobid':job_id}
+    qm_collection.update_one(target, {"$set": update_field}, True)
 
 """
 Some manually test
@@ -743,22 +694,18 @@ def create_sub_file(SP_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompthread
 
 def update_status(target, job_id):
     reaction_collection = db['reactions']
-    reg_query = {"path":target}
+    query = {"path":target}
     update_field = {"sp_status":"job_launched", "sp_jobid":job_id}
-    reaction_collection.update_one(reg_query, {"$set": update_field}, True)
+    reaction_collection.update_one(query, {"$set": update_field}, True)
 
 
-launch_energy_jobs()
-launch_ssm_jobs(num = 100, level_of_theory='ORCA')
-#launch_low_opt_jobs(num=100)
-#launch_opt_jobs(num=100)
-launch_ts_refine_jobs(num=100)
-launch_ts_jobs(num=100)
-#launch_irc_jobs()
-#launch_irc_opt_jobs()
+launch_energy_jobs(ncpus = 4, mpiprocs = 1, ompthreads = 4)
+launch_ssm_jobs(num = 100, level_of_theory='ORCA', ncpus = 4, mpiprocs = 1, ompthreads = 4)
+#launch_low_opt_jobs(num=100, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+#launch_opt_jobs(num=100, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+launch_ts_refine_jobs(num=100, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+launch_ts_jobs(num=100, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+#launch_irc_jobs(ncpus = 4, mpiprocs = 1, ompthreads = 4)
+#launch_irc_opt_jobs(ncpus = 4, mpiprocs = 1, ompthreads = 4)
 
 #launch_jobs() # For manual test
-
-
-
-

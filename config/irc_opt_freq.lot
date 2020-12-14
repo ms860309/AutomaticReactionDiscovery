@@ -1,0 +1,40 @@
+$molecule
+$end
+
+$rem
+	JOBTYPE OPT
+	METHOD  B3LYP
+	DFT_D   D3_BJ
+	BASIS   def2-SVP
+	SCF_ALGORITHM DIIS
+	MAX_SCF_CYCLES 150
+	SCF_CONVERGENCE 8
+	GEOM_OPT_MAX_CYCLES       300
+	GEOM_OPT_TOL_GRADIENT     100
+	GEOM_OPT_TOL_DISPLACEMENT 400
+	GEOM_OPT_TOL_ENERGY       33
+	SYM_IGNORE TRUE
+	SYMMETRY FALSE
+	WAVEFUNCTION_ANALYSIS FALSE
+$end
+
+
+@@@
+
+$molecule
+read
+$end
+
+$rem
+	JOBTYPE                   FREQ
+	METHOD 					  B3LYP
+	DFT_D                     D3_BJ
+	BASIS                     def2-SVP
+	SCF_GUESS                 READ
+	SCF_ALGORITHM             DIIS
+	MAX_SCF_CYCLES            150
+	SCF_CONVERGENCE           8
+	SYM_IGNORE                TRUE
+	SYMMETRY                  FALSE
+	WAVEFUNCTION_ANALYSIS     FALSE
+$end

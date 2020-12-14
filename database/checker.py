@@ -38,12 +38,12 @@ def select_energy_target():
     """
 
     qm_collection = db['qm_calculate_center']
-    reg_query = {"energy_status":
+    query = {"energy_status":
                     {"$in":
                         ["job_launched", "job_running", "job_queueing"]
                     }
                 }
-    targets = list(qm_collection.find(reg_query))
+    targets = list(qm_collection.find(query))
 
     return targets
 
@@ -134,12 +134,12 @@ def select_ssm_target():
     Returns a list of targe
     """
     qm_collection = db['qm_calculate_center']
-    reg_query = {"ssm_status":
+    query = {"ssm_status":
                     {"$in": 
                         ["job_launched", "job_running", "job_queueing"] 
                     }
                 }
-    targets = list(qm_collection.find(reg_query))
+    targets = list(qm_collection.find(query))
     return targets
 
 def check_ssm_job_status(job_id):
@@ -362,12 +362,12 @@ def select_ts_refine_target():
     Returns a list of targe
     """
     qm_collection = db['qm_calculate_center']
-    reg_query = {"ts_refine_status":
+    query = {"ts_refine_status":
                     {"$in": 
                         ["job_launched", "job_running", "job_queueing"] 
                     }
                 }
-    targets = list(qm_collection.find(reg_query))
+    targets = list(qm_collection.find(query))
 
     return targets
 
@@ -437,12 +437,12 @@ def select_ts_target():
     Returns a list of targe
     """
     qm_collection = db['qm_calculate_center']
-    reg_query = {"ts_status":
+    query = {"ts_status":
                     {"$in": 
                         ["job_launched", "job_running", "job_queueing"] 
                     }
                 }
-    targets = list(qm_collection.find(reg_query))
+    targets = list(qm_collection.find(query))
 
     return targets
 
@@ -528,21 +528,16 @@ def check_ts_jobs():
                 if target['use_irc'] == '0':
                     if barrier == 'do not have reactant_energy':
                         update_field = {
-                                        'ts_status': new_status, 'ts_energy':ts_energy, 'energy_stauts':'job_unrun'
+                                        'ts_status': new_status, 'ts_energy':ts_energy, 'energy_status':'job_unrun'
                                         }
                     else:
                         update_field = {
                                         'ts_status': new_status, 'ts_energy':ts_energy, 'barrier':barrier, 'insert reaction':'need insert'
                                         }    
                 else:
-                    if barrier == 'do not have reactant_energy':
-                        update_field = {
-                                        'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'energy_stauts':'job_unrun'
-                                        }
-                    else:
-                        update_field = {
-                                        'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'barrier':barrier
-                                        }
+                    update_field = {
+                                    'ts_status': new_status, 'ts_energy':ts_energy, 'irc_status':'job_unrun', 'barrier':barrier
+                                    }
             else:
                 update_field = {
                                 'ts_status': new_status
@@ -552,7 +547,7 @@ def check_ts_jobs():
 """
 IRC check.
 """
-def select_irc_target(direction = 'forward'):
+def select_irc_target():
     """
     This method is to inform job checker which targets 
     to check, which need meet one requirement:
@@ -560,8 +555,7 @@ def select_irc_target(direction = 'forward'):
     Returns a list of targe
     """
     qm_collection = db['qm_calculate_center']
-    irc_status = 'irc_{}_status'.format(direction)
-    query = {irc_status:
+    query = {'irc_status':
                     {"$in": 
                         ["job_launched", "job_running", "job_queueing"] 
                     }
@@ -594,112 +588,16 @@ def check_irc_status(job_id):
     else:
         return "job_launched"
     
-def check_irc_content(target_path, direction = 'forward'):
-    reactant_path = path.join(target_path, 'reactant.xyz')
-    irc_path = path.join(target_path, 'IRC/')
-    base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(irc_path)))), 'config')
-    opt_lot = path.join(base_dir_path, 'opt_freq.lot')
-    opt_name = '{}_opt.in'.format(direction)
-    opt_in = path.join(irc_path, opt_name)
-    irc_output = path.join(irc_path, 'irc_{}.out'.format(direction))
+def check_irc_content(target_path):
+    irc_dir_path = os.path.join(target_path, 'IRC')
+    first_output = os.path.join(irc_dir_path, 'finished_first.xyz')
+    last_output = os.path.join(irc_dir_path, 'finished_last.xyz')
 
-    with open(opt_lot) as f:
-        config = [line.strip() for line in f]
-    with open(reactant_path, 'r') as f1:
-        lines = f1.readlines()
-    atom_number = int(lines[0])
-    with open(irc_output, 'r') as f:
-        f.seek(0, 2)
-        fsize = f.tell()
-        f.seek(max(fsize - 12280, 0), 0)  # Read last 12 kB of file
-        lines = f.readlines()
-
-    if lines[-2] == ' IRC backup failure\n' or lines[-2] == ' IRC failed final bisector step\n':
-
-        with open(irc_output, 'r') as f:
-            full_lines = f.readlines()
-
-        # Sometimes irc success in forward(reverse) but fail in reverse(forward).
-        # We wan't to catch the final structure to optimize. 
-        # But if "convergence criterion reached" in first direction fail in second that will cause reactant equal to product.
-
-        if '  IRC -- convergence criterion reached.\n' in full_lines:
-            for idx, i in enumerate(full_lines):
-                if i.startswith('  IRC -- convergence criterion reached.\n'):
-                    break
-            full_lines = full_lines[:idx]
-            for idx2, j in enumerate(reversed(full_lines)):
-                if j.startswith('             Standard Nuclear Orientation (Angstroms)\n'):
-                    break
-            geo = []
-            for i in full_lines[-idx2 + 2 : -idx2 + 2 + atom_number]:
-                atom = i.split()[1:]
-                geo.append('  '.join(atom))
-            with open(opt_in, 'w') as f:
-                f.write('$molecule\n{} {}\n'.format(0, 1))
-                f.write('\n'.join(geo))
-                f.write('\n$end\n\n')
-                for line in config:
-                    f.write(line + '\n')
-        else:
-            for idx, i in enumerate(lines):
-                if i.startswith('             Standard Nuclear Orientation (Angstroms)\n'):
-                    break
-            geo = []
-            for i in lines[idx + 3 : idx + 3 + atom_number]:
-                atom = i.split()[1:]
-                geo.append('  '.join(atom))
-                
-            with open(opt_in, 'w') as f:
-                f.write('$molecule\n{} {}\n'.format(0, 1))
-                f.write('\n'.join(geo))
-                f.write('\n$end\n\n')
-                for line in config:
-                    f.write(line + '\n')
-
-        return 'need opt'
-    elif lines[-5] == '        *  Thank you very much for using Q-Chem.  Have a nice day.  *\n':
+    if os.path.exists(first_output) and os.path.exists(last_output):
         return 'job_success'
-    elif lines[-2] == ' Bad initial gradient\n':
-        return 'Bad initial gradient'
-    elif lines[-2] == ' IRC --- Failed line search\n':
-        return 'Failed line search'
-    elif lines[-6] == ' Error in gen_scfman\n':
-        return 'Error in gen_scfman'
     else:
-        return 'unknown fail information'
+        return 'job_fail'
 
-def generate_irc_product_xyz(target, direction='forward'):
-    irc_path = path.join(target['path'], 'IRC')
-    reactant_path = path.join(target['path'], 'reactant.xyz')
-    output_name = 'irc_{}.out'.format(direction)
-    output = path.join(irc_path, output_name)
-    name = path.join(irc_path, '{}.xyz'.format(direction))
-
-    with open(reactant_path, 'r') as f1:
-        lines = f1.readlines()
-    atom_number = int(lines[0])
-
-    with open(output, 'r') as f:
-        full_lines = f.readlines()
-    count = 1
-    for idx, i in enumerate(full_lines):
-        if i.startswith('  IRC -- convergence criterion reached.\n'):
-            count += 1
-            if count == 2:
-                break
-    full_lines = full_lines[:idx]
-    for idx2, j in enumerate(reversed(full_lines)):
-        if j.startswith('             Standard Nuclear Orientation (Angstroms)\n'):
-            break
-    geo = []
-    for i in full_lines[-idx2 + 2 : -idx2 + 2 + atom_number]:
-        atom = i.split()[1:]
-        geo.append('  '.join(atom))
-    with open(name, 'w') as f:
-        f.write(str(atom_number))
-        f.write('\n\n')
-        f.write('\n'.join(geo))
 
 def check_irc_jobs():
     """
@@ -710,7 +608,7 @@ def check_irc_jobs():
     4. update with new status
     """
     # 1. select jobs to check
-    targets = select_irc_target(direction = 'forward')
+    targets = select_irc_target()
 
     qm_collection = db['qm_calculate_center']
     # 2. check the job pbs status
@@ -720,68 +618,22 @@ def check_irc_jobs():
         new_status = check_irc_status(job_id)
         if new_status == "off_queue":
             # 3. check job content
-            new_status = check_irc_content(target['path'], direction='forward')
+            new_status = check_irc_content(target['path'])
 
         # 4. check with original status which
         # should be job_launched or job_running
         # if any difference update status
-        irc_status = 'irc_{}_status'.format('forward')
-        orig_status = target[irc_status]
+        orig_status = target['irc_status']
         if orig_status != new_status:
             if new_status == 'job_success':
-                generate_irc_product_xyz(target, direction='forward')
                 update_field = {
-                    irc_status:new_status, 'irc_equal':'waiting for check'
+                                'irc_status':new_status, 'irc_equal':'waiting for check'
                                 }
-                qm_collection.update_one(target, {"$set": update_field}, True)
-            elif new_status == 'need opt':
-                opt_status = 'opt_{}_status'.format('forward')
-                update_field = {
-                    irc_status:new_status, opt_status:'job_unrun'
-                                }
-                qm_collection.update_one(target, {"$set": update_field}, True)
             else:
                 update_field = {
-                                irc_status: new_status
+                                'irc_status': new_status
                             }
-                qm_collection.update_one(target, {"$set": update_field}, True)
-    
-    # 1. select jobs to check
-    targets = select_irc_target(direction = 'reverse')
-
-    qm_collection = db['qm_calculate_center']
-    # 2. check the job pbs status
-    for target in targets:
-        job_id = target['irc_reverse_jobid']
-        # 2. check the job pbs status
-        new_status = check_irc_status(job_id)
-        if new_status == "off_queue":
-            # 3. check job content
-            new_status = check_irc_content(target['path'], direction='reverse')
-
-        # 4. check with original status which
-        # should be job_launched or job_running
-        # if any difference update status
-        irc_status = 'irc_{}_status'.format('reverse')
-        orig_status = target[irc_status]
-        if orig_status != new_status:
-            if new_status == 'job_success':
-                generate_irc_product_xyz(target, direction='reverse')
-                update_field = {
-                    irc_status:new_status, 'irc_equal':'waiting for check'
-                                }
-                qm_collection.update_one(target, {"$set": update_field}, True)
-            elif new_status == 'need opt':
-                opt_status = 'opt_{}_status'.format('reverse')
-                update_field = {
-                    irc_status:new_status, opt_status:'job_unrun'
-                                }
-                qm_collection.update_one(target, {"$set": update_field}, True)
-            else:
-                update_field = {
-                                irc_status: new_status
-                            }
-                qm_collection.update_one(target, {"$set": update_field}, True)
+            qm_collection.update_one(target, {"$set": update_field}, True)
 
 """
 IRC  success check.
@@ -796,18 +648,10 @@ def select_irc_equal_target():
     """
 
     qm_collection = db['qm_calculate_center']
-    query = {'$and': 
-                    [
-                    { "irc_forward_status":
-                        {"$in":
-                        ['job_success', 'opt_success']}},
-                    {'irc_reverse_status':
-                        {'$in':
-                            ['job_success', 'opt_success']}},
-                    {'irc_equal':
-                        {'$in':
-                            ['waiting for check']}}
-                    ]
+    query = {"irc_equal":
+                    {"$in":
+                        ["waiting for check"]
+                    }
                 }
     targets = list(qm_collection.find(query))
 
@@ -817,26 +661,28 @@ def check_irc_equal():
 
     targets = select_irc_equal_target()
     qm_collection = db['qm_calculate_center']
-    
+
+    acceptable_condition = ['forward equal to reactant and reverse equal to product',
+                        'reverse equal to reactant and forward equal to product']
+    special_condition = ['reverse equal to reactant but forward does not equal to product',
+                        'forward equal to reactant but reverse does not equal to product']
+
     for target in targets:
-        if target['irc_forward_status'] in ['job_success', 'opt_success'] and target['irc_reverse_status'] in ['job_success', 'opt_success']:
-            new_status = check_irc_equal_status(target)
-            orig_status = target['irc_equal']
-            if orig_status != new_status:
-                if new_status == 'forward equal to reactant and reverse equal to product' or new_status == 'reverse equal to reactant and forward equal to product' or new_status == 'reverse equal to reactant but forward does not equal to product' or new_status == 'forward equal to reactant but reverse does not equal to product':
-                    update_field = {
-                                        'irc_equal': new_status, 'energy_status': 'job_unrun'
-                                    }
-                    qm_collection.update_one(target, {"$set": update_field}, True)
-                else:
-                    update_field = {
-                                        'irc_equal': new_status
-                                    }
-                    qm_collection.update_one(target, {"$set": update_field}, True)
-        elif target['opt_reverse_status'] == 'job_fail' or target['opt_forward_status'] == 'job_fail':
-            update_field = {
-                                'irc_equal': 'opt fail'
-                            }
+        new_status = check_irc_equal_status(target)
+        orig_status = target['irc_equal']
+        if orig_status != new_status:
+            if new_status in acceptable_condition:
+                update_field = {
+                                'irc_equal':new_status, 'energy_status':'job_unrun', 'irc_opt_stauts':'job_unrun'
+                                }
+            elif new_status in special_condition:
+                update_field = {
+                                'irc_equal':new_status, 'energy_status':'job_unrun'
+                                }
+            else:
+                update_field = {
+                                    'irc_equal': new_status
+                                }
             qm_collection.update_one(target, {"$set": update_field}, True)
 
 def check_irc_equal_status(target):
@@ -844,8 +690,8 @@ def check_irc_equal_status(target):
     irc_path = path.join(target['path'], 'IRC/')
     reactant_path = path.join(target['path'], 'reactant.xyz')
     product_path = path.join(target['path'], 'ssm_product.xyz')
-    forward_output = path.join(irc_path, 'forward.xyz')
-    reverse_output = path.join(irc_path, 'reverse.xyz')
+    forward_output = path.join(irc_path, 'finished_first.xyz')
+    reverse_output = path.join(irc_path, 'finished_last.xyz')
     
     pyMol_1 = xyz_to_pyMol(reactant_path)
     pyMol_2 = xyz_to_pyMol(product_path)
@@ -875,8 +721,10 @@ def check_irc_equal_status(target):
 
 """
 IRC opt check.
+This check is to make irc reactant as a new reactant to run ard next generation
 """
-def select_irc_opt_target(direction = 'forward'):
+
+def select_irc_opt_target():
     """
     This method is to inform job checker which targets 
     to check, which need meet one requirement:
@@ -885,13 +733,12 @@ def select_irc_opt_target(direction = 'forward'):
     """
 
     qm_collection = db['qm_calculate_center']
-    irc_opt_status = 'opt_{}_status'.format(direction)
-    reg_query = {irc_opt_status:
+    query = {'irc_opt_stauts':
                     {"$in":
-                        ["opt_job_launched", "opt_job_running", "opt_job_queueing"]
+                        ["job_launched", "job_running", "job_queueing"]
                     }
                 }
-    targets = list(qm_collection.find(reg_query))
+    targets = list(qm_collection.find(query))
 
     return targets
 
@@ -914,26 +761,34 @@ def check_irc_opt_job_status(job_id):
     stdout = stdout.decode().strip().split()
     idx = stdout.index('job_state')
     if stdout[idx+2] == 'R':
-        return "opt_job_running"
+        return "irc_opt_job_running"
     elif stdout[idx+2] == 'Q':
-        return 'opt_job_queueing'
+        return 'irc_opt_job_queueing'
     else:
-        return "opt_job_launched"
+        return "irc_opt_job_launched"
     
-def check_irc_opt_content(dir_path, direction = 'forward'):
-    reactant_path = os.path.join(dir_path, 'reactant.xyz')
+def check_irc_opt_content(dir_path):
+    reactant_path = path.join(dir_path, 'irc_reactant.xyz')
     irc_path = path.join(dir_path, "IRC")
-    xyzname = '{}.xyz'.format(direction)
-    output = path.join(irc_path, xyzname)
-    output_path = path.join(irc_path, '{}_opt.out'.format(direction))
+    output_path = path.join(irc_path, 'irc_opt.out')
 
     try:
         q = QChem(outputfile = output_path)
-        q.create_geo_file(output)
+        freqs = q.get_frequencies()
+        nnegfreq = sum(1 for freq in freqs if freq < 0.0)
+        if nnegfreq > 0:
+            return 'Have negative frequency', 0, 0.0
+        else:
+            opt_cycle = q.get_opt_cycle()
+            q.create_geo_file(reactant_path)
+            energy = q.get_energy()
+            zpe = q.get_zpe()
+            energy += zpe
+            return 'job_success', opt_cycle, energy
         return 'job_success'
     except:
-        return 'job_fail'
-        
+        return 'job_fail', 0, 0.0
+
     
 def check_irc_opt_jobs():
     """
@@ -944,65 +799,30 @@ def check_irc_opt_jobs():
     4. update with new status
     """
     # 1. select jobs to check
-    targets = select_irc_opt_target(direction = 'forward')
-    irc_opt_jobid = 'irc_{}_opt_jobid'.format(str('forward'))
+    targets = select_irc_opt_target()
     qm_collection = db['qm_calculate_center']
 
     # 2. check the job pbs_status
     for target in targets:
-        job_id = target[irc_opt_jobid]
+        job_id = target['irc_opt_jobid']
         new_status = check_irc_opt_job_status(job_id)
         if new_status == "off_queue":
-                # 3. check job content
-                new_status = check_irc_opt_content(target['path'], direction = 'forward')
-
-                # 4. check with original status which
-                # should be job_launched or job_running
-                # if any difference update status
-                irc_status = 'irc_{}_status'.format(str('forward'))
-                irc_opt_status = 'opt_{}_status'.format(str('forward'))
-                orig_status = target[irc_opt_status]
-                if orig_status != new_status:
-                    if new_status == 'job_success':
-                        update_field = {
-                                        irc_status: 'opt_success', irc_opt_status: new_status, 'irc_equal':'waiting for check'
-                                    }
-                        qm_collection.update_one(target, {"$set": update_field}, True)
-                    else:
-                        update_field = {
-                                        irc_status: 'opt_fail', irc_opt_status: new_status
-                                    }
-                        qm_collection.update_one(target, {"$set": update_field}, True)
-                               
-    # 1. select jobs to check
-    targets = select_irc_opt_target(direction = 'reverse')
-    irc_opt_jobid = 'irc_{}_opt_jobid'.format(str('reverse'))
-    
-    # 2. check the job pbs_status
-    for target in targets:
-        job_id = target[irc_opt_jobid]
-        new_status = check_irc_opt_job_status(job_id)
-        if new_status == "off_queue":
-                # 3. check job content
-                new_status = check_irc_opt_content(target['path'], direction = 'reverse')
-
-                # 4. check with original status which
-                # should be job_launched or job_running
-                # if any difference update status
-                irc_status = 'irc_{}_status'.format(str('reverse'))
-                irc_opt_status = 'opt_{}_status'.format(str('reverse'))
-                orig_status = target[irc_opt_status]
-                if orig_status != new_status:
-                    if new_status == 'job_success':
-                        update_field = {
-                                        irc_status: 'opt_success', irc_opt_status: new_status, 'irc_equal':'waiting for check'
-                                    }
-                        qm_collection.update_one(target, {"$set": update_field}, True)
-                    else:
-                        update_field = {
-                                        irc_status: 'opt_fail', irc_opt_status: new_status
-                                    }
-                        qm_collection.update_one(target, {"$set": update_field}, True)
+            # 3. check job content
+            new_status, opt_cycle, energy = check_irc_opt_content(target['path'])
+        # 4. check with original status which
+        # should be job_launched or job_running
+        # if any difference update status
+        orig_status = target['irc_opt_status']
+        if orig_status != new_status:
+            if new_status == 'job_success':
+                update_field = {
+                                'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy
+                            }
+            else:
+                update_field = {
+                                'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy
+                            }
+            qm_collection.update_one(target, {"$set": update_field}, True)
 
 """
 OPT check
@@ -1016,12 +836,12 @@ def select_opt_target():
     """
 
     qm_collection = db['qm_calculate_center']
-    reg_query = {'opt_status':
+    query = {'opt_status':
                     {"$in":
                         ["job_launched", "job_running", "job_queueing"]
                     }
                 }
-    targets = list(qm_collection.find(reg_query))
+    targets = list(qm_collection.find(query))
     return targets
 
 def check_opt_job_status(job_id):
@@ -1125,12 +945,12 @@ def select_low_opt_target():
     """
 
     qm_collection = db['qm_calculate_center']
-    reg_query = {'low_opt_status':
+    query = {'low_opt_status':
                     {"$in":
                         ["job_launched", "job_running", "job_queueing"]
                     }
                 }
-    targets = list(qm_collection.find(reg_query))
+    targets = list(qm_collection.find(query))
     return targets
 
 def check_low_opt_job_status(job_id):
@@ -1408,7 +1228,7 @@ def select_barrier_target():
     qm_collection = db['qm_calculate_center']
     query = {'$and': 
                     [
-                    { "energy_stauts":
+                    { "energy_status":
                         {"$in":
                         ['job_success']}},
                     {'barrier':

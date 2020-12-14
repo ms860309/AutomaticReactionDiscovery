@@ -20,7 +20,7 @@ def select_ard_target():
     targets = list(qm_collection.find(reg_query))
     return targets
 
-def launch_ard_jobs():
+def launch_ard_jobs(ncpus = 8, mpiprocs = 1, ompthreads = 8):
     
     qm_collection = db['qm_calculate_center']
     pool_collection = db['pool']
@@ -32,7 +32,7 @@ def launch_ard_jobs():
         script_path = path.join(path.dirname(path.dirname(path.abspath(__file__))), 'script')
         if os.path.exists(script_path):
             os.chdir(script_path)
-        subfile = create_ard_sub_file(script_path, script_path, 1, 'reactant.xyz')
+        subfile = create_ard_sub_file(script_path, script_path, 1, 'reactant.xyz', ncpus = 8, mpiprocs = 1, ompthreads = 8)
         # first reactant need to add to pool
         initial_reactant = next(pybel.readfile('xyz', path.join(script_path, 'reactant.xyz')))
         initial_reactant_inchi_key = initial_reactant.write('inchiKey').strip()
@@ -54,26 +54,20 @@ def launch_ard_jobs():
         use_irc = list(qm_collection.find(use_irc_query))[0]['use_irc']
         for target in targets:
             if use_irc == '0':
-                dir_path, gen_num, ard_ssm_equal, irc_equal = target['path'], target['generations'], target['ard_ssm_equal'], None
-            else:
-                dir_path, gen_num, ard_ssm_equal, irc_equal = target['path'], target['generations'], target['ard_ssm_equal'], target['irc_equal']
-            script_path = path.join(path.dirname(path.dirname(dir_path)), 'script')
-            os.chdir(dir_path)
-            if irc_equal == 'forward equal to reactant but reverse does not equal to product':
-                irc_path = path.join(dir_path, 'IRC/')
-                next_reactant = path.join(irc_path, 'reverse.xyz')
-                subfile = create_ard_sub_file(dir_path, script_path, gen_num + 1, next_reactant)
-            elif irc_equal == 'reverse equal to reactant but forward does not equal to product':
-                irc_path = path.join(dir_path, 'IRC/')
-                next_reactant = path.join(irc_path, 'forward.xyz')
-                subfile = create_ard_sub_file(dir_path, script_path, gen_num + 1, next_reactant)
-            else:
+                dir_path, gen_num, ard_ssm_equal = target['path'], target['generations'], target['ard_ssm_equal']
                 if ard_ssm_equal == 'not_equal':
                     next_reactant = 'ssm_product.xyz'
-                    subfile = create_ard_sub_file(dir_path, script_path, gen_num + 1, next_reactant)
+                    subfile = create_ard_sub_file(dir_path, script_path, gen_num + 1, next_reactant, ncpus = 8, mpiprocs = 1, ompthreads = 8)
                 else:
                     next_reactant = 'product.xyz'
-                    subfile = create_ard_sub_file(dir_path, script_path, gen_num + 1, next_reactant)
+                    subfile = create_ard_sub_file(dir_path, script_path, gen_num + 1, next_reactant, ncpus = 8, mpiprocs = 1, ompthreads = 8)
+            else:
+                dir_path, gen_num = target['path'], target['generations']
+                next_reactant = path.join(dir_path, 'irc_reactant.xyz')
+                subfile = create_ard_sub_file(dir_path, script_path, gen_num + 1, next_reactant, ncpus = 8, mpiprocs = 1, ompthreads = 8)
+
+            script_path = path.join(path.dirname(path.dirname(dir_path)), 'script')
+            os.chdir(dir_path)
 
             cmd = 'qsub {}'.format(subfile)
             process = subprocess.Popen([cmd],
@@ -136,5 +130,5 @@ def check_ard_job_status(job_id):
         return 'job_launched'
 
 
-launch_ard_jobs()
+launch_ard_jobs(ncpus = 8, mpiprocs = 1, ompthreads = 8)
         

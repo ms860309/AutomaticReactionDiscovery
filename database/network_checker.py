@@ -98,6 +98,33 @@ def print_information(generations):
                         [generations] 
                     }
                 }
+    energy_query_1 = {'$and': 
+                    [
+                    { "energy_status":
+                        {"$in":
+                        ["job_running", "job_queueing"]}
+                        },
+                    {'generations':generations}
+                    ]
+                }
+    energy_query_2 = {'$and': 
+                    [
+                    { "energy_status":
+                        {"$in":
+                        ["job_running", "job_queueing"]}
+                        },
+                    {'generations':generations}
+                    ]
+                }
+    energy_query_3 = {'$and': 
+                    [
+                    { "energy_status":
+                        {"$in":
+                        ["job_running", "job_queueing"]}
+                        },
+                    {'generations':generations}
+                    ]
+                }
     low_opt_query_1 = {'$and': 
                     [
                     { "low_opt_status":
@@ -207,7 +234,7 @@ def print_information(generations):
                 }
     irc_query_1 = {'$and': 
                     [
-                    { "irc_forward_status":
+                    { "irc_status":
                         {"$in":
                         ['job_running', "job_queueing"]}
                         },
@@ -216,63 +243,23 @@ def print_information(generations):
                 }
     irc_query_2 = {'$and': 
                     [
-                    { "irc_reverse_status":
+                    { "irc_status":
                         {"$in":
-                        ['job_running', "job_queueing"]}
+                        ['job_success']}
                         },
                     {'generations':generations}
                     ]
                 }
     irc_query_3 = {'$and': 
                     [
-                    { "irc_forward_status":
+                    { "irc_status":
                         {"$in":
-                        ['job_success', 'opt_success']}
-                        },
-                    { "irc_reverse_status":
-                        {"$in":
-                        ['job_success', 'opt_success']}
+                        ['job_fail']}
                         },
                     {'generations':generations}
                     ]
                 }
     irc_query_4 = {'$and': 
-                    [
-                    { "irc_forward_status":
-                        {"$in":
-                        ['Bad initial gradient', "Failed line search", 'Error in gen_scfman', 'unknown fail information']}
-                        },
-                    {'generations':generations}
-                    ]
-                }
-    irc_query_5 = {'$and': 
-                    [
-                    { "irc_reverse_status":
-                        {"$in":
-                        ['Bad initial gradient', "Failed line search", 'Error in gen_scfman', 'unknown fail information']}
-                        },
-                    {'generations':generations}
-                    ]
-                }
-    irc_query_6 = {'$and': 
-                    [
-                    { "irc_forward_status":
-                        {"$in":
-                        ['need opt']}
-                        },
-                    {'generations':generations}
-                    ]
-                }
-    irc_query_7 = {'$and': 
-                    [
-                    { "irc_reverse_status":
-                        {"$in":
-                        ['need opt']}
-                        },
-                    {'generations':generations}
-                    ]
-                }
-    irc_query_8 = {'$and': 
                     [
                     { "irc_equal":
                         {"$in":
@@ -281,7 +268,7 @@ def print_information(generations):
                     {'generations':generations}
                     ]
                 }
-    irc_query_9 = {'$and': 
+    irc_query_5 = {'$and': 
                     [
                     { "irc_equal":
                         {"$in":
@@ -291,7 +278,7 @@ def print_information(generations):
                     {'generations':generations}
                     ]
                 }
-    irc_query_10 = {'$and': 
+    irc_query_6 = {'$and': 
                     [
                     { "irc_equal":
                         {"$in":
@@ -302,59 +289,36 @@ def print_information(generations):
                 }
     irc_opt_query_1 = {'$and': 
                     [
-                    { "opt_forward_status":
+                    { "irc_opt_status":
                         {"$in":
-                        ["opt_job_running", "opt_job_queueing"]}
+                        ["job_running", "job_queueing"]}
                         },
                     {'generations':generations}
                     ]
                 }
     irc_opt_query_2 = {'$and': 
                     [
-                    { "opt_reverse_status":
+                    { "irc_opt_status":
                         {"$in":
-                        ["opt_job_running", "opt_job_queueing"]}
+                        ['job_success']}
                         },
                     {'generations':generations}
                     ]
                 }
     irc_opt_query_3 = {'$and': 
                     [
-                    { "opt_forward_status":
-                        {"$in":
-                        ['job_success']}
-                        },
-                    {'generations':generations}
-                    ]
-                }
-    irc_opt_query_4 = {'$and': 
-                    [
-                    { "opt_reverse_status":
-                        {"$in":
-                        ['job_success']}
-                        },
-                    {'generations':generations}
-                    ]
-                }
-    irc_opt_query_5 = {'$and': 
-                    [
-                    { "opt_forward_status":
+                    { "irc_opt_status":
                         {"$in":
                         ['job_fail']}
                         },
                     {'generations':generations}
                     ]
                 }
-    irc_opt_query_6 = {'$and': 
-                    [
-                    { "opt_reverse_status":
-                        {"$in":
-                        ['job_fail']}
-                        },
-                    {'generations':generations}
-                    ]
-                }
+
     gen_targets = list(qm_collection.find(gen_query))
+    energy_targets_1 = list(qm_collection.find(energy_query_1))
+    energy_targets_2 = list(qm_collection.find(energy_query_2))
+    energy_targets_3 = list(qm_collection.find(energy_query_3))
     low_opt_targets_1 = list(qm_collection.find(low_opt_query_1))
     low_opt_targets_2 = list(qm_collection.find(low_opt_query_2))
     low_opt_targets_3 = list(qm_collection.find(low_opt_query_3))
@@ -373,16 +337,9 @@ def print_information(generations):
     irc_targets_4 = list(qm_collection.find(irc_query_4))
     irc_targets_5 = list(qm_collection.find(irc_query_5))
     irc_targets_6 = list(qm_collection.find(irc_query_6))
-    irc_targets_7 = list(qm_collection.find(irc_query_7))
-    irc_targets_8 = list(qm_collection.find(irc_query_8))
-    irc_targets_9 = list(qm_collection.find(irc_query_9))
-    irc_targets_10 = list(qm_collection.find(irc_query_10))
     irc_opt_targets_1 = list(qm_collection.find(irc_opt_query_1))
     irc_opt_targets_2 = list(qm_collection.find(irc_opt_query_2))
     irc_opt_targets_3 = list(qm_collection.find(irc_opt_query_3))
-    irc_opt_targets_4 = list(qm_collection.find(irc_opt_query_4))
-    irc_opt_targets_5 = list(qm_collection.find(irc_opt_query_5))
-    irc_opt_targets_6 = list(qm_collection.find(irc_opt_query_6))
     reactant_target = list(qm_collection.find({'generations':generations}))
     smi = []
     for target in reactant_target:
@@ -400,22 +357,24 @@ def print_information(generations):
     print('{} nodes running or queueing OPT'.format(len(opt_targets_1)))
     print('{} nodes success in OPT'.format(len(opt_targets_2)))
     print('{} nodes fail in OPT'.format(len(opt_targets_3)))
+    print('{} nodes running or queueing energy'.format(len(energy_targets_1)))
+    print('{} nodes success in energy'.format(len(energy_targets_2)))
+    print('{} nodes fail in energy'.format(len(energy_targets_3)))
     print('{} nodes running or queueing SSM'.format(len(ssm_targets_1)))
     print('{} nodes success in SSM'.format(len(ssm_targets_2)))
     print('{} nodes fail in SSM'.format(len(ssm_targets_3)))
     print('{} nodes running or queueing TS'.format(len(ts_targets_1)))
     print('{} nodes success in TS'.format(len(ts_targets_2)))
     print('{} nodes fail in TS'.format(len(ts_targets_3)))
-    print('{} nodes running or queueing IRC'.format(len(irc_targets_1) + len(irc_targets_2)))
-    print('{} nodes success in IRC (including after opt)'.format(len(irc_targets_3) * 2))
-    print('{} nodes fail in OPT'.format(len(irc_targets_4) + len(irc_targets_5)))
-    print('{} nodes need to OPT (IRC)'.format(len(irc_targets_6) + len(irc_targets_7)))
-    print('{} nodes are waiting for checking irc equal'.format(len(irc_targets_10)))
-    print('{} nodes are intended'.format(len(irc_targets_8)))
-    print('{} nodes are unintended'.format(len(irc_targets_9)))
-    print('{} nodes are running or queueing irc opt job'.format(len(irc_opt_targets_1) + len(irc_opt_targets_2)))
-    print('{} nodes are success irc opt job'.format(len(irc_opt_targets_3) + len(irc_opt_targets_4)))
-    print('{} nodes are fail irc opt job'.format(len(irc_opt_targets_5) + len(irc_opt_targets_6)))
+    print('{} nodes running or queueing IRC'.format(len(irc_targets_1)))
+    print('{} nodes success in IRC'.format(len(irc_targets_2)))
+    print('{} nodes fail in OPT'.format(len(irc_targets_3)))
+    print('{} nodes are waiting for checking irc equal'.format(len(irc_targets_6)))
+    print('{} nodes are intended'.format(len(irc_targets_4)))
+    print('{} nodes are unintended'.format(len(irc_targets_5)))
+    print('{} nodes are running or queueing irc opt job'.format(len(irc_opt_targets_1)))
+    print('{} nodes are success irc opt job'.format(len(irc_opt_targets_2)))
+    print('{} nodes are fail irc opt job'.format(len(irc_opt_targets_3)))
     print('-----------------------------------------')
 
 
