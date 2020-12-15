@@ -1061,6 +1061,12 @@ def insert_reaction():
     reactions_collection = db['reactions']
     qm_collection = db['qm_calculate_center']
     targets = select_insert_reaction_target()
+
+    acceptable_condition = ['forward equal to reactant and reverse equal to product',
+                        'reverse equal to reactant and forward equal to product']
+    special_condition = ['reverse equal to reactant but forward does not equal to product',
+                        'forward equal to reactant but reverse does not equal to product']
+
     # new one not mean the lowest barrier (so the lowest may in duplicate)
     for target in targets:
         reactant_inchi_key = target['reactant_inchi_key']
@@ -1072,30 +1078,62 @@ def insert_reaction():
         barrier = target['barrier']
         check1 = {'reaction':[reactant_inchi_key, product_inchi_key]}
         checker1 = list(reactions_collection.find(check1))
-        if len(checker1) == 0:
-            reactions_collection.insert_one({
-                                'reaction':[reactant_inchi_key, product_inchi_key],
-                                'reactant_inchi_key': reactant_inchi_key,
-                                'product_inchi_key':product_inchi_key,
-                                'reactant_smi':reactant_smi,
-                                'product_smi':product_smi,
-                                'path':path,
-                                'generations':generations,
-                                'unique': 'new one',
-                                'barrier_energy':barrier})
-            qm_collection.update_one(target, {"$set": {'insert reaction':"Already insert"}}, True)
+        irc_equal = target['irc_equal']
+
+        if irc_equal in acceptable_condition:
+            if len(checker1) == 0:
+                reactions_collection.insert_one({
+                                    'reaction':[reactant_inchi_key, product_inchi_key],
+                                    'reactant_inchi_key': reactant_inchi_key,
+                                    'product_inchi_key':product_inchi_key,
+                                    'reactant_smi':reactant_smi,
+                                    'product_smi':product_smi,
+                                    'path':path,
+                                    'generations':generations,
+                                    'unique': 'new one',
+                                    'barrier_energy':barrier,
+                                    'irc_equal':irc_equal})
+            else:
+                reactions_collection.insert_one({
+                                    'reaction':[reactant_inchi_key, product_inchi_key],
+                                    'reactant_inchi_key': reactant_inchi_key,
+                                    'product_inchi_key':product_inchi_key,
+                                    'reactant_smi':reactant_smi,
+                                    'product_smi':product_smi,
+                                    'path':path,
+                                    'generations':generations,
+                                    'unique': 'duplicate',
+                                    'barrier_energy':barrier,
+                                    'irc_equal':irc_equal})
         else:
-            reactions_collection.insert_one({
-                                'reaction':[reactant_inchi_key, product_inchi_key],
-                                'reactant_inchi_key': reactant_inchi_key,
-                                'product_inchi_key':product_inchi_key,
-                                'reactant_smi':reactant_smi,
-                                'product_smi':product_smi,
-                                'path':path,
-                                'generations':generations,
-                                'unique': 'duplicate',
-                                'barrier_energy':barrier})
-            qm_collection.update_one(target, {"$set": {'insert reaction':"Already insert"}}, True)
+            if len(checker1) == 0:
+                reactions_collection.insert_one({
+                                    'reaction':[reactant_inchi_key, product_inchi_key],
+                                    'reactant_inchi_key': reactant_inchi_key,
+                                    'product_inchi_key':product_inchi_key,
+                                    'reactant_smi':reactant_smi,
+                                    'product_smi':product_smi,
+                                    'path':path,
+                                    'generations':generations,
+                                    'unique': 'new one',
+                                    'barrier_energy':barrier,
+                                    'ard_stauts':'aleady insert to qm',
+                                    'irc_equal':irc_equal})
+            else:
+                reactions_collection.insert_one({
+                                    'reaction':[reactant_inchi_key, product_inchi_key],
+                                    'reactant_inchi_key': reactant_inchi_key,
+                                    'product_inchi_key':product_inchi_key,
+                                    'reactant_smi':reactant_smi,
+                                    'product_smi':product_smi,
+                                    'path':path,
+                                    'generations':generations,
+                                    'unique': 'duplicate',
+                                    'barrier_energy':barrier,
+                                    'ard_stauts':'aleady insert to qm',
+                                    'irc_equal':irc_equal})
+
+        qm_collection.update_one(target, {"$set": {'insert reaction':"Already insert"}}, True)
 
 """
 ARD check unrun

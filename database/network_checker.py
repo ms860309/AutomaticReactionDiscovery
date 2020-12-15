@@ -205,6 +205,33 @@ def print_information(generations):
                     {'generations':generations}
                     ]
                 }
+    ts_refine_query_1 = {'$and': 
+                    [
+                    { "ts_refine_status":
+                        {"$in":
+                        ['job_running', "job_queueing"]}
+                        },
+                    {'generations':generations}
+                    ]
+                }
+    ts_refine_query_2 = {'$and': 
+                    [
+                    { "ts_refine_status":
+                        {"$in":
+                        ['job_success']}
+                        },
+                    {'generations':generations}
+                    ]
+                }
+    ts_refine_query_3 = {'$and': 
+                    [
+                    { "ts_refine_status":
+                        {"$in":
+                        ['job_fail']}
+                        },
+                    {'generations':generations}
+                    ]
+                }
     ts_query_1 = {'$and': 
                     [
                     { "ts_status":
@@ -328,6 +355,9 @@ def print_information(generations):
     ssm_targets_1 = list(qm_collection.find(ssm_query_1))
     ssm_targets_2 = list(qm_collection.find(ssm_query_2))
     ssm_targets_3 = list(qm_collection.find(ssm_query_3))
+    ts_refine_targets_1 = list(qm_collection.find(ts_refine_query_1))
+    ts_refine_targets_2 = list(qm_collection.find(ts_refine_query_2))
+    ts_refine_targets_3 = list(qm_collection.find(ts_refine_query_3))
     ts_targets_1 = list(qm_collection.find(ts_query_1))
     ts_targets_2 = list(qm_collection.find(ts_query_2))
     ts_targets_3 = list(qm_collection.find(ts_query_3))
@@ -357,24 +387,27 @@ def print_information(generations):
     print('{} nodes running or queueing OPT'.format(len(opt_targets_1)))
     print('{} nodes success in OPT'.format(len(opt_targets_2)))
     print('{} nodes fail in OPT'.format(len(opt_targets_3)))
-    print('{} nodes running or queueing energy'.format(len(energy_targets_1)))
-    print('{} nodes success in energy'.format(len(energy_targets_2)))
-    print('{} nodes fail in energy'.format(len(energy_targets_3)))
+    print('{} nodes running or queueing ENERGY'.format(len(energy_targets_1)))
+    print('{} nodes success in ENERGY'.format(len(energy_targets_2)))
+    print('{} nodes fail in ENERGY'.format(len(energy_targets_3)))
     print('{} nodes running or queueing SSM'.format(len(ssm_targets_1)))
     print('{} nodes success in SSM'.format(len(ssm_targets_2)))
     print('{} nodes fail in SSM'.format(len(ssm_targets_3)))
+    print('{} nodes running or queueing TS REFINE'.format(len(ts_refine_targets_1)))
+    print('{} nodes success in TS REFINE'.format(len(ts_refine_targets_2)))
+    print('{} nodes fail in TS REFINE'.format(len(ts_refine_targets_3)))
     print('{} nodes running or queueing TS'.format(len(ts_targets_1)))
     print('{} nodes success in TS'.format(len(ts_targets_2)))
     print('{} nodes fail in TS'.format(len(ts_targets_3)))
     print('{} nodes running or queueing IRC'.format(len(irc_targets_1)))
     print('{} nodes success in IRC'.format(len(irc_targets_2)))
     print('{} nodes fail in OPT'.format(len(irc_targets_3)))
-    print('{} nodes are waiting for checking irc equal'.format(len(irc_targets_6)))
+    print('{} nodes are waiting for checking IRC EQUAL'.format(len(irc_targets_6)))
     print('{} nodes are intended'.format(len(irc_targets_4)))
     print('{} nodes are unintended'.format(len(irc_targets_5)))
-    print('{} nodes are running or queueing irc opt job'.format(len(irc_opt_targets_1)))
-    print('{} nodes are success irc opt job'.format(len(irc_opt_targets_2)))
-    print('{} nodes are fail irc opt job'.format(len(irc_opt_targets_3)))
+    print('{} nodes are running or queueing IRC OPT job'.format(len(irc_opt_targets_1)))
+    print('{} nodes are success IRC OPT job'.format(len(irc_opt_targets_2)))
+    print('{} nodes are fail IRC OPT job'.format(len(irc_opt_targets_3)))
     print('-----------------------------------------')
 
 
