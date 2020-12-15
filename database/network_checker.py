@@ -111,7 +111,7 @@ def print_information(generations):
                     [
                     { "energy_status":
                         {"$in":
-                        ["job_running", "job_queueing"]}
+                        ["job_success"]}
                         },
                     {'generations':generations}
                     ]
@@ -120,7 +120,7 @@ def print_information(generations):
                     [
                     { "energy_status":
                         {"$in":
-                        ["job_running", "job_queueing"]}
+                        ["job_fail"]}
                         },
                     {'generations':generations}
                     ]
@@ -300,7 +300,8 @@ def print_information(generations):
                     { "irc_equal":
                         {"$in":
                         ['reverse equal to reactant but forward does not equal to product', 'reverse does not equal to reactant but forward equal to product', 
-                        'forward equal to reactant but reverse does not equal to product', 'forward does not equal to reactant but reverse equal to product']}
+                        'forward equal to reactant but reverse does not equal to product', 'forward does not equal to reactant but reverse equal to product',
+                        'forward equal to reverse']}
                         },
                     {'generations':generations}
                     ]
@@ -336,7 +337,7 @@ def print_information(generations):
                     [
                     { "irc_opt_status":
                         {"$in":
-                        ['job_fail']}
+                        ['job_fail', 'Have negative frequency']}
                         },
                     {'generations':generations}
                     ]
@@ -386,7 +387,7 @@ def print_information(generations):
     print('{} nodes fail in low_opt'.format(len(low_opt_targets_3)))
     print('{} nodes running or queueing OPT'.format(len(opt_targets_1)))
     print('{} nodes success in OPT'.format(len(opt_targets_2)))
-    print('{} nodes fail in OPT'.format(len(opt_targets_3)))
+    print('{} nodes fail or Have negative frequency in OPT'.format(len(opt_targets_3)))
     print('{} nodes running or queueing ENERGY'.format(len(energy_targets_1)))
     print('{} nodes success in ENERGY'.format(len(energy_targets_2)))
     print('{} nodes fail in ENERGY'.format(len(energy_targets_3)))
@@ -398,16 +399,16 @@ def print_information(generations):
     print('{} nodes fail in TS REFINE'.format(len(ts_refine_targets_3)))
     print('{} nodes running or queueing TS'.format(len(ts_targets_1)))
     print('{} nodes success in TS'.format(len(ts_targets_2)))
-    print('{} nodes fail in TS'.format(len(ts_targets_3)))
+    print('{} nodes fail or more than one imaginary frequency in TS'.format(len(ts_targets_3)))
     print('{} nodes running or queueing IRC'.format(len(irc_targets_1)))
     print('{} nodes success in IRC'.format(len(irc_targets_2)))
     print('{} nodes fail in OPT'.format(len(irc_targets_3)))
     print('{} nodes are waiting for checking IRC EQUAL'.format(len(irc_targets_6)))
     print('{} nodes are intended'.format(len(irc_targets_4)))
-    print('{} nodes are unintended'.format(len(irc_targets_5)))
-    print('{} nodes are running or queueing IRC OPT job'.format(len(irc_opt_targets_1)))
-    print('{} nodes are success IRC OPT job'.format(len(irc_opt_targets_2)))
-    print('{} nodes are fail IRC OPT job'.format(len(irc_opt_targets_3)))
+    print('{} nodes are unintended (Maybe forward equal to reverse)'.format(len(irc_targets_5)))
+    print('{} nodes are running or queueing in IRC OPT job'.format(len(irc_opt_targets_1)))
+    print('{} nodes are success in IRC OPT job'.format(len(irc_opt_targets_2)))
+    print('{} nodes are fail or Have negative frequency in IRC OPT job'.format(len(irc_opt_targets_3)))
     print('-----------------------------------------')
 
 
@@ -435,6 +436,11 @@ def update_network_status():
                         ["job_launched", "job_running", "job_queueing", 'job_unrun']
                     }
                 }
+    low_opt_query = {"low_opt_status":
+                    {"$in":
+                        ["job_launched", "job_running", "job_queueing", 'job_unrun']
+                    }
+                }
     opt_query = {"opt_status":
                     {"$in":
                         ["job_launched", "job_running", "job_queueing", 'job_unrun']
@@ -445,27 +451,36 @@ def update_network_status():
                         ["job_launched", "job_running", "job_queueing", 'job_unrun']
                     }
                 }
-    irc_query_1 = {"irc_forward_status":
+    ts_refine_query = {"ts_refine_status":
                     {"$in":
-                        ["job_launched", "job_running", "job_queueing", "need opt", 'job_unrun']
+                        ["job_launched", "job_running", "job_queueing", 'job_unrun']
                     }
                 }
-    irc_query_2 = {"irc_reverse_status":
+    irc_query = {"irc_status":
                     {"$in":
-                        ["job_launched", "job_running", "job_queueing", "need opt", 'job_unrun']
+                        ["job_launched", "job_running", "job_queueing", 'job_unrun']
                     }
                 }
-    opt_query_1 = {"opt_forward_status":
+    irc_equal_query = {"irc_equal":
                     {"$in":
-                        ["opt_job_launched", "opt_job_running", "opt_job_queueing", 'job_unrun']
+                        ["waiting for checking"]
                     }
                 }
-    opt_query_2 = {"opt_reverse_status":
+    irc_opt_query = {"irc_opt_status":
                     {"$in":
-                        ["opt_job_launched", "opt_job_running", "opt_job_queueing", 'job_unrun']
+                        ["job_launched", "job_running", "job_queueing", 'job_unrun']
                     }
                 }
-    not_finished_number = len(list(qm_collection.find(energy_query))) + len(list(qm_collection.find(ssm_query))) + len(list(qm_collection.find(ts_query))) + len(list(qm_collection.find(irc_query_1))) + len(list(qm_collection.find(irc_query_2))) + len(list(qm_collection.find(opt_query_1))) + len(list(qm_collection.find(opt_query_2))) + len(list(qm_collection.find(opt_query)))
+
+    not_finished_number = len(list(qm_collection.find(energy_query))) + \
+                          len(list(qm_collection.find(ssm_query))) + \
+                          len(list(qm_collection.find(low_opt_query))) + \
+                          len(list(qm_collection.find(opt_query))) + \
+                          len(list(qm_collection.find(ts_query))) + \
+                          len(list(qm_collection.find(ts_refine_query))) + \
+                          len(list(qm_collection.find(irc_query))) + \
+                          len(list(qm_collection.find(irc_equal_query))) + \
+                          len(list(qm_collection.find(irc_opt_query)))
 
 
     if ard_had_add_number == ard_should_add_number and len(ard_nodes) == 0 and not_finished_number == 0:

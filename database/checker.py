@@ -613,7 +613,7 @@ def check_irc_jobs():
     qm_collection = db['qm_calculate_center']
     # 2. check the job pbs status
     for target in targets:
-        job_id = target['irc_forward_jobid']
+        job_id = target['irc_jobid']
         # 2. check the job pbs status
         new_status = check_irc_status(job_id)
         if new_status == "off_queue":
@@ -627,7 +627,7 @@ def check_irc_jobs():
         if orig_status != new_status:
             if new_status == 'job_success':
                 update_field = {
-                                'irc_status':new_status, 'irc_equal':'waiting for check'
+                                'irc_status':new_status, 'irc_equal':'waiting for checking'
                                 }
             else:
                 update_field = {
@@ -650,7 +650,7 @@ def select_irc_equal_target():
     qm_collection = db['qm_calculate_center']
     query = {"irc_equal":
                     {"$in":
-                        ["waiting for check"]
+                        ["waiting for checking"]
                     }
                 }
     targets = list(qm_collection.find(query))
@@ -665,7 +665,8 @@ def check_irc_equal():
     acceptable_condition = ['forward equal to reactant and reverse equal to product',
                         'reverse equal to reactant and forward equal to product']
     special_condition = ['reverse equal to reactant but forward does not equal to product',
-                        'forward equal to reactant but reverse does not equal to product']
+                        'forward equal to reactant but reverse does not equal to product',
+                        'forward equal to reverse']
 
     for target in targets:
         new_status = check_irc_equal_status(target)
@@ -673,7 +674,7 @@ def check_irc_equal():
         if orig_status != new_status:
             if new_status in acceptable_condition:
                 update_field = {
-                                'irc_equal':new_status, 'energy_status':'job_unrun', 'irc_opt_stauts':'job_unrun'
+                                'irc_equal':new_status, 'energy_status':'job_unrun', 'irc_opt_status':'job_unrun'
                                 }
             elif new_status in special_condition:
                 update_field = {
@@ -733,7 +734,7 @@ def select_irc_opt_target():
     """
 
     qm_collection = db['qm_calculate_center']
-    query = {'irc_opt_stauts':
+    query = {'irc_opt_status':
                     {"$in":
                         ["job_launched", "job_running", "job_queueing"]
                     }
@@ -816,11 +817,11 @@ def check_irc_opt_jobs():
         if orig_status != new_status:
             if new_status == 'job_success':
                 update_field = {
-                                'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy
+                                'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'insert reaction': 'need insert'
                             }
             else:
                 update_field = {
-                                'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy
+                                'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'insert reaction': 'need insert'
                             }
             qm_collection.update_one(target, {"$set": update_field}, True)
 
@@ -1064,8 +1065,6 @@ def insert_reaction():
 
     acceptable_condition = ['forward equal to reactant and reverse equal to product',
                         'reverse equal to reactant and forward equal to product']
-    special_condition = ['reverse equal to reactant but forward does not equal to product',
-                        'forward equal to reactant but reverse does not equal to product']
 
     # new one not mean the lowest barrier (so the lowest may in duplicate)
     for target in targets:
@@ -1092,7 +1091,8 @@ def insert_reaction():
                                     'generations':generations,
                                     'unique': 'new one',
                                     'barrier_energy':barrier,
-                                    'irc_equal':irc_equal})
+                                    'irc_equal':irc_equal,
+                                    'irc_opt_status':target['irc_opt_status']})
             else:
                 reactions_collection.insert_one({
                                     'reaction':[reactant_inchi_key, product_inchi_key],
@@ -1104,7 +1104,8 @@ def insert_reaction():
                                     'generations':generations,
                                     'unique': 'duplicate',
                                     'barrier_energy':barrier,
-                                    'irc_equal':irc_equal})
+                                    'irc_equal':irc_equal,
+                                    'irc_opt_status':target['irc_opt_status']})
         else:
             if len(checker1) == 0:
                 reactions_collection.insert_one({
@@ -1118,7 +1119,8 @@ def insert_reaction():
                                     'unique': 'new one',
                                     'barrier_energy':barrier,
                                     'ard_stauts':'aleady insert to qm',
-                                    'irc_equal':irc_equal})
+                                    'irc_equal':irc_equal,
+                                    'irc_opt_status':target['irc_opt_status']})
             else:
                 reactions_collection.insert_one({
                                     'reaction':[reactant_inchi_key, product_inchi_key],
@@ -1131,8 +1133,8 @@ def insert_reaction():
                                     'unique': 'duplicate',
                                     'barrier_energy':barrier,
                                     'ard_stauts':'aleady insert to qm',
-                                    'irc_equal':irc_equal})
-
+                                    'irc_equal':irc_equal,
+                                    'irc_opt_status':target['irc_opt_status']})
         qm_collection.update_one(target, {"$set": {'insert reaction':"Already insert"}}, True)
 
 """
@@ -1159,30 +1161,26 @@ def insert_ard():
                         ["job_unrun", "job_launched", "job_running", "job_queueing"]
                     }
                 }
-    irc_query_1 = {"irc_forward_status":
+    irc_query_1 = {"irc_status":
                     {"$in":
-                        ["job_unrun", "job_launched", "job_running", "job_queueing", "need opt"]
+                        ["job_unrun", "job_launched", "job_running", "job_queueing"]
                     }
                 }
-    irc_query_2 = {"irc_reverse_status":
+    irc_query_2 = {"irc_opt_status":
                     {"$in":
-                        ["job_unrun", "job_launched", "job_running", "job_queueing", "need opt"]
+                        ["job_unrun", "job_launched", "job_running", "job_queueing"]
                     }
                 }
-    opt_query_1 = {"opt_forward_status":
+    irc_equal_query_1 = {"irc_equal":
                     {"$in":
-                        ["job_unrun", "opt_job_launched", "opt_job_running", "opt_job_queueing"]
+                        ["waiting for checking"]
                     }
                 }
-    opt_query_2 = {"opt_reverse_status":
-                    {"$in":
-                        ["job_unrun", "opt_job_launched", "opt_job_running", "opt_job_queueing"]
-                    }
-                }
+
     if use_irc == '0':
         not_finished_number = len(list(qm_collection.find(energy_query))) + len(list(qm_collection.find(ssm_query))) + len(list(qm_collection.find(ts_query)))
     else:
-        not_finished_number = len(list(qm_collection.find(energy_query))) + len(list(qm_collection.find(ssm_query))) + len(list(qm_collection.find(ts_query))) + len(list(qm_collection.find(irc_query_1))) + len(list(qm_collection.find(irc_query_2))) + len(list(qm_collection.find(opt_query_1))) + len(list(qm_collection.find(opt_query_2)))
+        not_finished_number = len(list(qm_collection.find(energy_query))) + len(list(qm_collection.find(ssm_query))) + len(list(qm_collection.find(ts_query))) + len(list(qm_collection.find(irc_query_1))) + len(list(qm_collection.find(irc_query_2))) + len(list(qm_collection.find(irc_equal_query_1)))
     ard_had_add_number = qm_collection.count_documents({})  # Should -1 because the initial reactant
     ard_should_add_number = sum(statistics_collection.distinct("add how many products"))
 
@@ -1307,9 +1305,9 @@ check_ssm_jobs(refine = True)  # If the ssm perform by orca with xtb GFN2-xtb, t
 #check_opt_jobs()
 check_ts_refine_jobs()
 check_ts_jobs()
-#check_irc_jobs()
-#check_irc_equal()
-#check_irc_opt_jobs()
+check_irc_jobs()
+check_irc_equal()
+check_irc_opt_jobs()
 check_barrier()
 insert_reaction()
 insert_ard()
