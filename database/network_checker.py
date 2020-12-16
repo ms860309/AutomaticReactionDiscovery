@@ -301,7 +301,7 @@ def print_information(generations):
                         {"$in":
                         ['reverse equal to reactant but forward does not equal to product', 'reverse does not equal to reactant but forward equal to product', 
                         'forward equal to reactant but reverse does not equal to product', 'forward does not equal to reactant but reverse equal to product',
-                        'forward equal to reverse']}
+                        'forward equal to reverse', 'unknown (Maybe both of them are not equal to reactant&product)']}
                         },
                     {'generations':generations}
                     ]
