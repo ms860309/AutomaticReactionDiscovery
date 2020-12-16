@@ -762,11 +762,11 @@ def check_irc_opt_job_status(job_id):
     stdout = stdout.decode().strip().split()
     idx = stdout.index('job_state')
     if stdout[idx+2] == 'R':
-        return "irc_opt_job_running"
+        return "job_running"
     elif stdout[idx+2] == 'Q':
-        return 'irc_opt_job_queueing'
+        return 'job_queueing'
     else:
-        return "irc_opt_job_launched"
+        return "job_launched"
     
 def check_irc_opt_content(dir_path):
     reactant_path = path.join(dir_path, 'irc_reactant.xyz')
@@ -786,7 +786,6 @@ def check_irc_opt_content(dir_path):
             zpe = q.get_zpe()
             energy += zpe
             return 'job_success', opt_cycle, energy
-        return 'job_success'
     except:
         return 'job_fail', 0, 0.0
 
