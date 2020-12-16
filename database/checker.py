@@ -669,20 +669,24 @@ def check_irc_equal():
                         'forward equal to reverse']
 
     for target in targets:
-        new_status = check_irc_equal_status(target)
+        new_status, forward, backward = check_irc_equal_status(target)
         orig_status = target['irc_equal']
         if orig_status != new_status:
             if new_status in acceptable_condition:
                 update_field = {
-                                'irc_equal':new_status, 'energy_status':'job_unrun', 'irc_opt_status':'job_unrun'
+                                'irc_equal':new_status, 'energy_status':'job_unrun', 'irc_opt_status':'job_unrun',
+                                'reactant_inchi_key':forward.write('inchiKey').strip(), 'product_inchi_key':backward.write('inchiKey').strip(),
+                                'Reactant SMILES':forward.write('can').split()[0], 'Product SMILES':backward.write('can').split()[0]
                                 }
             elif new_status in special_condition:
                 update_field = {
-                                'irc_equal':new_status, 'energy_status':'job_unrun'
+                                'irc_equal':new_status, 'energy_status':'job_unrun', 'irc_opt_status':'job_unrun',
+                                'reactant_inchi_key':forward.write('inchiKey').strip(), 'product_inchi_key':backward.write('inchiKey').strip(),
+                                'Reactant SMILES':forward.write('can').split()[0], 'Product SMILES':backward.write('can').split()[0]
                                 }
             else:
                 update_field = {
-                                    'irc_equal': new_status
+                                'irc_equal': new_status
                                 }
             qm_collection.update_one(target, {"$set": update_field}, True)
 
@@ -698,27 +702,27 @@ def check_irc_equal_status(target):
     pyMol_2 = xyz_to_pyMol(product_path)
     pyMol_3 = xyz_to_pyMol(forward_output)
     pyMol_4 = xyz_to_pyMol(reverse_output)
-    
+
     if pyMol_3.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip():
         return 'forward equal to reverse'
     elif (pyMol_1.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip()) and (pyMol_1.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip()):
-        return 'forward and reverse equal to reactant'
+        return 'forward and reverse equal to reactant', pyMol_3, pyMol_4
     elif (pyMol_2.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip()) and (pyMol_2.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip()):
-        return 'forward and reverse equal to product'
+        return 'forward and reverse equal to product', pyMol_3, pyMol_4
     elif pyMol_1.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip() and pyMol_2.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip():
-        return 'forward equal to reactant and reverse equal to product'
+        return 'forward equal to reactant and reverse equal to product', pyMol_3, pyMol_4
     elif pyMol_1.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip() and pyMol_2.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip():
-        return 'reverse equal to reactant and forward equal to product'
+        return 'reverse equal to reactant and forward equal to product', pyMol_4, pyMol_3
     elif pyMol_1.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip() and pyMol_2.write('inchiKey').strip() != pyMol_3.write('inchiKey').strip():
-        return 'reverse equal to reactant but forward does not equal to product'
+        return 'reverse equal to reactant but forward does not equal to product', pyMol_4, pyMol_3
     elif pyMol_1.write('inchiKey').strip() != pyMol_4.write('inchiKey').strip() and pyMol_2.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip():
-        return 'reverse does not equal to reactant but forward equal to product'
+        return 'reverse does not equal to reactant but forward equal to product', pyMol_4, pyMol_3
     elif pyMol_1.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip() and pyMol_2.write('inchiKey').strip() != pyMol_4.write('inchiKey').strip():
-        return 'forward equal to reactant but reverse does not equal to product'
+        return 'forward equal to reactant but reverse does not equal to product', pyMol_3, pyMol_4
     elif pyMol_1.write('inchiKey').strip() != pyMol_3.write('inchiKey').strip() and pyMol_2.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip():
-        return 'forward does not equal to reactant but reverse equal to product'
+        return 'forward does not equal to reactant but reverse equal to product', pyMol_3, pyMol_4
     else:
-        return 'unknown (Maybe both of them are not equal to reactant&product)'
+        return 'unknown (Maybe both of them are not equal to reactant&product)', pyMol_3, pyMol_4
 
 """
 IRC opt check.
@@ -818,6 +822,10 @@ def check_irc_opt_jobs():
                 update_field = {
                                 'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'insert reaction': 'need insert'
                             }
+            elif new_status == "job_running" or new_status == "job_queueing":
+                update_field = {
+                                'irc_opt_status': new_status
+                            }           
             else:
                 update_field = {
                                 'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'insert reaction': 'need insert'
