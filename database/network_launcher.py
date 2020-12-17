@@ -55,6 +55,7 @@ def launch_ard_jobs(ncpus = 8, mpiprocs = 1, ompthreads = 8):
         for target in targets:
             if use_irc == '0':
                 dir_path, gen_num, ard_ssm_equal = target['path'], target['generations'], target['ard_ssm_equal']
+                script_path = path.join(path.dirname(path.dirname(dir_path)), 'script')
                 if ard_ssm_equal == 'not_equal':
                     next_reactant = 'ssm_product.xyz'
                     subfile = create_ard_sub_file(dir_path, script_path, gen_num + 1, next_reactant, ncpus = 8, mpiprocs = 1, ompthreads = 8)
@@ -64,9 +65,9 @@ def launch_ard_jobs(ncpus = 8, mpiprocs = 1, ompthreads = 8):
             else:
                 dir_path, gen_num = target['path'], target['generations']
                 next_reactant = path.join(dir_path, 'irc_reactant.xyz')
+                script_path = path.join(path.dirname(path.dirname(dir_path)), 'script')
                 subfile = create_ard_sub_file(dir_path, script_path, gen_num + 1, next_reactant, ncpus = 8, mpiprocs = 1, ompthreads = 8)
 
-            script_path = path.join(path.dirname(path.dirname(dir_path)), 'script')
             os.chdir(dir_path)
 
             cmd = 'qsub {}'.format(subfile)

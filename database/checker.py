@@ -1123,7 +1123,6 @@ def insert_reaction():
                                     'product_smi':product_smi,
                                     'path':path,
                                     'generations':generations,
-                                    'unique': 'new one',
                                     'barrier_energy':barrier,
                                     'ard_stauts':'aleady insert to qm',
                                     'irc_equal':irc_equal,
