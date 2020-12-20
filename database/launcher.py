@@ -519,7 +519,7 @@ def create_irc_sub_file(TS_dir_path, IRC_dir_path, ncpus = 4, mpiprocs = 1, ompt
     target_path = 'cd {}'.format(IRC_dir_path)
     nes = 'source ~/.bashrc\nconda activate rmg3'
     command = 'pysis pysisyphus_irc.yaml'
-    deactivate = 'conda deactivate'
+    deactivate = 'conda deactivate\nrm *.gbw'
 
     with open(subfile, 'w') as f:
         f.write('{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes, command, deactivate))
