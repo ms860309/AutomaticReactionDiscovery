@@ -100,7 +100,7 @@ class XTB(object):
             if msg != '':
                 print(msg)
         except:
-            return False, False, False, False
+            return False, False
 
         if self.constraint == None:
             ff.Setup(Hatom.OBMol)

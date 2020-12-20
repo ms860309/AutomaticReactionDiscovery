@@ -24,7 +24,7 @@ def launch_energy_jobs(num = 100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
     targets = select_calE_target()
     
     for target in targets[:num]:
-        Energy_dir_path = path.join(target, 'ENERGY')
+        Energy_dir_path = path.join(target['path'], 'ENERGY')
         if os.path.exists(Energy_dir_path):
             shutil.rmtree(Energy_dir_path)
             os.mkdir(Energy_dir_path)
@@ -558,7 +558,9 @@ def launch_irc_opt_jobs(num = 100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
             target_mol = path.join(IRC_dir_path, 'finished_last.xyz')
         elif irc_equal == 'reverse equal to reactant and forward equal to product':
             target_mol = path.join(IRC_dir_path, 'finished_first.xyz')
-
+        elif irc_equal == 'forward equal to reverse':
+            target_mol = path.join(IRC_dir_path, 'finished_first.xyz')
+            
         subfile = create_irc_opt_sub_file(IRC_dir_path, target_mol, ncpus = 4, mpiprocs = 1, ompthreads = 4)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],

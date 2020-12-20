@@ -561,6 +561,8 @@ class Arrange3D(object):
         self.def_2 = None
         self.nodes_1 = None
         self.nodes_2 = None
+        self.fdist_1 = None
+        self.fdist_2 = None
         if constraint == None:
             self.constraint = []
         else:
@@ -653,6 +655,10 @@ class Arrange3D(object):
         self.nodes_2 = [mol.toNode() for mol in self.mol_2.mols]
         self.setInitialPositions(self.nodes_1)
         self.setInitialPositions(self.nodes_2)
+        fd1 = [node.getCentroid() for node in self.nodes_1]
+        fd2 = [node.getCentroid() for node in self.nodes_2]
+        self.fdist_1 = [np.linalg.norm(a-b) for a, b in zip(fd1, fd1[1:] + fd1[:-1])]
+        self.fdist_2 = [np.linalg.norm(a-b) for a, b in zip(fd2, fd2[1:] + fd2[:-1])]
 
     def arrangeIn3D(self):
         """
@@ -664,7 +670,6 @@ class Arrange3D(object):
         ret = ''
         dof = self.dof_1 + self.def_2
         if dof != 0:
-
             #a = self.mol_1
             #b = self.nodes_1
             def callbackF(Xi):
@@ -679,18 +684,11 @@ class Arrange3D(object):
                 """
 
             disps_guess = np.array([0.0]*dof)
-            """
-            result = optimize.minimize(self.objectiveFunction, disps_guess,
-                                       constraints={'type': 'ineq', 'fun': self.constraintFunction},
-                                       method='COBYLA',
-                                       options={'disp': False}) #, callback = callbackF, 'eps':1e-10
-            """
             result = optimize.minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
-                                       options={'maxiter': 1000, 'disp': False, 'ftol':0.01}) #, callback = callbackF, 'eps':1e-10
-            
-            
+                                       options={'maxiter': 100, 'disp': False, 'ftol':0.1}) #, callback = callbackF, 'eps':1e-10
+
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
                            str(result.status) + ':\n' + result.message + '\n')
@@ -937,6 +935,10 @@ class Arrange3D(object):
         """
         coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, disps[:self.dof_1])
         coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, disps[self.dof_1:])
+        fragment_dist_1 = [node.sum(axis=0)/len(node) for node in coords_1]
+        fragment_dist_2 = [node.sum(axis=0)/len(node) for node in coords_2]
+        a = [np.linalg.norm(a-b) for a, b in zip(fragment_dist_1, fragment_dist_1[1:] + fragment_dist_1[:-1])]
+        b = [np.linalg.norm(a-b) for a, b in zip(fragment_dist_2, fragment_dist_2[1:] + fragment_dist_2[:-1])]
         b1 = self.calcBondLens(coords_1, self.bonds_1)
         b2 = self.calcBondLens(coords_2, self.bonds_2)
         d1 = self.calcDihedralAngs(coords_1, self.torsions_1)
@@ -953,9 +955,12 @@ class Arrange3D(object):
                 val_d += np.abs(d + 2 * np.pi)
             else:
                 val_d += np.abs(d)
-        
+        for i in range(len(a)):
+            val_dist += a[i] - self.fdist_1[i]
+        for i in range(len(b)):
+            val_dist += b[i] - self.fdist_2[i]
         # The weight 5 for val_b is chosen arbitrarily
-        val = 5 * val_b + val_d
+        val = 5 * val_b + val_d + val_dist
         return val
         """
         if self.constraint != []:
@@ -1012,10 +1017,10 @@ class Arrange3D(object):
         for mol_node in self.mol_2.mols:
             dist = self.fragment_dist(mol_node.toNode())
             dist_2.append(dist)
-        distance_1 = np.linalg.norm(dist_1[0] - dist_1[1]) - 5.0
-        distance_2 = np.linalg.norm(dist_1[0] - dist_1[1]) - 5.0
+        distance_1 = np.linalg.norm(dist_1[0] - dist_1[1]) - 6.0
+        distance_2 = np.linalg.norm(dist_1[0] - dist_1[1]) - 6.0
         return min([distance_1], [distance_2])
-    
+
     def second_constraintFunction(self, disps):
         mol_1_matches = []
         mol_2_matches = []
