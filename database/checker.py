@@ -666,7 +666,7 @@ def check_irc_equal():
                         'reverse equal to reactant and forward equal to product']
     special_condition = ['reverse equal to reactant but forward does not equal to product',
                         'forward equal to reactant but reverse does not equal to product',
-                        'forward equal to reverse']
+                        'forward equal to reverse', 'unknown (Maybe both of them are not equal to reactant&product)']
 
     for target in targets:
         new_status, forward, backward = check_irc_equal_status(target)
@@ -704,7 +704,7 @@ def check_irc_equal_status(target):
     pyMol_4 = xyz_to_pyMol(reverse_output)
 
     if pyMol_3.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip():
-        return 'forward equal to reverse'
+        return 'forward equal to reverse', pyMol_3, pyMol_4
     elif (pyMol_1.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip()) and (pyMol_1.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip()):
         return 'forward and reverse equal to reactant', pyMol_3, pyMol_4
     elif (pyMol_2.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip()) and (pyMol_2.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip()):
@@ -1125,8 +1125,7 @@ def insert_reaction():
                                     'generations':generations,
                                     'barrier_energy':barrier,
                                     'ard_stauts':'aleady insert to qm',
-                                    'irc_equal':irc_equal,
-                                    'irc_opt_status':target['irc_opt_status']})
+                                    'irc_equal':irc_equal})
             else:
                 reactions_collection.insert_one({
                                     'reaction':[reactant_inchi_key, product_inchi_key],
@@ -1139,8 +1138,7 @@ def insert_reaction():
                                     'unique': 'duplicate',
                                     'barrier_energy':barrier,
                                     'ard_stauts':'aleady insert to qm',
-                                    'irc_equal':irc_equal,
-                                    'irc_opt_status':target['irc_opt_status']})
+                                    'irc_equal':irc_equal})
         qm_collection.update_one(target, {"$set": {'insert reaction':"Already insert"}}, True)
 
 """
@@ -1295,7 +1293,10 @@ def check_barrier():
     qm_collection = db['qm_calculate_center']
     # 2. check the job pbs status
     for target in targets:
-        reactant_energy = float(target['reactant_energy'])
+        try:
+            reactant_energy = float(target['reactant_energy'])
+        except:
+            reactant_energy = float(target['irc_opt_energy'])
         ts_energy = float(target['ts_energy'])
         barrier = (ts_energy - reactant_energy) * 627.5095
         update_field = {

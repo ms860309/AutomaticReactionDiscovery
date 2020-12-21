@@ -402,7 +402,7 @@ def print_information(generations):
     print('{} nodes fail or more than one imaginary frequency in TS'.format(len(ts_targets_3)))
     print('{} nodes running or queueing IRC'.format(len(irc_targets_1)))
     print('{} nodes success in IRC'.format(len(irc_targets_2)))
-    print('{} nodes fail in OPT'.format(len(irc_targets_3)))
+    print('{} nodes fail in IRC'.format(len(irc_targets_3)))
     print('{} nodes are waiting for checking IRC EQUAL'.format(len(irc_targets_6)))
     print('{} nodes are intended'.format(len(irc_targets_4)))
     print('{} nodes are unintended (Maybe forward equal to reverse)'.format(len(irc_targets_5)))
