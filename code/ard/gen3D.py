@@ -657,6 +657,8 @@ class Arrange3D(object):
         self.setInitialPositions(self.nodes_2)
         fd1 = [node.getCentroid() for node in self.nodes_1]
         fd2 = [node.getCentroid() for node in self.nodes_2]
+        #center = [node.getCenterOfMass() for node in self.nodes_1]
+
         self.fdist_1 = [np.linalg.norm(a-b) for a, b in zip(fd1, fd1[1:] + fd1[:-1])]
         self.fdist_2 = [np.linalg.norm(a-b) for a, b in zip(fd2, fd2[1:] + fd2[:-1])]
 
@@ -687,7 +689,7 @@ class Arrange3D(object):
             result = optimize.minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='SLSQP',
-                                       options={'maxiter': 100, 'disp': False, 'ftol':0.1}) #, callback = callbackF, 'eps':1e-10
+                                       options={'maxiter': 1000, 'disp': False, 'ftol':0.01}) #, callback = callbackF, 'eps':1e-10
 
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
@@ -956,12 +958,13 @@ class Arrange3D(object):
             else:
                 val_d += np.abs(d)
         for i in range(len(a)):
-            val_dist += a[i] - self.fdist_1[i]
+            val_dist += self.fdist_1[i] - a[i]
         for i in range(len(b)):
-            val_dist += b[i] - self.fdist_2[i]
+            val_dist += self.fdist_2[i] - b[i]
         # The weight 5 for val_b is chosen arbitrarily
-        val = 5 * val_b + val_d + val_dist
+        val = 5 * val_b + val_d + 3 * val_dist
         return val
+        
         """
         if self.constraint != []:
             mol_1_matches = []
