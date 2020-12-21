@@ -822,7 +822,7 @@ def check_irc_opt_jobs():
                 update_field = {
                                 'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'insert reaction': 'need insert'
                             }
-            elif new_status == "job_running" or new_status == "job_queueing":
+            elif new_status == "job_running" or new_status == "job_queueing" or new_status == "job_launched":
                 update_field = {
                                 'irc_opt_status': new_status
                             }           
@@ -931,7 +931,7 @@ def check_opt_jobs():
                 update_field = {
                                 'opt_status': new_status, 'opt_iter':opt_cycle, 'reactant_energy':energy
                             }
-            elif new_status == "job_running" or new_status == "job_queueing":
+            elif new_status == "job_running" or new_status == "job_queueing" or new_status == "job_launched":
                 update_field = {
                                 'opt_status': new_status
                             }

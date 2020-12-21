@@ -133,7 +133,6 @@ def gen_geometry(reactant_mol, product_mol, constraint):
     reactant_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
     product_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
 
-    print(product_mol.toNode())
     dist = check_bond_length(reactant_mol, ((2, 17, 1), (5, 19, 1)))
     print(dist)
 
@@ -142,16 +141,12 @@ def gen_geometry(reactant_mol, product_mol, constraint):
     if msg != '':
         print(msg)
     
-    print('----')
-    print(product_mol.toNode())
     dist = check_bond_length(reactant_mol, ((2, 17, 1), (5, 19, 1)))
     print(dist)
+    
+    gen3D.constraint_force_field(reactant_mol, constraint, forcefield='uff', method = 'SteepestDescent')
+    gen3D.constraint_force_field(product_mol, constraint, forcefield='uff', method = 'SteepestDescent')
 
-    reactant_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
-    product_mol.gen3D(constraint, forcefield='uff', method = 'SteepestDescent', make3D=False)
-
-    print('----')
-    print(product_mol.toNode())
     dist = check_bond_length(reactant_mol, ((2, 17, 1), (5, 19, 1)))
     print(dist)
 
