@@ -656,12 +656,13 @@ class Arrange3D(object):
         self.nodes_2 = [mol.toNode() for mol in self.mol_2.mols]
         self.setInitialPositions(self.nodes_1)
         self.setInitialPositions(self.nodes_2)
-        fd1 = [node.getCentroid() for node in self.nodes_1]
-        fd2 = [node.getCentroid() for node in self.nodes_2]
-        #center = [node.getCenterOfMass() for node in self.nodes_1]
+        if len(self.nodes_1) > 1 and len(self.nodes_2) > 1:
+            fd1 = [node.getCentroid() for node in self.nodes_1]
+            fd2 = [node.getCentroid() for node in self.nodes_2]
+            #center = [node.getCenterOfMass() for node in self.nodes_1]
 
-        self.fdist_1 = [np.linalg.norm(a-b) for a, b in zip(fd1, fd1[1:] + fd1[:-1])]
-        self.fdist_2 = [np.linalg.norm(a-b) for a, b in zip(fd2, fd2[1:] + fd2[:-1])]
+            self.fdist_1 = [np.linalg.norm(a-b) for a, b in zip(fd1, fd1[1:] + fd1[:-1])]
+            self.fdist_2 = [np.linalg.norm(a-b) for a, b in zip(fd2, fd2[1:] + fd2[:-1])]
 
     def arrangeIn3D(self):
         """
@@ -958,10 +959,11 @@ class Arrange3D(object):
                 val_d += np.abs(d + 2 * np.pi)
             else:
                 val_d += np.abs(d)
-        for i in range(len(a)):
-            val_dist += self.fdist_1[i] - a[i]
-        for i in range(len(b)):
-            val_dist += self.fdist_2[i] - b[i]
+        if len(self.nodes_1) > 1 and len(self.nodes_2) > 1:
+            for i in range(len(a)):
+                val_dist += self.fdist_1[i] - a[i]
+            for i in range(len(b)):
+                val_dist += self.fdist_2[i] - b[i]
         # The weight 5 for val_b is chosen arbitrarily
         val = 5 * val_b + val_d + 3 * val_dist
         return val
