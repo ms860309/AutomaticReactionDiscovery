@@ -659,6 +659,7 @@ class Arrange3D(object):
         if len(self.nodes_1) > 1 and len(self.nodes_2) > 1:
             fd1 = [node.getCentroid() for node in self.nodes_1]
             fd2 = [node.getCentroid() for node in self.nodes_2]
+            #center = [node.getCentroid() for node in self.nodes_1]
             #center = [node.getCenterOfMass() for node in self.nodes_1]
 
             self.fdist_1 = [np.linalg.norm(a-b) for a, b in zip(fd1, fd1[1:] + fd1[:-1])]
@@ -967,8 +968,8 @@ class Arrange3D(object):
         # The weight 5 for val_b is chosen arbitrarily
         val = 5 * val_b + val_d + 3 * val_dist
         return val
-        
         """
+
         if self.constraint != []:
             mol_1_matches = []
             mol_2_matches = []
@@ -1015,17 +1016,19 @@ class Arrange3D(object):
     def second_constraintFunction(self, disps):
         coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, disps[:self.dof_1])
         coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, disps[self.dof_1:])
-        dist_1 = []
-        dist_2 = []
-        for mol_node in self.mol_1.mols:
-            dist = self.fragment_dist(mol_node.toNode())
-            dist_1.append(dist)
-        for mol_node in self.mol_2.mols:
-            dist = self.fragment_dist(mol_node.toNode())
-            dist_2.append(dist)
-        distance_1 = np.linalg.norm(dist_1[0] - dist_1[1]) - 6.0
-        distance_2 = np.linalg.norm(dist_1[0] - dist_1[1]) - 6.0
-        return min([distance_1], [distance_2])
+        fragment_dist_1 = [node.sum(axis=0)/len(node) for node in coords_1]
+        fragment_dist_2 = [node.sum(axis=0)/len(node) for node in coords_2]
+        a = [np.linalg.norm(a-b) for a, b in zip(fragment_dist_1, fragment_dist_1[1:] + fragment_dist_1[:-1])]
+        b = [np.linalg.norm(a-b) for a, b in zip(fragment_dist_2, fragment_dist_2[1:] + fragment_dist_2[:-1])]
+        distance_1 = []
+        if len(self.nodes_1) > 1 and len(self.nodes_2) > 1:
+            for i in range(len(a)):
+                distance_1.append(self.fdist_1[i] - a[i])
+            for i in range(len(b)):
+               distance_1.append(self.fdist_2[i] - b[i])
+        print(distance_1)
+        return min([distance_1])
+
 
     def second_constraintFunction(self, disps):
         mol_1_matches = []
