@@ -70,7 +70,7 @@ class Mopac(object):
             self.finalize(start_time, 'mopac')
             return float(reactant), float(product)
     
-    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 15.0):
+    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 10.0):
         start_time = time.time()
 
         # Initial optimization
@@ -90,7 +90,9 @@ class Mopac(object):
             if msg != '':
                 print(msg)
         except:
-            return False, False, False, False
+            self.logger.info('Here is the {} product.'.format(self.num))
+            self.logger.info('Arrange fail')
+            return False, False
 
         if self.constraint == None:
             ff.Setup(Hatom.OBMol)
@@ -113,7 +115,7 @@ class Mopac(object):
             self.logger.info('Form bond distance is greater than threshold.')
             self.logger.info('Now finished {}/{}'.format(self.num, self.count))
             self.finalize(start_time, 'arrange')
-            return False, False, False, False
+            return False, False
         else:
             self.logger.info('\nHere is the {} product.'.format(self.num))
             self.logger.info('Structure:\n{}'.format(str(reactant_mol.toNode())))

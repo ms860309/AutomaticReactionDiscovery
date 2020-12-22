@@ -961,9 +961,9 @@ class Arrange3D(object):
                 val_d += np.abs(d)
         if len(self.nodes_1) > 1 and len(self.nodes_2) > 1:
             for i in range(len(a)):
-                val_dist += self.fdist_1[i] - a[i]
+                val_dist += abs(self.fdist_1[i] - a[i])
             for i in range(len(b)):
-                val_dist += self.fdist_2[i] - b[i]
+                val_dist += abs(self.fdist_2[i] - b[i])
         # The weight 5 for val_b is chosen arbitrarily
         val = 5 * val_b + val_d + 3 * val_dist
         return val

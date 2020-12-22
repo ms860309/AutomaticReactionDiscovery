@@ -80,7 +80,7 @@ class XTB(object):
             self.finalize(start_time, 'XTB')
             return float(reactant_energy), float(product_energy)
     
-    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 15.0):
+    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 10.0):
         start_time = time.time()
 
         # Initial optimization
@@ -100,6 +100,8 @@ class XTB(object):
             if msg != '':
                 print(msg)
         except:
+            self.logger.info('Here is the {} product.'.format(self.num))
+            self.logger.info('Arrange fail')
             return False, False
 
         if self.constraint == None:

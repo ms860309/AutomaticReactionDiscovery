@@ -663,7 +663,7 @@ def check_irc_equal():
     qm_collection = db['qm_calculate_center']
 
     acceptable_condition = ['forward equal to reactant and reverse equal to product',
-                        'reverse equal to reactant and forward equal to product']
+                            'reverse equal to reactant and forward equal to product']
     special_condition = ['reverse equal to reactant but forward does not equal to product',
                         'forward equal to reactant but reverse does not equal to product',
                         'forward equal to reverse', 'unknown (Maybe both of them are not equal to reactant&product)']
@@ -680,7 +680,7 @@ def check_irc_equal():
                                 }
             elif new_status in special_condition:
                 update_field = {
-                                'irc_equal':new_status, 'energy_status':'job_unrun', 'irc_opt_status':'job_unrun',
+                                'irc_equal':new_status, 'energy_status':'job_unrun', 'insert_reaction':'need insert'
                                 'reactant_inchi_key':forward.write('inchiKey').strip(), 'product_inchi_key':backward.write('inchiKey').strip(),
                                 'Reactant SMILES':forward.write('can').split()[0], 'Product SMILES':backward.write('can').split()[0]
                                 }
@@ -1057,11 +1057,16 @@ def select_insert_reaction_target():
     Returns a list of targe
     """
     qm_collection = db['qm_calculate_center']
-    query = {'insert reaction':
-                {"$in":
-                    ["need insert"]
+    query = {'$and': 
+                    [
+                    { "insert reaction":
+                        {"$in":
+                        ['need insert']}},
+                    {'barrier':
+                        {'$nin':
+                            ['do not have reactant_energy']}}
+                    ]
                 }
-            }
     targets = list(qm_collection.find(query))
     return targets
 
@@ -1071,7 +1076,7 @@ def insert_reaction():
     targets = select_insert_reaction_target()
 
     acceptable_condition = ['forward equal to reactant and reverse equal to product',
-                        'reverse equal to reactant and forward equal to product']
+                            'reverse equal to reactant and forward equal to product']
 
     # new one not mean the lowest barrier (so the lowest may in duplicate)
     for target in targets:
