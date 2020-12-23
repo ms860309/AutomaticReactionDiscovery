@@ -558,7 +558,9 @@ def launch_irc_opt_jobs(num = 100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
             target_mol = path.join(IRC_dir_path, 'finished_last.xyz')
         elif irc_equal == 'reverse equal to reactant and forward equal to product':
             target_mol = path.join(IRC_dir_path, 'finished_first.xyz')
-        elif irc_equal == 'forward equal to reverse':
+        elif irc_equal == 'forward equal to reactant but reverse does not equal to product':
+            target_mol = path.join(IRC_dir_path, 'finished_reverse.xyz')
+        elif irc_equal == 'reverse equal to reactant but forward does not equal to product':
             target_mol = path.join(IRC_dir_path, 'finished_first.xyz')
             
         subfile = create_irc_opt_sub_file(IRC_dir_path, target_mol, ncpus = 4, mpiprocs = 1, ompthreads = 4)

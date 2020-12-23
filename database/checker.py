@@ -663,10 +663,13 @@ def check_irc_equal():
     qm_collection = db['qm_calculate_center']
 
     acceptable_condition = ['forward equal to reactant and reverse equal to product',
-                            'reverse equal to reactant and forward equal to product']
-    special_condition = ['reverse equal to reactant but forward does not equal to product',
-                        'forward equal to reactant but reverse does not equal to product',
-                        'forward equal to reverse', 'unknown (Maybe both of them are not equal to reactant&product)']
+                            'reverse equal to reactant and forward equal to product',
+                            'forward equal to reactant but reverse does not equal to product',
+                            'reverse equal to reactant but forward does not equal to product']
+    special_condition = ['forward and reverse equal to product', 'forward and reverse equal to reactant'
+                        'forward equal to reverse', 'unknown (Maybe both of them are not equal to reactant&product)',
+                        'forward does not equal to reactant but reverse equal to product',
+                        'reverse does not equal to reactant but forward equal to product']
 
     for target in targets:
         new_status, forward, backward = check_irc_equal_status(target)
@@ -680,7 +683,7 @@ def check_irc_equal():
                                 }
             elif new_status in special_condition:
                 update_field = {
-                                'irc_equal':new_status, 'energy_status':'job_unrun', 'insert_reaction':'need insert'
+                                'irc_equal':new_status, 'energy_status':'job_unrun', 'insert_reaction':'need insert',
                                 'reactant_inchi_key':forward.write('inchiKey').strip(), 'product_inchi_key':backward.write('inchiKey').strip(),
                                 'Reactant SMILES':forward.write('can').split()[0], 'Product SMILES':backward.write('can').split()[0]
                                 }
@@ -1076,7 +1079,9 @@ def insert_reaction():
     targets = select_insert_reaction_target()
 
     acceptable_condition = ['forward equal to reactant and reverse equal to product',
-                            'reverse equal to reactant and forward equal to product']
+                            'reverse equal to reactant and forward equal to product',
+                            'forward equal to reactant but reverse does not equal to product',
+                            'reverse equal to reactant but forward does not equal to product']
 
     # new one not mean the lowest barrier (so the lowest may in duplicate)
     for target in targets:
@@ -1194,8 +1199,19 @@ def insert_ard():
     ard_should_add_number = sum(statistics_collection.distinct("add how many products"))
 
     if int(not_finished_number) == 0 and int(ard_had_add_number) -1 == int(ard_should_add_number):
-        targets = list(reactions_collection.find({'unique':'new one'}))
-        for target in targets:
+        reactions = list(reactions_collection.aggregate([{
+                                                '$group':{
+                                                        '_id': "$reaction",
+                                                        'barrier': {'$min': "$barrier_energy"}}}
+                                                ]))
+        for i in reactions:
+            query = {'$and': 
+                            [
+                            { "reaction":i['_id']},
+                            {'barrier_energy':i['barrier']}
+                            ]
+                        }
+            target = list(reactions_collection.find(query))[0]
             try:
                 ard_stauts = target['ard_status']
                 if ard_stauts == 'aleady insert to qm':

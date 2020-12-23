@@ -290,7 +290,10 @@ def print_information(generations):
                     [
                     { "irc_equal":
                         {"$in":
-                        ['forward equal to reactant and reverse equal to product', 'reverse equal to reactant and forward equal to product']}
+                        ['forward equal to reactant and reverse equal to product', 
+                        'reverse equal to reactant and forward equal to product',
+                        'forward equal to reactant but reverse does not equal to product',
+                        'reverse equal to reactant but forward does not equal to product']}
                         },
                     {'generations':generations}
                     ]
@@ -299,9 +302,12 @@ def print_information(generations):
                     [
                     { "irc_equal":
                         {"$in":
-                        ['reverse equal to reactant but forward does not equal to product', 'reverse does not equal to reactant but forward equal to product', 
-                        'forward equal to reactant but reverse does not equal to product', 'forward does not equal to reactant but reverse equal to product',
-                        'forward equal to reverse', 'unknown (Maybe both of them are not equal to reactant&product)']}
+                        ['forward and reverse equal to product', 
+                        'forward and reverse equal to reactant',
+                        'forward equal to reverse',
+                        'unknown (Maybe both of them are not equal to reactant&product)',
+                        'forward does not equal to reactant but reverse equal to product',
+                        'reverse does not equal to reactant but forward equal to product']}
                         },
                     {'generations':generations}
                     ]

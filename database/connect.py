@@ -23,7 +23,26 @@ db = getattr(Connector(), 'db')
 
 
 # debug
+
 """
+reactions_collection = db['reactions']
+reactions = list(reactions_collection.aggregate([{
+                                        '$group':{
+                                                '_id': "$reaction",
+                                                'barrier': {'$min': "$barrier_energy"}}}
+                                        ]))
+for i in reactions:
+    query = {'$and': 
+                    [
+                    { "reaction":i['_id']},
+                    {'barrier_energy':i['barrier']}
+                    ]
+                }
+    target = list(reactions_collection.find(query))[0]
+    print(target['barrier_energy'])
+
+
+
 qm_collection = db['qm_calculate_center']
 query = {'low_opt_status':"job_success"}
 a = list(qm_collection.find(query))

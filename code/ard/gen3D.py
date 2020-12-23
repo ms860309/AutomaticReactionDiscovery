@@ -654,8 +654,8 @@ class Arrange3D(object):
         # Convert mols to nodes and center molecules
         self.nodes_1 = [mol.toNode() for mol in self.mol_1.mols]
         self.nodes_2 = [mol.toNode() for mol in self.mol_2.mols]
-        self.setInitialPositions(self.nodes_1)
-        self.setInitialPositions(self.nodes_2)
+        #self.setInitialPositions(self.nodes_1)
+        #self.setInitialPositions(self.nodes_2)
         if len(self.nodes_1) > 1 and len(self.nodes_2) > 1:
             fd1 = [node.getCentroid() for node in self.nodes_1]
             fd2 = [node.getCentroid() for node in self.nodes_2]
@@ -948,8 +948,8 @@ class Arrange3D(object):
         b2 = self.calcBondLens(coords_2, self.bonds_2)
         d1 = self.calcDihedralAngs(coords_1, self.torsions_1)
         d2 = self.calcDihedralAngs(coords_2, self.torsions_2)
-        val_b, val_d, val_dist = 0.0, 0.0, 0.0
 
+        val_b, val_d, val_dist = 0.0, 0.0, 0.0
         for i in range(len(b1)):
             val_b += np.abs(b1[i]-b2[i])
         for i in range(len(d1)):
@@ -960,16 +960,16 @@ class Arrange3D(object):
                 val_d += np.abs(d + 2 * np.pi)
             else:
                 val_d += np.abs(d)
+
         if len(self.nodes_1) > 1 and len(self.nodes_2) > 1:
             for i in range(len(a)):
                 val_dist += abs(self.fdist_1[i] - a[i])
             for i in range(len(b)):
                 val_dist += abs(self.fdist_2[i] - b[i])
         # The weight 5 for val_b is chosen arbitrarily
-        val = 5 * val_b + val_d + 3 * val_dist
+        val = val_b + 5 * val_d + 3 * val_dist
         return val
         """
-
         if self.constraint != []:
             mol_1_matches = []
             mol_2_matches = []
