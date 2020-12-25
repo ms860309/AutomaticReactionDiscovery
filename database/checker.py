@@ -532,7 +532,7 @@ def check_ts_jobs():
                                         }
                     else:
                         update_field = {
-                                        'ts_status': new_status, 'ts_energy':ts_energy, 'barrier':barrier, 'insert reaction':'need insert'
+                                        'ts_status': new_status, 'ts_energy':ts_energy, 'barrier':barrier, 'insert_reaction':'need insert'
                                         }    
                 else:
                     update_field = {
@@ -666,7 +666,7 @@ def check_irc_equal():
                             'reverse equal to reactant and forward equal to product',
                             'forward equal to reactant but reverse does not equal to product',
                             'reverse equal to reactant but forward does not equal to product']
-    special_condition = ['forward and reverse equal to product', 'forward and reverse equal to reactant'
+    special_condition = ['forward and reverse equal to product', 'forward and reverse equal to reactant',
                         'forward equal to reverse', 'unknown (Maybe both of them are not equal to reactant&product)',
                         'forward does not equal to reactant but reverse equal to product',
                         'reverse does not equal to reactant but forward equal to product']
@@ -686,10 +686,6 @@ def check_irc_equal():
                                 'irc_equal':new_status, 'energy_status':'job_unrun', 'insert_reaction':'need insert',
                                 'reactant_inchi_key':forward.write('inchiKey').strip(), 'product_inchi_key':backward.write('inchiKey').strip(),
                                 'Reactant SMILES':forward.write('can').split()[0], 'Product SMILES':backward.write('can').split()[0]
-                                }
-            else:
-                update_field = {
-                                'irc_equal': new_status
                                 }
             qm_collection.update_one(target, {"$set": update_field}, True)
 
@@ -823,7 +819,7 @@ def check_irc_opt_jobs():
         if orig_status != new_status:
             if new_status == 'job_success':
                 update_field = {
-                                'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'insert reaction': 'need insert'
+                                'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'insert_reaction': 'need insert'
                             }
             elif new_status == "job_running" or new_status == "job_queueing" or new_status == "job_launched":
                 update_field = {
@@ -831,7 +827,7 @@ def check_irc_opt_jobs():
                             }           
             else:
                 update_field = {
-                                'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'insert reaction': 'need insert'
+                                'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'insert_reaction': 'need insert'
                             }
             qm_collection.update_one(target, {"$set": update_field}, True)
 
@@ -1062,7 +1058,7 @@ def select_insert_reaction_target():
     qm_collection = db['qm_calculate_center']
     query = {'$and': 
                     [
-                    { "insert reaction":
+                    {"insert_reaction":
                         {"$in":
                         ['need insert']}},
                     {'barrier':
@@ -1149,7 +1145,7 @@ def insert_reaction():
                                     'barrier_energy':barrier,
                                     'ard_stauts':'aleady insert to qm',
                                     'irc_equal':irc_equal})
-        qm_collection.update_one(target, {"$set": {'insert reaction':"Already insert"}}, True)
+        qm_collection.update_one(target, {"$set": {'insert_reaction':"Already insert"}}, True)
 
 """
 ARD check unrun

@@ -507,7 +507,6 @@ class Molecule(pybel.Molecule):
                                 if atom_in_rotor[ref_3] ^ atom_in_rotor[ref_4]:
                                     atom_in_rotor[ref_3], atom_in_rotor[ref_4] = True, True
                                     new_atom = True
-
                     self.atom_in_rotor.append(atom_in_rotor)
 
     def detCloseAtoms(self, d):
@@ -564,6 +563,7 @@ class Arrange3D(object):
         self.nodes_2 = None
         self.fdist_1 = None
         self.fdist_2 = None
+
         if constraint == None:
             self.constraint = []
         else:
@@ -571,7 +571,7 @@ class Arrange3D(object):
 
         self.initializeVars(mol_1, mol_2)
 
-    def initializeVars(self, mol_1, mol_2, d_intermol=3.0, d_intramol=2.0):
+    def initializeVars(self, mol_1, mol_2, d_intermol=1.0, d_intramol=2.0):
         """
         Set up class variables and determine the bonds and torsions to be
         matched between reactant and product.
@@ -654,8 +654,9 @@ class Arrange3D(object):
         # Convert mols to nodes and center molecules
         self.nodes_1 = [mol.toNode() for mol in self.mol_1.mols]
         self.nodes_2 = [mol.toNode() for mol in self.mol_2.mols]
-        #self.setInitialPositions(self.nodes_1)
-        #self.setInitialPositions(self.nodes_2)
+        self.setInitialPositions(self.nodes_1)
+        self.setInitialPositions(self.nodes_2)
+
         if len(self.nodes_1) > 1 and len(self.nodes_2) > 1:
             fd1 = [node.getCentroid() for node in self.nodes_1]
             fd2 = [node.getCentroid() for node in self.nodes_2]
@@ -689,11 +690,18 @@ class Arrange3D(object):
                 """
 
             disps_guess = np.array([0.0]*dof)
+            
             result = optimize.minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='COBYLA',
-                                       options={'maxiter': 5000, 'disp': False}) #, callback = callbackF, 'eps':1e-10
-
+                                       options={'disp': False, 'catol': 0.005, 'tol':0.001}) #, callback = callbackF, 'eps':1e-10
+            """
+            result = optimize.minimize(self.objectiveFunction, disps_guess,
+                                       constraints={'type': 'ineq', 'fun': self.constraintFunction},
+                                       method='SLSQP',
+                                       options={'maxiter': 500, 'disp': False, 'ftol':0.1, 'eps':1e-5}, callback = callbackF) #, callback = callbackF, 'eps':1e-10
+            """
+            print(result)
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
                            str(result.status) + ':\n' + result.message + '\n')
@@ -1033,9 +1041,10 @@ class Arrange3D(object):
     def second_constraintFunction(self, disps):
         mol_1_matches = []
         mol_2_matches = []
+        constraint = [0,1,5,8,20,21,22,23]
         coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, disps[:self.dof_1])
         coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, disps[self.dof_1:])
-        combs = combinations(self.constraint, 2)
+        combs = combinations(constraint, 2)
         for comb in list(combs):
             matches_1 = [match for match in self.get_idx(comb[0], self.mol_1.mols_indices)]
             matches_2 = [match for match in self.get_idx(comb[1], self.mol_1.mols_indices)]
@@ -1045,6 +1054,7 @@ class Arrange3D(object):
             matches_4 = [match for match in self.get_idx(comb[1], self.mol_2.mols_indices)]
             matches_3.extend(matches_4)
             mol_2_matches.append(matches_3)
+
         dis1 = self.calcBondLens(coords_1, mol_1_matches)
         dis2 = self.calcBondLens(coords_2, mol_2_matches)
 
