@@ -488,8 +488,8 @@ class Molecule(pybel.Molecule):
         self.rotors = []
         self.atom_in_rotor = []
         natoms = len(self.atoms)
-        constraint = [15,16,17,18,20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
-        
+        #constraint = [15,16,17,18,20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+        constraint = [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
         for bond_1 in pybel.ob.OBMolBondIter(self.OBMol):
             if bond_1.IsRotor():
                 ref_1, ref_2 = bond_1.GetBeginAtomIdx() - 1, bond_1.GetEndAtomIdx() - 1
@@ -571,7 +571,7 @@ class Arrange3D(object):
 
         self.initializeVars(mol_1, mol_2)
 
-    def initializeVars(self, mol_1, mol_2, d_intermol=1.0, d_intramol=2.0):
+    def initializeVars(self, mol_1, mol_2, d_intermol=3.0, d_intramol=2.0):
         """
         Set up class variables and determine the bonds and torsions to be
         matched between reactant and product.
@@ -690,18 +690,17 @@ class Arrange3D(object):
                 """
 
             disps_guess = np.array([0.0]*dof)
-            
+            """
             result = optimize.minimize(self.objectiveFunction, disps_guess,
                                        constraints={'type': 'ineq', 'fun': self.constraintFunction},
                                        method='COBYLA',
                                        options={'disp': False, 'catol': 0.005, 'tol':0.001}) #, callback = callbackF, 'eps':1e-10
             """
             result = optimize.minimize(self.objectiveFunction, disps_guess,
-                                       constraints={'type': 'ineq', 'fun': self.constraintFunction},
+                                       constraints=[{'type': 'ineq', 'fun': self.constraintFunction}, {'type': 'eq', 'fun': self.second_constraintFunction}],
                                        method='SLSQP',
-                                       options={'maxiter': 500, 'disp': False, 'ftol':0.1, 'eps':1e-5}, callback = callbackF) #, callback = callbackF, 'eps':1e-10
-            """
-            print(result)
+                                       options={'maxiter': 500, 'disp': False, 'ftol':0.1}) #, callback = callbackF, 'eps':1e-10
+
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
                            str(result.status) + ':\n' + result.message + '\n')
@@ -956,7 +955,7 @@ class Arrange3D(object):
         b2 = self.calcBondLens(coords_2, self.bonds_2)
         d1 = self.calcDihedralAngs(coords_1, self.torsions_1)
         d2 = self.calcDihedralAngs(coords_2, self.torsions_2)
-
+        
         val_b, val_d, val_dist = 0.0, 0.0, 0.0
         for i in range(len(b1)):
             val_b += np.abs(b1[i]-b2[i])
@@ -1019,6 +1018,31 @@ class Arrange3D(object):
         val = min([a - self.d_intermol for a in intermol_dists if a != 0] +
                   [b - self.d_intramol for b in intramol_dists if b != 0])
         return val
+
+    def second_constraintFunction(self, disps):
+        mol_1_matches = []
+        mol_2_matches = []
+
+        coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, disps[:self.dof_1])
+        coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, disps[self.dof_1:])
+        combs = combinations(self.constraint, 2)
+        for comb in list(combs):
+            matches_1 = [match for match in self.get_idx(comb[0], self.mol_1.mols_indices)]
+            matches_2 = [match for match in self.get_idx(comb[1], self.mol_1.mols_indices)]
+            matches_1.extend(matches_2)
+            mol_1_matches.append(matches_1)
+            matches_3 = [match for match in self.get_idx(comb[0], self.mol_2.mols_indices)]
+            matches_4 = [match for match in self.get_idx(comb[1], self.mol_2.mols_indices)]
+            matches_3.extend(matches_4)
+            mol_2_matches.append(matches_3)
+
+        dis1 = self.calcBondLens(coords_1, mol_1_matches)
+        dis2 = self.calcBondLens(coords_2, mol_2_matches)
+
+        val_dist = 0.0
+        for i in range(len(dis1)):
+            val_dist += np.abs(dis1[i]-dis2[i])
+        return val_dist
 
     """
     def second_constraintFunction(self, disps):
