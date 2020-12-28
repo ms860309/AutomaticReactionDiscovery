@@ -72,6 +72,7 @@ def constraint_force_field(mol, freeze_index, forcefield='uff', method = 'Steepe
         ff.ConjugateGradients(steps)
     ff.GetCoordinates(mol.OBMol)
 
+
 def makeMolFromAtomsAndBonds(atoms, bonds, spin=None):
     """
     Create a new Molecule object from a sequence of atoms and bonds.
@@ -488,8 +489,8 @@ class Molecule(pybel.Molecule):
         self.rotors = []
         self.atom_in_rotor = []
         natoms = len(self.atoms)
-        #constraint = [15,16,17,18,20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
-        constraint = [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+        constraint = [15,16,17,18,20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+        #constraint = [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
         for bond_1 in pybel.ob.OBMolBondIter(self.OBMol):
             if bond_1.IsRotor():
                 ref_1, ref_2 = bond_1.GetBeginAtomIdx() - 1, bond_1.GetEndAtomIdx() - 1
@@ -624,6 +625,7 @@ class Arrange3D(object):
                         if (not connectivity[k][l]) or l == j or l <= i:
                             continue
                         a, b, c, d = atom_in_mol_1[i], atom_in_mol_1[j], atom_in_mol_1[k], atom_in_mol_1[l]
+                        #if i not in self.constraint and j not in self.constraint and k not in self.constraint and l not in self.constraint:  # debug
                         self.torsions_1.append([
                             (a, mol_1.mols_indices[a].index(i)),
                             (b, mol_1.mols_indices[b].index(j)),
@@ -654,8 +656,8 @@ class Arrange3D(object):
         # Convert mols to nodes and center molecules
         self.nodes_1 = [mol.toNode() for mol in self.mol_1.mols]
         self.nodes_2 = [mol.toNode() for mol in self.mol_2.mols]
-        self.setInitialPositions(self.nodes_1)
-        self.setInitialPositions(self.nodes_2)
+        #self.setInitialPositions(self.nodes_1)
+        #self.setInitialPositions(self.nodes_2)
 
         if len(self.nodes_1) > 1 and len(self.nodes_2) > 1:
             fd1 = [node.getCentroid() for node in self.nodes_1]
@@ -690,17 +692,22 @@ class Arrange3D(object):
                 """
 
             disps_guess = np.array([0.0]*dof)
-            """
+            
             result = optimize.minimize(self.objectiveFunction, disps_guess,
-                                       constraints={'type': 'ineq', 'fun': self.constraintFunction},
+                                       constraints=[{'type': 'ineq', 'fun': self.constraintFunction}, 
+                                                    {'type': 'ineq', 'fun': self.second_constraintFunction},
+                                                    {'type': 'ineq', 'fun': self.third_constraintFunction}],
                                        method='COBYLA',
-                                       options={'disp': False, 'catol': 0.005, 'tol':0.001}) #, callback = callbackF, 'eps':1e-10
+                                       options={'disp': False}) #, callback = callbackF, 'eps':1e-10
+
             """
             result = optimize.minimize(self.objectiveFunction, disps_guess,
-                                       constraints=[{'type': 'ineq', 'fun': self.constraintFunction}, {'type': 'eq', 'fun': self.second_constraintFunction}],
+                                       constraints=[{'type': 'ineq', 'fun': self.constraintFunction}, 
+                                                    {'type': 'eq', 'fun': self.second_constraintFunction},
+                                                    {'type': 'eq', 'fun': self.third_constraintFunction}],
                                        method='SLSQP',
-                                       options={'maxiter': 500, 'disp': False, 'ftol':0.1}) #, callback = callbackF, 'eps':1e-10
-
+                                       options={'maxiter': 500, 'disp': False, 'ftol':0.1}, callback = callbackF) #, callback = callbackF, 'eps':1e-10
+            """
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
                            str(result.status) + ':\n' + result.message + '\n')
@@ -947,16 +954,13 @@ class Arrange3D(object):
         """
         coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, disps[:self.dof_1])
         coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, disps[self.dof_1:])
-        fragment_dist_1 = [node.sum(axis=0)/len(node) for node in coords_1]
-        fragment_dist_2 = [node.sum(axis=0)/len(node) for node in coords_2]
-        a = [np.linalg.norm(a-b) for a, b in zip(fragment_dist_1, fragment_dist_1[1:] + fragment_dist_1[:-1])]
-        b = [np.linalg.norm(a-b) for a, b in zip(fragment_dist_2, fragment_dist_2[1:] + fragment_dist_2[:-1])]
+
         b1 = self.calcBondLens(coords_1, self.bonds_1)
         b2 = self.calcBondLens(coords_2, self.bonds_2)
         d1 = self.calcDihedralAngs(coords_1, self.torsions_1)
         d2 = self.calcDihedralAngs(coords_2, self.torsions_2)
-        
-        val_b, val_d, val_dist = 0.0, 0.0, 0.0
+
+        val_b, val_d = 0.0, 0.0
         for i in range(len(b1)):
             val_b += np.abs(b1[i]-b2[i])
         for i in range(len(d1)):
@@ -968,13 +972,9 @@ class Arrange3D(object):
             else:
                 val_d += np.abs(d)
 
-        if len(self.nodes_1) > 1 and len(self.nodes_2) > 1:
-            for i in range(len(a)):
-                val_dist += abs(self.fdist_1[i] - a[i])
-            for i in range(len(b)):
-                val_dist += abs(self.fdist_2[i] - b[i])
         # The weight 5 for val_b is chosen arbitrarily
-        val = val_b + 5 * val_d + 3 * val_dist
+
+        val = 5 * val_b + val_d
         return val
         """
         if self.constraint != []:
@@ -1042,7 +1042,24 @@ class Arrange3D(object):
         val_dist = 0.0
         for i in range(len(dis1)):
             val_dist += np.abs(dis1[i]-dis2[i])
-        return val_dist
+        return - val_dist
+
+    def third_constraintFunction(self, disps):
+        coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, disps[:self.dof_1])
+        coords_2 = self.newCoords(self.mol_2.mols, self.nodes_2, disps[self.dof_1:])
+        fragment_dist_1 = [node.sum(axis=0)/len(node) for node in coords_1]
+        fragment_dist_2 = [node.sum(axis=0)/len(node) for node in coords_2]
+        a = [np.linalg.norm(a-b) for a, b in zip(fragment_dist_1, fragment_dist_1[1:] + fragment_dist_1[:-1])]
+        b = [np.linalg.norm(a-b) for a, b in zip(fragment_dist_2, fragment_dist_2[1:] + fragment_dist_2[:-1])]
+        
+        val_dist = 0.0
+        if len(self.nodes_1) > 1 and len(self.nodes_2) > 1:
+            for i in range(len(a)):
+                val_dist += abs(self.fdist_1[i] - a[i])
+            for i in range(len(b)):
+                val_dist += abs(self.fdist_2[i] - b[i])
+
+        return - val_dist
 
     """
     def second_constraintFunction(self, disps):
