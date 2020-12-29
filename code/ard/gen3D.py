@@ -572,7 +572,7 @@ class Arrange3D(object):
 
         self.initializeVars(mol_1, mol_2)
 
-    def initializeVars(self, mol_1, mol_2, d_intermol=3.0, d_intramol=2.0):
+    def initializeVars(self, mol_1, mol_2, d_intermol=1.0, d_intramol=1.0):
         """
         Set up class variables and determine the bonds and torsions to be
         matched between reactant and product.
@@ -692,7 +692,7 @@ class Arrange3D(object):
                 """
 
             disps_guess = np.array([0.0]*dof)
-            
+            """
             result = optimize.minimize(self.objectiveFunction, disps_guess,
                                        constraints=[{'type': 'ineq', 'fun': self.constraintFunction}, 
                                                     {'type': 'ineq', 'fun': self.second_constraintFunction},
@@ -706,8 +706,8 @@ class Arrange3D(object):
                                                     {'type': 'eq', 'fun': self.second_constraintFunction},
                                                     {'type': 'eq', 'fun': self.third_constraintFunction}],
                                        method='SLSQP',
-                                       options={'maxiter': 500, 'disp': False, 'ftol':0.1}, callback = callbackF) #, callback = callbackF, 'eps':1e-10
-            """
+                                       options={'maxiter': 500, 'disp': False, 'ftol':1e-3}, callback = callbackF) #, callback = callbackF, 'eps':1e-10
+            
             if not result.success:
                 message = ('Optimization in arrangeIn3D terminated with status ' +
                            str(result.status) + ':\n' + result.message + '\n')
@@ -1002,7 +1002,6 @@ class Arrange3D(object):
             val = 5 * val_b + val_d
             return val
         """
-        
 
     def constraintFunction(self, disps):
         """
@@ -1042,7 +1041,7 @@ class Arrange3D(object):
         val_dist = 0.0
         for i in range(len(dis1)):
             val_dist += np.abs(dis1[i]-dis2[i])
-        return - val_dist
+        return val_dist
 
     def third_constraintFunction(self, disps):
         coords_1 = self.newCoords(self.mol_1.mols, self.nodes_1, disps[:self.dof_1])
@@ -1059,7 +1058,7 @@ class Arrange3D(object):
             for i in range(len(b)):
                 val_dist += abs(self.fdist_2[i] - b[i])
 
-        return - val_dist
+        return val_dist
 
     """
     def second_constraintFunction(self, disps):
