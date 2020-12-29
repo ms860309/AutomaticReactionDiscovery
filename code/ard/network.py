@@ -20,6 +20,7 @@ from quantum import QuantumError
 from node import Node
 from pgen import Generate
 from mopac import Mopac
+import mopac
 from xtb import XTB
 
 #database
@@ -344,7 +345,7 @@ class Network(object):
 
         reac_geo = str(mol_object.toNode()).splitlines()
         reactant_geometry = []
-        for i in reac_geo:
+        for idx, i in enumerate(reac_geo):
             i_list = i.split()
             atom = i_list[0] + " "
             k = i_list[1:] + [""]

@@ -156,6 +156,7 @@ class Mopac(object):
             reactant_geometry = "\n".join(reactant_geometry)
 
             reactant_mol.setCoordsFromMol(reac_mol_copy)
+
             self.finalize(start_time, 'arrange')
             return reactant_geometry, product_geometry
             
