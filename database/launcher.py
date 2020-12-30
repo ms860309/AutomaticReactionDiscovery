@@ -517,9 +517,9 @@ def create_irc_sub_file(TS_dir_path, IRC_dir_path, ncpus = 4, mpiprocs = 1, ompt
     shell = '#!/usr/bin/bash'
     pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
     target_path = 'cd {}'.format(IRC_dir_path)
-    nes = 'source ~/.bashrc\nconda activate rmg3'
+    nes = 'source ~/.bashrc\nconda activate rmg3\nexport TMPDIR=/tmp/$PBS_JOBID\nmkdir -p $TMPDIR\n'
     command = 'pysis pysisyphus_irc.yaml'
-    deactivate = 'conda deactivate\nrm *.gbw'
+    deactivate = 'conda deactivate\nrm *.gbw\nrm -r $TMPDIR'
 
     with open(subfile, 'w') as f:
         f.write('{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes, command, deactivate))
