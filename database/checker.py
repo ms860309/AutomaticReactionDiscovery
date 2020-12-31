@@ -1200,6 +1200,15 @@ def insert_ard():
                                                         '_id': "$reaction",
                                                         'barrier': {'$min': "$barrier_energy"}}}
                                                 ]))
+        acceptable_condition = ['forward equal to reactant and reverse equal to product',
+                                'reverse equal to reactant and forward equal to product',
+                                'forward equal to reactant but reverse does not equal to product',
+                                'reverse equal to reactant but forward does not equal to product']
+
+        finished_reactant_list = []
+        for i in statistics_collection.find({}, {"_id": 0, "Reactant SMILES": 0, "add how many products": 0, "generations": 0}):
+            finished_reactant_list.append(i['reactant_inchi_key'])
+
         for i in reactions:
             query = {'$and': 
                             [
@@ -1211,6 +1220,14 @@ def insert_ard():
             try:
                 ard_stauts = target['ard_status']
                 if ard_stauts == 'aleady insert to qm':
+                    continue
+                irc_equal = target['irc_equal']
+                if irc_equal not in acceptable_condition:
+                    continue
+                irc_opt_reactant_path = path.join(target['path'], 'irc_reactant.xyz')
+                irc_opt_reactant_mol = xyz_to_pyMol(irc_opt_reactant_path)
+                irc_opt_reactant_inchi_key = irc_opt_reactant_mol.write('inchiKey').strip()
+                if irc_opt_reactant_inchi_key in finished_reactant_list:
                     continue
             except:
                 dirpath = target['path']

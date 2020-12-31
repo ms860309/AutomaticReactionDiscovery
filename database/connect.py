@@ -11,7 +11,7 @@ class Connector(object):
         #self.server = 'mongodb://localhost:27017/'
         #self.mongo_db = mongo_db
         self.client = self.connect()
-        self.db = self.client['third_constraint']
+        self.db = self.client['restrict_second_constraint']
 
     def connect(self):
         client = MongoClient(self.server, serverSelectionTimeoutMS=2000)
@@ -40,15 +40,20 @@ for i in reactions:
                 }
     target = list(reactions_collection.find(query))[0]
     print(target['barrier_energy'])
+"""
 
-
-
+"""
 qm_collection = db['qm_calculate_center']
-query = {'low_opt_status':"job_success"}
-a = list(qm_collection.find(query))
-for i in a:
-    print(i['low_energy'])
+statistics_collection = db['statistics']
+#query = {'low_opt_status':"job_success"}
+#a = list(qm_collection.find(query))
+finished_reactant_list = []
+for i in statistics_collection.find({}, {"_id": 0, "Reactant SMILES": 0, "add how many products": 0, "generations": 0}):
+    finished_reactant_list.append(i['reactant_inchi_key'])
+    print(i['reactant_inchi_key'])
+"""
 
+"""
 qm_collection = db['qm_calculate_center']
 query = [{'$match':{'reactant_inchi_key':'OWCQMKVAAHGRRF-UHFFFAOYSA-N'}},
             {'$group':{'_id':'$reactant_inchi_key', 'reactant_mopac_hf':{'$min':'$reactant_mopac_hf'}}}]
