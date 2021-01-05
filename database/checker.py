@@ -818,8 +818,11 @@ def check_irc_opt_jobs():
         orig_status = target['irc_opt_status']
         if orig_status != new_status:
             if new_status == 'job_success':
+                irc_opt_reactant_path = path.join(target['path'], 'irc_reactant.xyz')
+                irc_opt_reactant_mol = xyz_to_pyMol(irc_opt_reactant_path)
                 update_field = {
-                                'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'insert_reaction': 'need insert'
+                                'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'product_inchi_key':irc_opt_reactant_mol.write('inchiKey').strip(),
+                                'Product SMILES':irc_opt_reactant_mol.write('can').split()[0], 'insert_reaction': 'need insert'
                             }
             elif new_status == "job_running" or new_status == "job_queueing" or new_status == "job_launched":
                 update_field = {
@@ -1105,7 +1108,8 @@ def insert_reaction():
                                     'unique': 'new one',
                                     'barrier_energy':barrier,
                                     'irc_equal':irc_equal,
-                                    'irc_opt_status':target['irc_opt_status']})
+                                    'irc_opt_status':target['irc_opt_status'],
+                                    'delta H':(target['irc_opt_energy'] - target['reactant_energy']) * 627.5095})
             else:
                 reactions_collection.insert_one({
                                     'reaction':[reactant_inchi_key, product_inchi_key],
@@ -1118,7 +1122,8 @@ def insert_reaction():
                                     'unique': 'duplicate',
                                     'barrier_energy':barrier,
                                     'irc_equal':irc_equal,
-                                    'irc_opt_status':target['irc_opt_status']})
+                                    'irc_opt_status':target['irc_opt_status'],
+                                    'delta H':(target['irc_opt_energy'] - target['reactant_energy']) * 627.5095})
         else:
             if len(checker1) == 0:
                 reactions_collection.insert_one({
@@ -1130,7 +1135,7 @@ def insert_reaction():
                                     'path':path,
                                     'generations':generations,
                                     'barrier_energy':barrier,
-                                    'ard_stauts':'aleady insert to qm',
+                                    'ard_status':'aleady insert to qm',
                                     'irc_equal':irc_equal})
             else:
                 reactions_collection.insert_one({
@@ -1143,7 +1148,7 @@ def insert_reaction():
                                     'generations':generations,
                                     'unique': 'duplicate',
                                     'barrier_energy':barrier,
-                                    'ard_stauts':'aleady insert to qm',
+                                    'ard_status':'aleady insert to qm',
                                     'irc_equal':irc_equal})
         qm_collection.update_one(target, {"$set": {'insert_reaction':"Already insert"}}, True)
 
@@ -1218,16 +1223,17 @@ def insert_ard():
                         }
             target = list(reactions_collection.find(query))[0]
             try:
-                ard_stauts = target['ard_status']
-                if ard_stauts == 'aleady insert to qm':
+                if target['ard_status'] == 'aleady insert to qm':
                     continue
-                irc_equal = target['irc_equal']
-                if irc_equal not in acceptable_condition:
+                if target['irc_equal'] not in acceptable_condition:
                     continue
                 irc_opt_reactant_path = path.join(target['path'], 'irc_reactant.xyz')
                 irc_opt_reactant_mol = xyz_to_pyMol(irc_opt_reactant_path)
                 irc_opt_reactant_inchi_key = irc_opt_reactant_mol.write('inchiKey').strip()
                 if irc_opt_reactant_inchi_key in finished_reactant_list:
+                    reactions_collection.update_one(target, {"$set": {'ard_status': 'The irc opt reactant had been finished before.'}}, True)
+                    continue
+                if target['irc_opt_status'] != 'job_success':
                     continue
             except:
                 dirpath = target['path']

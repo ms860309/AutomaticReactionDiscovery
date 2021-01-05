@@ -547,8 +547,9 @@ class Arrange3D(object):
     """
 
     def __init__(self, mol_1, mol_2, constraint = None):
-        if not (0 < len(mol_1.mols) <= 4 and 0 < len(mol_2.mols) <= 4):
-            raise Exception('More than 4 molecules are not supported')
+        # set initial position has been disable so i think we can remove this fragment constraint
+        #if not (0 < len(mol_1.mols) <= 4 and 0 < len(mol_2.mols) <= 4):
+            #raise Exception('More than 4 molecules are not supported')
 
         self.mol_1 = None
         self.mol_2 = None
