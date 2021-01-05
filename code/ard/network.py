@@ -220,7 +220,7 @@ class Network(object):
 
     def filter_dh_mopac(self, reac_obj, reac_mol_copy, prod_mol, form_bonds, break_bonds, total_prod_num, refH = None):
         self.count += 1
-        mopac_object = Mopac(reac_obj, prod_mol, self.mopac_method, self.forcefield, self.constraintff_alg, form_bonds, self.logger, total_prod_num, self.count, self.constraint)
+        mopac_object = Mopac(reac_obj, prod_mol, self.mopac_method, self.forcefield, self.constraintff_alg, form_bonds, self.logger, total_prod_num, self.count, self.constraint, self.fixed_atom)
         H298_reac, H298_prod = mopac_object.mopac_get_H298(reac_mol_copy, self.reactant_path)
 
         if H298_prod == False or H298_reac == False:
@@ -279,7 +279,7 @@ class Network(object):
 
     def filter_dh_xtb(self, reac_obj, reac_mol_copy, prod_mol, form_bonds, break_bonds, total_prod_num, refH = None):
         self.count += 1
-        xtb_object = XTB(reac_obj, prod_mol, self.forcefield, self.constraintff_alg, form_bonds, self.logger, total_prod_num, self.count, self.constraint)
+        xtb_object = XTB(reac_obj, prod_mol, self.forcefield, self.constraintff_alg, form_bonds, self.logger, total_prod_num, self.count, self.constraint, self.fixed_atom)
         H298_reac, H298_prod = xtb_object.xtb_get_H298(reac_mol_copy, self.reactant_path)
 
         if H298_prod == False or H298_reac == False:
@@ -409,7 +409,7 @@ class Network(object):
 
         # Arrange
         # If arrange error can use try
-        arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint)
+        arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint, self.fixed_atom)
         msg = arrange3D.arrangeIn3D()
         if msg != '':
             self.logger.info(msg)

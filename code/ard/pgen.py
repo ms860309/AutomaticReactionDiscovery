@@ -119,8 +119,9 @@ class Generate(object):
         for bonds in reactant_bonds:
             if (self.atoms[bonds[0]] == 6 and self.atoms[bonds[1]] == 1) or (self.atoms[bonds[1]] == 6 and self.atoms[bonds[0]] == 1):
                 bond_can_form.remove(bonds)
-        for hydrogen in [2,3,4,6,7,9,10,11,12,13]:
-            for oxygen in [15,17,18]:
+        # index start from 0
+        for hydrogen in [10,11,17,18,19,20]:
+            for oxygen in [22,24,25]:
                 bond_can_form.append((hydrogen,oxygen,1))
 
         bond_can_break = [bond for bond in reactant_bonds

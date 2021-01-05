@@ -25,7 +25,7 @@ class XTBError(Exception):
 
 class XTB(object):
 
-    def __init__(self, reactant_mol, product_mol, forcefield, constraintff_alg, form_bonds, logger, count, num, constraint = None):
+    def __init__(self, reactant_mol, product_mol, forcefield, constraintff_alg, form_bonds, logger, count, num, constraint = None, fixed_atom= None):
         self.reactant_mol = reactant_mol
         self.product_mol = product_mol
         self.forcefield = forcefield
@@ -35,6 +35,7 @@ class XTB(object):
         self.count = count
         self.num = num
         self.constraint = constraint
+        self.fixed_atom = fixed_atom
 
     def xtb_get_H298(self, reac_mol_copy, reactant_path):
         """
@@ -95,7 +96,7 @@ class XTB(object):
 
         # Arrange
         try:  # Pass the more than 4 fragment situation
-            arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint)
+            arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint, self.fixed_atom)
             msg = arrange3D.arrangeIn3D()
             if msg != '':
                 print(msg)
@@ -184,7 +185,7 @@ class XTB(object):
         constraint_path = os.path.join(config_path, 'constraint.inp')
         new_output_path = os.path.join(tmpdir, outname)
         if self.constraint == None:
-            p = Popen(['xtb --opt ', input_path])
+            p = Popen(['xtb', input_path, '--opt'])
             p.wait()
             os.rename(output_path, new_output_path)
         else:

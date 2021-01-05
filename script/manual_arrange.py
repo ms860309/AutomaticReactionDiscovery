@@ -55,7 +55,7 @@ def extract_constraint_index(constraint):
     lines = eval(lines)
     return lines
 
-def mopac_get_H298(reactant, product, constraint, charge = 0, multiplicity = 'SINGLET'):
+def mopac_get_H298(reactant, product, constraint, fixed_atom, charge = 0, multiplicity = 'SINGLET'):
     """
     Create a directory folder called "tmp" for mopac calculation
     Create a input file called "input.mop" for mopac calculation
@@ -65,7 +65,7 @@ def mopac_get_H298(reactant, product, constraint, charge = 0, multiplicity = 'SI
     reactant_path = os.path.join(tmpdir, 'reactant.mop')
     product_path = os.path.join(tmpdir, 'product.mop')
 
-    reac_geo, prod_geo = gen_geometry(reactant, product, constraint)
+    reac_geo, prod_geo = gen_geometry(reactant, product, constraint, fixed_atom)
     
     if os.path.exists(tmpdir):
         shutil.rmtree(tmpdir)
@@ -128,12 +128,12 @@ def runMopac(tmpdir, target = 'reactant.mop'):
     p = Popen(['mopac', input_path])
     p.wait()
 
-def gen_geometry(reactant_mol, product_mol, constraint):
+def gen_geometry(reactant_mol, product_mol, constraint, fixed_atom):
 
     reactant_mol.gen3D(constraint, forcefield='uff', method = 'ConjugateGradients', make3D=False)
     product_mol.gen3D(constraint, forcefield='uff', method = 'ConjugateGradients', make3D=False)
 
-    arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, constraint)
+    arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, constraint, fixed_atom)
     msg = arrange3D.arrangeIn3D()
     if msg != '':
         print(msg)
@@ -175,11 +175,13 @@ def gen_geometry(reactant_mol, product_mol, constraint):
 
 xyz_path = './reactant.xyz'
 constraint_path = './constraint.txt'
+fixed_atom_path = './fixed_atom.txt'
 bonds = ((0, 1, 1), (0, 2, 1), (0, 3, 1), (0, 4, 1), (1, 5, 1), (1, 6, 1), (1, 7, 1), (5, 8, 1), (5, 9, 1), 
         (5, 10, 1), (8, 11, 1), (8, 12, 1), (8, 13, 1), (14, 15, 1), (14, 16, 1), (14, 17, 1), (14, 18, 1), 
         (15, 20, 1), (16, 22, 1), (17, 21, 1), (18, 19, 1), (18, 23, 1), (20, 24, 1), (20, 25, 1), (20, 26, 1), 
         (21, 27, 1), (21, 28, 1), (21, 30, 1), (22, 29, 1), (22, 31, 1), (22, 34, 1), (23, 32, 1), (23, 33, 1), (23, 35, 1))
 constraint = extract_constraint_index(constraint_path)
+fixed_atom = extract_fixed_atom_index(fixed_atom_path)
 reactant = readXYZ(xyz_path, bonds=bonds)
 atoms = tuple(atom.atomicnum for atom in reactant)
 
@@ -202,4 +204,4 @@ product_bonds = ((1, 3, 1), (0, 2, 1), (0, 5, 1), (0, 4, 1), (1, 5, 1), (1, 6, 1
 product = gen3D.makeMolFromAtomsAndBonds(atoms, product_bonds, spin=reactant.spin)
 product.setCoordsFromMol(reactant)
 
-mopac_get_H298(reactant, product, constraint)
+mopac_get_H298(reactant, product, constraint, fixed_atom)

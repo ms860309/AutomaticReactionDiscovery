@@ -482,19 +482,18 @@ class Molecule(pybel.Molecule):
         else:
             self.mols_indices = tuple([atom] for atom in range(len(self.atoms)))
 
-    def detRotors(self, mols_indices, constraint=None):
+    def detRotors(self, mols_indices, fixed_atom=None):
         """
         Determine the rotors and atoms in the rotors of the molecule.
         """
         self.rotors = []
         self.atom_in_rotor = []
         natoms = len(self.atoms)
-        constraint = [15,16,17,18,20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
-        #constraint = [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+
         for bond_1 in pybel.ob.OBMolBondIter(self.OBMol):
             if bond_1.IsRotor():
                 ref_1, ref_2 = bond_1.GetBeginAtomIdx() - 1, bond_1.GetEndAtomIdx() - 1
-                if mols_indices[ref_1] not in constraint and mols_indices[ref_2] not in constraint:
+                if mols_indices[ref_1] not in fixed_atom and mols_indices[ref_2] not in fixed_atom:
                     self.rotors.append((ref_1, ref_2))
                     atom_in_rotor = [False] * natoms
                     atom_in_rotor[ref_1] = True
@@ -546,7 +545,7 @@ class Arrange3D(object):
 
     """
 
-    def __init__(self, mol_1, mol_2, constraint = None):
+    def __init__(self, mol_1, mol_2, constraint = None, fixed_atom = None):
         # set initial position has been disable so i think we can remove this fragment constraint
         #if not (0 < len(mol_1.mols) <= 4 and 0 < len(mol_2.mols) <= 4):
             #raise Exception('More than 4 molecules are not supported')
@@ -570,6 +569,10 @@ class Arrange3D(object):
             self.constraint = []
         else:
             self.constraint = constraint
+        if fixed_atom == None:
+            self.fixed_atom = []
+        else:
+            self.fixed_atom = fixed_atom
 
         self.initializeVars(mol_1, mol_2)
 
@@ -645,12 +648,12 @@ class Arrange3D(object):
         self.dof_1, self.def_2 = 6 * (len(self.mol_1.mols) - 1), 6 * (len(self.mol_2.mols) - 1)
 
         for idx, mol in enumerate(mol_1.mols):
-            mol.detRotors(mol.mols_indices[idx], self.constraint)
+            mol.detRotors(mol.mols_indices[idx], self.fixed_atom)
             mol.detCloseAtoms(d_intramol)
             self.dof_1 += len(mol.rotors)
 
         for idx, mol in enumerate(mol_2.mols):
-            mol.detRotors(mol.mols_indices[idx], self.constraint)
+            mol.detRotors(mol.mols_indices[idx], self.fixed_atom)
             mol.detCloseAtoms(d_intramol)
             self.def_2 += len(mol.rotors)
 

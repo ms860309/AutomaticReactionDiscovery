@@ -25,7 +25,7 @@ class MopacError(Exception):
 
 class Mopac(object):
 
-    def __init__(self, reactant_mol, product_mol, mopac_method, forcefield, constraintff_alg, form_bonds, logger, count, num, constraint = None):
+    def __init__(self, reactant_mol, product_mol, mopac_method, forcefield, constraintff_alg, form_bonds, logger, count, num, constraint = None, fixed_atom=None):
         self.reactant_mol = reactant_mol
         self.product_mol = product_mol
         self.mopac_method = mopac_method
@@ -36,7 +36,8 @@ class Mopac(object):
         self.count = count
         self.num = num
         self.constraint = constraint
-
+        self.fixed_atom = fixed_atom
+        
     def mopac_get_H298(self, reac_mol_copy, tmp_path, charge = 0, multiplicity = 'SINGLET'):
         """
         Create a directory folder called "tmp" for mopac calculation
@@ -85,7 +86,7 @@ class Mopac(object):
 
         # Arrange
         try:  # Pass the more than 4 fragment situation
-            arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint)
+            arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, self.constraint, self.fixed_atom)
             msg = arrange3D.arrangeIn3D()
             if msg != '':
                 print(msg)
