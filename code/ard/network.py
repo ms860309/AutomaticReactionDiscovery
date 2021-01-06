@@ -72,7 +72,6 @@ class Network(object):
         self.logger.info('Generating all possible products...')
         gen.generateProducts(nbreak = int(nbreak), nform =  int(nform))
         prod_mols = gen.prod_mols
-
         self.logger.info('{} possible products generated\n'.format(len(prod_mols)))
         add_bonds = gen.add_bonds
         break_bonds = gen.break_bonds

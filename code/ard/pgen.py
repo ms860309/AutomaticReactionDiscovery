@@ -120,8 +120,8 @@ class Generate(object):
             if (self.atoms[bonds[0]] == 6 and self.atoms[bonds[1]] == 1) or (self.atoms[bonds[1]] == 6 and self.atoms[bonds[0]] == 1):
                 bond_can_form.remove(bonds)
         # index start from 0
-        for hydrogen in [10,11,17,18,19,20]:
-            for oxygen in [22,24,25]:
+        for hydrogen in [2,3,4,6,7,9,10,11,12,13]:
+            for oxygen in [15,17,18]:
                 bond_can_form.append((hydrogen,oxygen,1))
 
         bond_can_break = [bond for bond in reactant_bonds
@@ -167,7 +167,7 @@ class Generate(object):
                         for j in form_bonds:
                             if i[0] == j[0] and i[1] == j[1]:
                                 form_bonds.remove(j)
-                if self.check_bond_type(bonds, reactant_valences, form_bonds, break_bonds):
+                if self.check_bond_type(bonds, form_bonds, break_bonds):
                     mol = gen3D.makeMolFromAtomsAndBonds(self.atoms, bonds, spin=self.reac_mol.spin)
                     mol.setCoordsFromMol(self.reac_mol)
                     if self.check_bond_dissociation_energy_and_isomorphic_and_rings(bonds, break_bonds):
@@ -189,7 +189,7 @@ class Generate(object):
                             self.break_bonds.append(break_bonds)
                             self.prod_mols.append(mol)
 
-    def check_bond_type(self, bonds, reactant_valences, form_bonds, break_bonds):
+    def check_bond_type(self, bonds, form_bonds, break_bonds):
         bond_type = {}
         for i in range(len(self.atoms)):
             num = 0
@@ -197,7 +197,6 @@ class Generate(object):
                 if j[0] == i or j[1] == i:
                     num += j[2]
             bond_type[i] = num
-
         if 0 in bond_type.values():
             return False
         else:
