@@ -587,7 +587,7 @@ class Network(object):
         config_path = os.path.join(os.path.dirname(os.path.dirname(tmpdir)), 'config')
         constraint_path = os.path.join(config_path, 'constraint.inp')
         if self.constraint == None:
-            p = Popen(['xtb --opt ', input_path])
+            p = Popen(['xtb', input_path, '--opt'])
             p.wait()
             os.rename(output_path, new_output_path)
         else:

@@ -178,8 +178,6 @@ def readXYZ(xyz, bonds = None, cluster_bond = None, constraint = None):
         obmol.SetTotalCharge(int(mol.charge))
         obmol.Center()
         obmol.EndModify()
-        bonds = [(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx(), bond.GetBondOrder())
-                    for bond in pb.ob.OBMolBondIter(obmol)]
 
         mol_obj = gen3D.Molecule(obmol)
 

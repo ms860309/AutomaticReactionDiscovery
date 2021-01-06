@@ -5,14 +5,42 @@ import os.path as path
 import sys
 sys.path.append(path.join(path.dirname( path.dirname( path.abspath(__file__))),'database'))
 from connect import db
+from openbabel import pybel
 
 def extract_data():
     
     reaction_collection = db['reactions']
-    query = {"unique":
-                {"$in":
-                    ['new one']
-                }}
+    acceptable_condition = ['forward equal to reactant and reverse equal to product',
+                            'reverse equal to reactant and forward equal to product',
+                            'forward equal to reactant but reverse does not equal to product',
+                            'reverse equal to reactant but forward does not equal to product']
+
+    query = {'$and': 
+                    [
+                    {"unique":
+                        {"$in":
+                        ['new one']}},
+                    {'irc_equal':
+                        {'$in':acceptable_condition}}
+                    ]
+                }
+
+    q = {'irc_equal':{'$in':acceptable_condition}}
+    a = list(reaction_collection.find(q))
+
+    for i in a:
+        print(i['reactant_inchi_key'].split()[0])
+        try:
+            pyMol_1 = xyz_to_pyMol(path.join(i['path'], 'irc_reactant.xyz'))
+            print(pyMol_1.write('inchiKey').strip())
+            print(i['reactant_smi'].split()[0])
+            print(pyMol_1.write('can').split()[0])
+            print(i['generations'])
+            print(round(i['barrier_energy'], 2))
+            print('-------')
+        except:
+            pass
+
     targets = list(reaction_collection.find(query))
     reactant_smi = [target['reactant_smi'].split()[0] for target in targets]
     product_smi = [target['product_smi'].split()[0] for target in targets]
@@ -24,6 +52,10 @@ def extract_data():
     zipped = zip(reactant_smi, product_smi, barrier_energy, generations)
 
     return zipped
+
+def xyz_to_pyMol(xyz):
+    mol = next(pybel.readfile('xyz', xyz))
+    return mol
 
 def draw():
     G=nx.Graph() # create object
@@ -51,7 +83,7 @@ def draw():
     nx.draw_networkx_edge_labels(G, pos, edge_labels=_dict, font_size=8)
     nx.draw(G, pos, 
             edge_color=colors, 
-            with_labels=True,
+            with_labels=False,
             node_color='lightgreen',
             font_size = 8)
     
