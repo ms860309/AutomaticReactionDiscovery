@@ -1,13 +1,15 @@
 irc:
  type: eulerpc              # Similar to EulerPC from Gaussian
+ hessian_recalc: 10          # Recalc exact hessian every n-th cycle
+ displ_length: 0.15
 endopt:
- fragments: True            # Detect fragments at the end of the IRC and optimize them separately.
+ fragments: False            # Detect fragments at the end of the IRC and optimize them separately.
  do_hess: True
  thresh: gau_tight
 calc:
  type: orca
- keywords: B3LYP D3BJ def2-SVP             # rijcosx def2/J def2-svp/C
- blocks: "%scf maxiter 500 end"
+ keywords: B3LYP D3BJ def2-SVP rijcosx def2/J def2-svp/C
+ blocks: "%scf maxiter 500 end %freq PARTIAL_Hess {24 25 26 27 28 29 30 31 32 33 34 35} end end"
  pal: 4
  charge: 0
  mult: 1

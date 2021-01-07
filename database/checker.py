@@ -237,44 +237,36 @@ def ard_prod_and_ssm_prod_checker(rxn_dir, refine = False):
         targets = list(qm_collection.find({'path':rxn_dir}))
         for i in targets:
             if i['reactant_inchi_key'] == pyMol_1.write('inchiKey').strip():
-                dirname = dir_check(path.dirname(i['path']), pyMol_1.write('inchiKey').strip(), num + 1)
-                new_path = path.join(path.dirname(i['path']), dirname)
-                os.rename(rxn_dir, new_path)
+                #dirname = dir_check(path.dirname(i['path']), pyMol_1.write('inchiKey').strip(), num + 1)
+                #new_path = path.join(path.dirname(i['path']), dirname)
+                #os.rename(rxn_dir, new_path)
                 prod_smi = pyMol_1.write('can').split()[0]
                 if refine:
                     update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
-                                    'initial_dir_name':rxn_dir, 
-                                    'path':new_path, 
                                     'ssm_status': 'job_success',                                # Though the reactant equal to product but TS maybe fine. The SSM somehow do not use constrained optimize in product
                                     'ard_ssm_equal':'ssm reactant equal to product',            # This is a special case but sometimes it will happen.
                                     'Product SMILES': prod_smi,
                                     "ts_refine_status":"job_unrun"}                                    # If check ts and get the success maybe need to check irc but QChem's irc is not robust
                 else:
                     update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
-                                    'initial_dir_name':rxn_dir, 
-                                    'path':new_path, 
                                     'ssm_status': 'job_success',                               
                                     'ard_ssm_equal':'ssm reactant equal to product',            
                                     'Product SMILES': prod_smi,
                                     "ts_status":"job_unrun"}                                    
                 qm_collection.update_one(i, {"$set": update_field}, True)
             else:
-                dirname = dir_check(path.dirname(i['path']), pyMol_1.write('inchiKey').strip(), num + 1)
-                new_path = path.join(path.dirname(i['path']), dirname)
-                os.rename(rxn_dir, new_path)
+                #dirname = dir_check(path.dirname(i['path']), pyMol_1.write('inchiKey').strip(), num + 1)
+                #new_path = path.join(path.dirname(i['path']), dirname)
+                #os.rename(rxn_dir, new_path)
                 prod_smi = pyMol_1.write('can').split()[0]
                 if refine:
                     update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
-                                    'initial_dir_name':rxn_dir, 
-                                    'path':new_path, 
                                     'ssm_status': 'job_success', 
                                     "ts_refine_status":"job_unrun", 
                                     'ard_ssm_equal':'not_equal',
                                     'Product SMILES': prod_smi}
                 else:
                     update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
-                                    'initial_dir_name':rxn_dir, 
-                                    'path':new_path, 
                                     'ssm_status': 'job_success', 
                                     "ts_status":"job_unrun", 
                                     'ard_ssm_equal':'not_equal',
