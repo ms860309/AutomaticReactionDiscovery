@@ -260,15 +260,15 @@ def ard_prod_and_ssm_prod_checker(rxn_dir, refine = False):
                 #os.rename(rxn_dir, new_path)
                 prod_smi = pyMol_1.write('can').split()[0]
                 if refine:
-                    update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
-                                    'ssm_status': 'job_success', 
-                                    "ts_refine_status":"job_unrun", 
+                    update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(),
+                                    'ssm_status': 'job_success',
+                                    "ts_refine_status":"job_unrun",
                                     'ard_ssm_equal':'not_equal',
                                     'Product SMILES': prod_smi}
                 else:
-                    update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
-                                    'ssm_status': 'job_success', 
-                                    "ts_status":"job_unrun", 
+                    update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(),
+                                    'ssm_status': 'job_success',
+                                    "ts_status":"job_unrun",
                                     'ard_ssm_equal':'not_equal',
                                     'Product SMILES': prod_smi}
                 qm_collection.update_one(i, {"$set": update_field}, True)
