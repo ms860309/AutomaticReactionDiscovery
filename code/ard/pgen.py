@@ -124,9 +124,15 @@ class Generate(object):
             for oxygen in [12,13,15]:
                 bond_can_form.append((hydrogen,oxygen,1))
 
-        bond_can_break = [bond for bond in reactant_bonds
-                              if bond[0] not in self.fixed_atom or bond[1] not in self.fixed_atom]
-
+        bond_can_break = []
+        for bond in reactant_bonds:
+            if bond[0] not in self.fixed_atom or bond[1] not in self.fixed_atom:
+                b = bond[2]
+                while b > 1:
+                    bond_can_break.append((bond[0], bond[1], b - 1))
+                    b -= 1
+                bond_can_break.append(bond)
+                
         # Generate products
         #bf_combinations = ((0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2))
         bf_combinations = ((0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2), (0, 3), (1, 3), (2, 3), (3, 3), (3, 2), (3, 1), (3, 0))
