@@ -24,6 +24,7 @@ import os
 from os import path
 import sys
 from openbabel import pybel
+from openbabel import openbabel as ob
 from qchem import QChem
 
 """
@@ -221,7 +222,7 @@ def generate_ssm_product_xyz(target_path):
     with open(parent_ssm_product_path,'w') as q:
         q.write('{}\n{}'.format(lines[idx-1], ''.join(lines[idx+1:])))
 
-def ard_prod_and_ssm_prod_checker(rxn_dir, refine = False):
+def ard_prod_and_ssm_prod_checker(rxn_dir, refine = False, cluster_bond_path = None):
     # Use ssm product xyz to check whether ssm prod equal to ard product
     # If equal, insert the inchi key into products pool
     # If not equal, use ssm product as the product and insert inchi key into products pool
@@ -230,10 +231,10 @@ def ard_prod_and_ssm_prod_checker(rxn_dir, refine = False):
     
     ard_prod_path = path.join(rxn_dir, 'product.xyz')
     ssm_prod_path = path.join(rxn_dir, 'ssm_product.xyz')
-    pyMol_1 = xyz_to_pyMol(ssm_prod_path)
-    pyMol_2 = xyz_to_pyMol(ard_prod_path)
+    pyMol_1 = xyz_to_pyMol(ssm_prod_path, cluster_bond_path = cluster_bond_path)
+    pyMol_2 = xyz_to_pyMol(ard_prod_path, cluster_bond_path = cluster_bond_path)
     if pyMol_1.write('inchiKey').strip() != pyMol_2.write('inchiKey').strip():
-        num = len(list(qm_collection.find({'product_inchi_key':pyMol_1.write('inchiKey').strip()})))
+        #num = len(list(qm_collection.find({'product_inchi_key':pyMol_1.write('inchiKey').strip()})))
         targets = list(qm_collection.find({'path':rxn_dir}))
         for i in targets:
             if i['reactant_inchi_key'] == pyMol_1.write('inchiKey').strip():
@@ -291,11 +292,34 @@ def dir_check(subdir, b_dirname, num):
     
     return new_name
 
-def xyz_to_pyMol(xyz):
+def xyz_to_pyMol(xyz, cluster_bond_path = None):
     mol = next(pybel.readfile('xyz', xyz))
-    return mol
+    if cluster_bond_path:
+        m = pybel.ob.OBMol()
+        m.BeginModify()
+        for atom in mol:
+            coords = [coord for coord in atom.coords]
+            atomno = atom.atomicnum
+            obatom = ob.OBAtom()
+            obatom.thisown = 0
+            obatom.SetAtomicNum(atomno)
+            obatom.SetVector(*coords)
+            m.AddAtom(obatom)
+            del obatom
 
-def check_ssm_jobs(refine = False):
+        with open(cluster_bond_path, 'r') as f:
+            lines = f.read()
+        cluster_bond = eval(lines)
+        bonds = [(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx(), bond.GetBondOrder()) for bond in pybel.ob.OBMolBondIter(mol.OBMol)]
+        bonds.extend(cluster_bond)
+        for bond in bonds:
+            m.AddBond(bond[0], bond[1], bond[2])
+        pybelmol = pybel.Molecule(m)
+        return pybelmol
+    else:
+        return mol
+
+def check_ssm_jobs(refine = False, cluster_bond_path = None):
     """
     This method checks job with following steps:
     1. select jobs to check
@@ -323,7 +347,7 @@ def check_ssm_jobs(refine = False):
         orig_status = target['ssm_status']
         if orig_status != new_status:
             if new_status == 'job_success':
-                equal = ard_prod_and_ssm_prod_checker(target['path'], refine = refine)
+                equal = ard_prod_and_ssm_prod_checker(target['path'], refine = refine, cluster_bond_path = None)
                 if equal == 'equal':
                     if refine:
                         update_field = {
@@ -649,7 +673,7 @@ def select_irc_equal_target():
 
     return targets
 
-def check_irc_equal():
+def check_irc_equal(cluster_bond_path = None):
 
     targets = select_irc_equal_target()
     qm_collection = db['qm_calculate_center']
@@ -664,7 +688,7 @@ def check_irc_equal():
                         'reverse does not equal to reactant but forward equal to product']
 
     for target in targets:
-        new_status, forward, backward = check_irc_equal_status(target)
+        new_status, forward, backward = check_irc_equal_status(target, cluster_bond_path = None)
         orig_status = target['irc_equal']
         if orig_status != new_status:
             if new_status in acceptable_condition:
@@ -681,7 +705,7 @@ def check_irc_equal():
                                 }
             qm_collection.update_one(target, {"$set": update_field}, True)
 
-def check_irc_equal_status(target):
+def check_irc_equal_status(target, cluster_bond_path = None):
 
     irc_path = path.join(target['path'], 'IRC/')
     reactant_path = path.join(target['path'], 'reactant.xyz')
@@ -689,10 +713,10 @@ def check_irc_equal_status(target):
     forward_output = path.join(irc_path, 'finished_first.xyz')
     reverse_output = path.join(irc_path, 'finished_last.xyz')
     
-    pyMol_1 = xyz_to_pyMol(reactant_path)
-    pyMol_2 = xyz_to_pyMol(product_path)
-    pyMol_3 = xyz_to_pyMol(forward_output)
-    pyMol_4 = xyz_to_pyMol(reverse_output)
+    pyMol_1 = xyz_to_pyMol(reactant_path, cluster_bond_path = None)
+    pyMol_2 = xyz_to_pyMol(product_path, cluster_bond_path = None)
+    pyMol_3 = xyz_to_pyMol(forward_output, cluster_bond_path = None)
+    pyMol_4 = xyz_to_pyMol(reverse_output, cluster_bond_path = None)
 
     if pyMol_3.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip():
         return 'forward equal to reverse', pyMol_3, pyMol_4
@@ -785,7 +809,7 @@ def check_irc_opt_content(dir_path):
         return 'job_fail', 0, 0.0
 
     
-def check_irc_opt_jobs():
+def check_irc_opt_jobs(cluster_bond_path = None):
     """
     This method checks job with following steps:
     1. select jobs to check
@@ -811,7 +835,7 @@ def check_irc_opt_jobs():
         if orig_status != new_status:
             if new_status == 'job_success':
                 irc_opt_reactant_path = path.join(target['path'], 'irc_reactant.xyz')
-                irc_opt_reactant_mol = xyz_to_pyMol(irc_opt_reactant_path)
+                irc_opt_reactant_mol = xyz_to_pyMol(irc_opt_reactant_path, cluster_bond_path = cluster_bond_path)
                 update_field = {
                                 'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'product_inchi_key':irc_opt_reactant_mol.write('inchiKey').strip(),
                                 'Product SMILES':irc_opt_reactant_mol.write('can').split()[0], 'insert_reaction': 'need insert'
@@ -1147,7 +1171,7 @@ def insert_reaction():
 """
 ARD check unrun
 """
-def insert_ard():
+def insert_ard(cluster_bond_path = None):
     qm_collection = db['qm_calculate_center']
     statistics_collection = db['statistics']
     reactions_collection = db['reactions']
@@ -1220,7 +1244,7 @@ def insert_ard():
                 if target['irc_equal'] not in acceptable_condition:
                     continue
                 irc_opt_reactant_path = path.join(target['path'], 'irc_reactant.xyz')
-                irc_opt_reactant_mol = xyz_to_pyMol(irc_opt_reactant_path)
+                irc_opt_reactant_mol = xyz_to_pyMol(irc_opt_reactant_path, cluster_bond_path = cluster_bond_path)
                 irc_opt_reactant_inchi_key = irc_opt_reactant_mol.write('inchiKey').strip()
                 if irc_opt_reactant_inchi_key in finished_reactant_list:
                     reactions_collection.update_one(target, {"$set": {'ard_status': 'The irc opt reactant had been finished before.'}}, True)
@@ -1337,16 +1361,24 @@ def check_barrier():
         qm_collection.update_one(target, {"$set": update_field}, True)
 
 
-check_energy_jobs()
-check_ssm_jobs(refine = True)  # If the ssm perform by orca with xtb GFN2-xtb, then refine the TS is a good choice.  Get a better initial guess
-#check_low_opt_jobs()
-#check_bindind_cutoff()
-#check_opt_jobs()
-check_ts_refine_jobs()
-check_ts_jobs()
-check_irc_jobs()
-check_irc_equal()
-check_irc_opt_jobs()
-check_barrier()
-insert_reaction()
-insert_ard()
+def check_jobs(refine = True, cluster_bond_path = None):
+    if cluster_bond_path:
+        # use the checker.py path as the reference
+        checker_path = os.path.realpath(sys.argv[0])
+        ard_path = os.path.dirname(os.path.dirname(checker_path))
+        cluster_bond_path = path.join(ard_path, 'script/bonds.txt')
+    check_energy_jobs()
+    check_ssm_jobs(refine = refine, cluster_bond_path = cluster_bond_path)  # If the ssm perform by orca with xtb GFN2-xtb, then refine the TS is a good choice.  Get a better initial guess
+    #check_low_opt_jobs()
+    #check_bindind_cutoff()
+    #check_opt_jobs()
+    check_ts_refine_jobs()
+    check_ts_jobs()
+    check_irc_jobs()
+    check_irc_equal(cluster_bond_path = cluster_bond_path)
+    check_irc_opt_jobs(cluster_bond_path = cluster_bond_path)
+    check_barrier()
+    insert_reaction()
+    insert_ard(cluster_bond_path = cluster_bond_path)
+
+check_jobs(refine = True, cluster_bond_path = True)
