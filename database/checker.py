@@ -314,6 +314,13 @@ def xyz_to_pyMol(xyz, cluster_bond_path = None):
         bonds.extend(cluster_bond)
         for bond in bonds:
             m.AddBond(bond[0], bond[1], bond[2])
+        #m.ConnectTheDots()
+        m.PerceiveBondOrders()
+        #m.SetTotalSpinMultiplicity(1)
+        m.SetTotalCharge(int(mol.charge))
+        m.Center()
+        m.EndModify()
+
         pybelmol = pybel.Molecule(m)
         return pybelmol
     else:
