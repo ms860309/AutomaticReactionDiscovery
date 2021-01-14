@@ -207,11 +207,11 @@ class Generate(object):
             return False
         else:
             for idx, i in enumerate(self.atoms):
-                if i == 6 and bond_type[idx] != 4: # use !=  or  >   need test
+                if i == 6 and bond_type[idx] != 4 and idx not in self.fixed_atom: # use !=  or  >   need test
                     return False
-                elif i == 8 and bond_type[idx] > 3: # use !=  or  >   need test
+                elif i == 8 and bond_type[idx] != 2 and idx not in self.fixed_atom: # use !=  or  >   need test
                     return False
-                elif i == 14 and bond_type[idx] != 4: # use !=  or  >   need test
+                elif i == 14 and bond_type[idx] != 4 and idx not in self.fixed_atom: # use !=  or  >   need test
                     return False
             return True
     
