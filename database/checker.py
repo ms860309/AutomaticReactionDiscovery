@@ -843,10 +843,18 @@ def check_irc_opt_jobs(cluster_bond_path = None):
             if new_status == 'job_success':
                 irc_opt_reactant_path = path.join(target['path'], 'irc_reactant.xyz')
                 irc_opt_reactant_mol = xyz_to_pyMol(irc_opt_reactant_path, cluster_bond_path = cluster_bond_path)
-                update_field = {
-                                'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'product_inchi_key':irc_opt_reactant_mol.write('inchiKey').strip(),
-                                'Product SMILES':irc_opt_reactant_mol.write('can').split()[0], 'insert_reaction': 'need insert'
-                            }
+                reactant_inchi_key = target['reactant_inchi_key']
+                product_inchi_key = irc_opt_reactant_mol.write('inchiKey').strip()
+                if reactant_inchi_key == product_inchi_key:
+                    update_field = {
+                                    'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'product_inchi_key':irc_opt_reactant_mol.write('inchiKey').strip(),
+                                    'Product SMILES':irc_opt_reactant_mol.write('can').split()[0], 'insert_reaction': 'need insert', 'irc_equal': 'forward equal to reverse'
+                                }
+                else:
+                    update_field = {
+                                    'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'product_inchi_key':irc_opt_reactant_mol.write('inchiKey').strip(),
+                                    'Product SMILES':irc_opt_reactant_mol.write('can').split()[0], 'insert_reaction': 'need insert'
+                                }
             elif new_status == "job_running" or new_status == "job_queueing" or new_status == "job_launched":
                 update_field = {
                                 'irc_opt_status': new_status
@@ -1089,7 +1097,10 @@ def select_insert_reaction_target():
                         ['need insert']}},
                     {'barrier':
                         {'$nin':
-                            ['do not have reactant_energy']}}
+                            ['do not have reactant_energy']}},
+                    {'irc_opt_status':
+                        {'$nin':
+                            ['job_unrun', 'job_running', 'job_queueing']}}
                     ]
                 }
     targets = list(qm_collection.find(query))
@@ -1331,7 +1342,7 @@ def select_barrier_target():
     qm_collection = db['qm_calculate_center']
     query = {'$and': 
                     [
-                    { "energy_status":
+                    {"energy_status":
                         {"$in":
                         ['job_success']}},
                     {'barrier':

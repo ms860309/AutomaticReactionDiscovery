@@ -10,6 +10,7 @@ from openbabel import pybel
 def extract_data():
     
     reaction_collection = db['reactions']
+    qm_collection = db['qm_calculate_center']
     acceptable_condition = ['forward equal to reactant and reverse equal to product',
                             'reverse equal to reactant and forward equal to product',
                             'forward equal to reactant but reverse does not equal to product',
@@ -24,13 +25,13 @@ def extract_data():
                         {'$in':acceptable_condition}}
                     ]
                 }
-
+    """
     q = {'irc_equal':{'$in':acceptable_condition}}
     a = list(reaction_collection.find(q))
 
     for i in a:
-        print(i['reactant_inchi_key'].split()[0])
         try:
+            print(i['reactant_inchi_key'].split()[0])
             pyMol_1 = xyz_to_pyMol(path.join(i['path'], 'irc_reactant.xyz'))
             print(pyMol_1.write('inchiKey').strip())
             print(i['reactant_smi'].split()[0])
@@ -40,12 +41,16 @@ def extract_data():
             print('-------')
         except:
             pass
-
+    """
     targets = list(reaction_collection.find(query))
     reactant_smi = [target['reactant_smi'].split()[0] for target in targets]
     product_smi = [target['product_smi'].split()[0] for target in targets]
     barrier_energy = []
     for i in targets:
+        ts = list(qm_collection.find({'path':i['path']}))[0]
+        print((ts['product_xtb_hf'] - ts['reactant_xtb_hf'])*627.5095)
+        #print(i['path'])
+        #print(round(i['barrier_energy'], 2))
         barrier_energy.append(round(i['barrier_energy'], 2))
         
     generations = [target['generations'] for target in targets]
