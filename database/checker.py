@@ -739,7 +739,7 @@ def check_irc_equal_status(target, cluster_bond_path = None):
         return 'reverse equal to reactant but forward does not equal to product', pyMol_4, pyMol_3
     elif pyMol_1.write('inchiKey').strip() != pyMol_4.write('inchiKey').strip() and pyMol_1.write('inchiKey').strip() != pyMol_3.write('inchiKey').strip() and pyMol_2.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip():
         return 'reverse does not equal to reactant but forward equal to product', pyMol_4, pyMol_3
-    elif pyMol_1.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip() and pyMol_2.write('inchiKey').strip() != pyMol_4.write('inchiKey').strip():
+    elif pyMol_1.write('inchiKey').strip() == pyMol_3.write('inchiKey').strip() and pyMol_2.write('inchiKey').strip() != pyMol_4.write('inchiKey').strip() and pyMol_1.write('inchiKey').strip() != pyMol_4.write('inchiKey').strip():
         return 'forward equal to reactant but reverse does not equal to product', pyMol_3, pyMol_4
     elif pyMol_1.write('inchiKey').strip() != pyMol_3.write('inchiKey').strip() and pyMol_2.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip():
         return 'forward does not equal to reactant but reverse equal to product', pyMol_3, pyMol_4

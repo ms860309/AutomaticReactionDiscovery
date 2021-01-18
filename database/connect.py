@@ -55,22 +55,38 @@ def xyz_to_pyMol(xyz, cluster_bond_path = None):
 
 """
 reactions_collection = db['reactions']
-reactions = list(reactions_collection.aggregate([{
-                                        '$group':{
-                                                '_id': "$reaction",
-                                                'barrier': {'$min': "$barrier_energy"}}}
-                                        ]))
-for i in reactions:
-    query = {'$and': 
-                    [
-                    { "reaction":i['_id']},
-                    {'barrier_energy':i['barrier']}
-                    ]
-                }
-    target = list(reactions_collection.find(query))[0]
-    print(target['barrier_energy'])
-"""
+acceptable_condition = ['forward equal to reactant and reverse equal to product',
+                        'reverse equal to reactant and forward equal to product',
+                        'forward equal to reactant but reverse does not equal to product',
+                        'reverse equal to reactant but forward does not equal to product']
 
+query = {'$and': 
+                [
+                {"unique":
+                    {"$in":
+                    ['new one']}},
+                {'irc_equal':
+                    {'$in':acceptable_condition}}
+                ]
+            }
+
+reactions = list(reactions_collection.find(query))
+
+for target in reactions:
+    print('-----------')
+    print('reactant_inchikey:{}'.format(target['reactant_inchi_key']))
+    print('reactant smiles:{}'.format(target['reactant_smi']))
+    print('product_inchikey:{}'.format(target['product_inchi_key']))
+    print('product smiles:{}'.format(target['product_smi']))
+    print('Barrier:{}'.format(target['barrier_energy']))
+    try:
+        print('Delta H:{}'.format(target['delta H']))
+    except:
+        print('Delta H:{}'.format(0))
+    print('Generations:{}'.format(target['generations']))
+    print('-----------')
+
+"""
 """
 qm_collection = db['qm_calculate_center']
 statistics_collection = db['statistics']
