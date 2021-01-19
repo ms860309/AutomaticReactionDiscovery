@@ -81,7 +81,7 @@ class XTB(object):
             self.finalize(start_time, 'XTB')
             return float(reactant_energy), float(product_energy)
     
-    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 10.0):
+    def genInput(self, reactant_mol, product_mol, reac_mol_copy, threshold = 4.0):
         start_time = time.time()
 
         # Initial optimization

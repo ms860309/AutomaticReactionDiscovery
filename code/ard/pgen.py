@@ -120,10 +120,10 @@ class Generate(object):
             if (self.atoms[bonds[0]] == 6 and self.atoms[bonds[1]] == 1) or (self.atoms[bonds[1]] == 6 and self.atoms[bonds[0]] == 1):
                 bond_can_form.remove(bonds)
         # index start from 0
-        for hydrogen in [6,7,8,9,10,11]:
+        for hydrogen in [6,7,8,9,10,11,17]:
             for oxygen in [13,14,15]:
                 bond_can_form.append((hydrogen,oxygen,1))
-
+        
         bond_can_break = []
         for bond in reactant_bonds:
             if bond[0] not in self.fixed_atom or bond[1] not in self.fixed_atom:
@@ -135,7 +135,8 @@ class Generate(object):
                 
         # Generate products
         #bf_combinations = ((0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2))
-        bf_combinations = ((0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2), (0, 3), (1, 3), (2, 3), (3, 3), (3, 2), (3, 1), (3, 0))
+        bf_combinations = ((0, 1), (1, 0), (1, 1), (1, 2), (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3))
+        #bf_combinations = ((0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2), (0, 3), (1, 3), (2, 3), (3, 3), (3, 2), (3, 1), (3, 0))
 
         for bf in bf_combinations:
             if bf[0] <= nbreak and bf[1] <= nform:

@@ -26,7 +26,7 @@ import sys
 from openbabel import pybel
 from openbabel import openbabel as ob
 from qchem import QChem
-
+from orca import ORCA
 """
 Energy check.
 """
@@ -418,6 +418,23 @@ def check_ts_refine_job_status(job_id):
     else:
         return "job_launched"
 
+def check_ts_refine_content(target_path):
+
+    ts_dir_path = path.join(target_path, 'TS')
+    ts_refine_out_path = path.join(ts_dir_path, 'ts_refine.out')
+
+    try:
+        q = ORCA(outputfile=ts_refine_out_path)
+        freqs = q.get_frequencies()
+        nnegfreq = sum(1 for freq in freqs if freq < 0.0)
+        if nnegfreq > 1:
+            return "Have more than one imaginary frequency"
+        elif nnegfreq == 0:
+            return "All positive frequency"
+        else:
+            return "job_success"
+    except:
+        return "job_fail"
 
 def check_ts_refine_jobs():
     """
@@ -437,17 +454,18 @@ def check_ts_refine_jobs():
         # 2. check the job pbs status
         new_status = check_ts_refine_job_status(job_id)
         if new_status == "off_queue":
-            update_field = {
-                            'ts_status': 'job_unrun', 'ts_refine_status': 'job_success'
-                            }
-            qm_collection.update_one(target, {"$set": update_field}, True)
-        else:
-            orig_status = target['ts_refine_status']
-            if orig_status != new_status:
+            new_status = check_ts_content(target['path'])
+        orig_status = target['ts_refine_status']
+        if orig_status != new_status:
+            if new_status == 'job_success':
+                update_field = {
+                                'ts_status': 'job_unrun', 'ts_refine_status': 'job_success'
+                                }
+            else:
                 update_field = {
                                 'ts_refine_status': new_status
                                 }
-                qm_collection.update_one(target, {"$set": update_field}, True)
+            qm_collection.update_one(target, {"$set": update_field}, True)
 
 """
 TS check.
@@ -615,8 +633,11 @@ def check_irc_content(target_path):
     irc_dir_path = os.path.join(target_path, 'IRC')
     first_output = os.path.join(irc_dir_path, 'finished_first.xyz')
     last_output = os.path.join(irc_dir_path, 'finished_last.xyz')
-
-    if os.path.exists(first_output) and os.path.exists(last_output):
+    forward_end_output = os.path.join(irc_dir_path, 'forward_end_opt.xyz')
+    backward_end_output = os.path.join(irc_dir_path, 'backward_end_opt.xyz')
+    if os.path.exists(forward_end_output) and os.path.exists(backward_end_output):
+        return 'job_success'
+    elif os.path.exists(first_output) and os.path.exists(last_output):
         return 'job_success'
     else:
         return 'job_fail'
@@ -719,11 +740,17 @@ def check_irc_equal_status(target, cluster_bond_path = None):
     product_path = path.join(target['path'], 'ssm_product.xyz')
     forward_output = path.join(irc_path, 'finished_first.xyz')
     reverse_output = path.join(irc_path, 'finished_last.xyz')
+    forward_end_output = os.path.join(irc_path, 'forward_end_opt.xyz')
+    backward_end_output = os.path.join(irc_path, 'backward_end_opt.xyz')
     
     pyMol_1 = xyz_to_pyMol(reactant_path, cluster_bond_path = None)
     pyMol_2 = xyz_to_pyMol(product_path, cluster_bond_path = None)
-    pyMol_3 = xyz_to_pyMol(forward_output, cluster_bond_path = None)
-    pyMol_4 = xyz_to_pyMol(reverse_output, cluster_bond_path = None)
+    if os.path.exists(forward_end_output) and os.path.exists(backward_end_output):
+        pyMol_3 = xyz_to_pyMol(forward_end_output, cluster_bond_path = None)
+        pyMol_4 = xyz_to_pyMol(backward_end_output, cluster_bond_path = None)
+    else:
+        pyMol_3 = xyz_to_pyMol(forward_output, cluster_bond_path = None)
+        pyMol_4 = xyz_to_pyMol(reverse_output, cluster_bond_path = None)
 
     if pyMol_3.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip():
         return 'forward equal to reverse', pyMol_3, pyMol_4
@@ -1268,6 +1295,8 @@ def insert_ard(cluster_bond_path = None):
                     reactions_collection.update_one(target, {"$set": {'ard_status': 'The irc opt reactant had been finished before.'}}, True)
                     continue
                 if target['irc_opt_status'] != 'job_success':
+                    continue
+                if target['barrier_energy'] > 80.0:
                     continue
             except:
                 dirpath = target['path']

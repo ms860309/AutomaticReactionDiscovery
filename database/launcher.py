@@ -554,14 +554,26 @@ def launch_irc_opt_jobs(num = 100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
         os.chdir(IRC_dir_path)
 
         irc_equal = target['irc_equal']
-        if irc_equal == 'forward equal to reactant and reverse equal to product':
-            target_mol = path.join(IRC_dir_path, 'finished_last.xyz')
-        elif irc_equal == 'reverse equal to reactant and forward equal to product':
-            target_mol = path.join(IRC_dir_path, 'finished_first.xyz')
-        elif irc_equal == 'forward equal to reactant but reverse does not equal to product':
-            target_mol = path.join(IRC_dir_path, 'finished_last.xyz')
-        elif irc_equal == 'reverse equal to reactant but forward does not equal to product':
-            target_mol = path.join(IRC_dir_path, 'finished_first.xyz')
+        forward_end_output = os.path.join(IRC_dir_path, 'forward_end_opt.xyz')
+        backward_end_output = os.path.join(IRC_dir_path, 'backward_end_opt.xyz')
+        if os.path.exists(forward_end_output) and os.path.exists(backward_end_output):
+            if irc_equal == 'forward equal to reactant and reverse equal to product':
+                target_mol = backward_end_output
+            elif irc_equal == 'reverse equal to reactant and forward equal to product':
+                target_mol = forward_end_output
+            elif irc_equal == 'forward equal to reactant but reverse does not equal to product':
+                target_mol = backward_end_output
+            elif irc_equal == 'reverse equal to reactant but forward does not equal to product':
+                target_mol = forward_end_output
+        else:
+            if irc_equal == 'forward equal to reactant and reverse equal to product':
+                target_mol = path.join(IRC_dir_path, 'finished_last.xyz')
+            elif irc_equal == 'reverse equal to reactant and forward equal to product':
+                target_mol = path.join(IRC_dir_path, 'finished_first.xyz')
+            elif irc_equal == 'forward equal to reactant but reverse does not equal to product':
+                target_mol = path.join(IRC_dir_path, 'finished_last.xyz')
+            elif irc_equal == 'reverse equal to reactant but forward does not equal to product':
+                target_mol = path.join(IRC_dir_path, 'finished_first.xyz')
             
         subfile = create_irc_opt_sub_file(IRC_dir_path, target_mol, ncpus = 4, mpiprocs = 1, ompthreads = 4)
         cmd = 'qsub {}'.format(subfile)
