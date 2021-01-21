@@ -1,10 +1,8 @@
-! XTB2 OptTS NumFreq TIGHTSCF PAL4
+! B3LYP D3BJ def2-SVP rijcosx def2/J def2-svp/C Opt NumFreq TIGHTSCF PAL4
 
 %geom
 Calc_Hess true # Calculate Hessian in the beginning
 NumHess true # Request numerical Hessian (analytical not available)
-Recalc_Hess 5  # Recalculate the Hessian every 5 steps
-maxiter 50
 Constraints
 {C 22 C} # Constraining atom no. 22 in space. index start from 0
 {C 23 C} 

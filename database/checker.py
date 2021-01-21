@@ -23,6 +23,7 @@ import subprocess
 import os
 from os import path
 import sys
+import shutil
 from openbabel import pybel
 from openbabel import openbabel as ob
 from qchem import QChem
@@ -73,23 +74,36 @@ def check_energy_job_status(job_id):
     else:
         return 'job_launched'
 
-def check_energy_content(rxn_path):
+def check_energy_content(rxn_path, level_of_theory = 'ORCA'):
     
     energy_dir = path.join(rxn_path, "ENERGY")
     energy_path = path.join(energy_dir, "energy.out")
     if not path.exists(energy_path):
         return "job_aborted"
     else:
-        try:
-            q = QChem(outputfile=energy_path)
-            energy = q.get_energy()
-            zpe = q.get_zpe()
-            energy += zpe
-            return "job_success", energy
-        except:
-            return "job_fail", 0
+        if level_of_theory == 'QCHEM':
+            try:
+                q = QChem(outputfile=energy_path)
+                energy = q.get_energy()
+                zpe = q.get_zpe()
+                energy += zpe
+                return "job_success", energy
+            except:
+                return "job_fail", 0
+        elif level_of_theory == 'ORCA':
+            try:
+                q = ORCA(outputfile=energy_path)
+                freqs = q.get_frequencies()
+                nnegfreq = sum(1 for freq in freqs if freq < 0.0)
+                if nnegfreq > 1:
+                    return "Have imaginary frequency", 0.0
+                else:
+                    energy = q.get_free_energy()
+                    return "job_success", float(energy)
+            except:
+                return "job_fail", 0
 
-def check_energy_jobs():
+def check_energy_jobs(level_of_theory = 'ORCA'):
     """
     This method checks job with following steps:
     1. select jobs to check
@@ -107,7 +121,7 @@ def check_energy_jobs():
         new_status = check_energy_job_status(job_id)
         if new_status == "off_queue":
             # 3. check job content
-            new_status, energy = check_energy_content(target['path'])
+            new_status, energy = check_energy_content(target['path'], level_of_theory = level_of_theory.upper())
         # 4. check with original status which
         # should be job_launched or job_running
         # if any difference update status
@@ -512,27 +526,45 @@ def check_ts_job_status(job_id):
         return "job_launched"
     
 def check_ts_content(target_path):
-
+    level_of_theory = 'QCHEM'
     ts_dir_path = path.join(target_path, 'TS')
-    ts_out_path = path.join(ts_dir_path, 'ts.out')
+    qchem_ts_out_path = path.join(ts_dir_path, 'ts.out')
+    orca_ts_out_path = path.join(ts_dir_path, 'ts_geo.out')
+    if not os.path.exists(qchem_ts_out_path):  # Which means the ts is running with orca
+        level_of_theory = 'ORCA'
     ts_geo_path = path.join(ts_dir_path, 'ts_geo.xyz')
 
-    try:
-        q = QChem(outputfile=ts_out_path)
-        freqs = q.get_frequencies()
-        nnegfreq = sum(1 for freq in freqs if freq < 0.0)
-        if nnegfreq > 1:
-            return "Have more than one imaginary frequency", 0.0
-        elif nnegfreq == 0:
-            return "All positive frequency", 0.0
-        else:
-            energy = q.get_energy()
-            zpe = q.get_zpe()
-            ts_energy = energy + zpe
-            q.create_geo_file(ts_geo_path)
-            return "job_success", float(ts_energy)
-    except:
-        return "job_fail", 0.0
+    if level_of_theory == 'QCHEM':
+        try:
+            q = QChem(outputfile=qchem_ts_out_path)
+            freqs = q.get_frequencies()
+            nnegfreq = sum(1 for freq in freqs if freq < 0.0)
+            if nnegfreq > 1:
+                return "Have more than one imaginary frequency", 0.0
+            elif nnegfreq == 0:
+                return "All positive frequency", 0.0
+            else:
+                energy = q.get_energy()
+                zpe = q.get_zpe()
+                ts_energy = energy + zpe
+                q.create_geo_file(ts_geo_path)
+                return "job_success", float(ts_energy)
+        except:
+            return "job_fail", 0.0
+    elif level_of_theory == 'ORCA':
+        try:
+            q = ORCA(outputfile=orca_ts_out_path)
+            freqs = q.get_frequencies()
+            nnegfreq = sum(1 for freq in freqs if freq < 0.0)
+            if nnegfreq > 1:
+                return "Have more than one imaginary frequency", 0.0
+            elif nnegfreq == 0:
+                return "All positive frequency", 0.0
+            else:
+                ts_energy = q.get_free_energy()
+                return "job_success", float(ts_energy)
+        except:
+            return "job_fail", 0.0
 
 def check_ts_jobs():
     """
@@ -821,29 +853,43 @@ def check_irc_opt_job_status(job_id):
     else:
         return "job_launched"
     
-def check_irc_opt_content(dir_path):
+def check_irc_opt_content(dir_path, level_of_theory = level_of_theory):
     reactant_path = path.join(dir_path, 'irc_reactant.xyz')
     irc_path = path.join(dir_path, "IRC")
-    output_path = path.join(irc_path, 'irc_opt.out')
-
-    try:
-        q = QChem(outputfile = output_path)
-        freqs = q.get_frequencies()
-        nnegfreq = sum(1 for freq in freqs if freq < 0.0)
-        if nnegfreq > 0:
-            return 'Have negative frequency', 0, 0.0
-        else:
-            opt_cycle = q.get_opt_cycle()
-            q.create_geo_file(reactant_path)
-            energy = q.get_energy()
-            zpe = q.get_zpe()
-            energy += zpe
-            return 'job_success', opt_cycle, energy
-    except:
-        return 'job_fail', 0, 0.0
+    irc_reactant_path = path.join(irc_path, 'irc_reactant.xyz')
+    if level_of_theory == 'QCHEM':
+        output_path = path.join(irc_path, 'irc_opt.out')
+        try:
+            q = QChem(outputfile = output_path)
+            freqs = q.get_frequencies()
+            nnegfreq = sum(1 for freq in freqs if freq < 0.0)
+            if nnegfreq > 0:
+                return 'Have negative frequency', 0.0
+            else:
+                q.create_geo_file(reactant_path)
+                energy = q.get_energy()
+                zpe = q.get_zpe()
+                energy += zpe
+                return 'job_success', energy
+        except:
+            return 'job_fail', 0.0
+    elif level_of_theory == 'ORCA':
+        output_path = path.join(irc_path, 'irc_reactant.out')
+        try:
+            q = ORCA(outputfile = output_path)
+            freqs = q.get_frequencies()
+            nnegfreq = sum(1 for freq in freqs if freq < 0.0)
+            if nnegfreq > 0:
+                return 'Have negative frequency', 0.0
+            else:
+                shutil.copyfile(irc_reactant_path, reactant_path)
+                energy = q.get_free_energy()
+                return 'job_success', float(energy)
+        except:
+            return 'job_fail', 0.0
 
     
-def check_irc_opt_jobs(cluster_bond_path = None):
+def check_irc_opt_jobs(cluster_bond_path = None, level_of_theory = 'ORCA'):
     """
     This method checks job with following steps:
     1. select jobs to check
@@ -861,7 +907,7 @@ def check_irc_opt_jobs(cluster_bond_path = None):
         new_status = check_irc_opt_job_status(job_id)
         if new_status == "off_queue":
             # 3. check job content
-            new_status, opt_cycle, energy = check_irc_opt_content(target['path'])
+            new_status, energy = check_irc_opt_content(target['path'], level_of_theory = level_of_theory.upper())
         # 4. check with original status which
         # should be job_launched or job_running
         # if any difference update status
@@ -874,12 +920,12 @@ def check_irc_opt_jobs(cluster_bond_path = None):
                 product_inchi_key = irc_opt_reactant_mol.write('inchiKey').strip()
                 if reactant_inchi_key == product_inchi_key:
                     update_field = {
-                                    'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'product_inchi_key':irc_opt_reactant_mol.write('inchiKey').strip(),
+                                    'irc_opt_status': new_status, 'irc_opt_energy':energy, 'product_inchi_key':irc_opt_reactant_mol.write('inchiKey').strip(),
                                     'Product SMILES':irc_opt_reactant_mol.write('can').split()[0], 'insert_reaction': 'need insert', 'irc_equal': 'forward equal to reverse'
                                 }
                 else:
                     update_field = {
-                                    'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'product_inchi_key':irc_opt_reactant_mol.write('inchiKey').strip(),
+                                    'irc_opt_status': new_status, 'irc_opt_energy':energy, 'product_inchi_key':irc_opt_reactant_mol.write('inchiKey').strip(),
                                     'Product SMILES':irc_opt_reactant_mol.write('can').split()[0], 'insert_reaction': 'need insert'
                                 }
             elif new_status == "job_running" or new_status == "job_queueing" or new_status == "job_launched":
@@ -888,7 +934,7 @@ def check_irc_opt_jobs(cluster_bond_path = None):
                             }           
             else:
                 update_field = {
-                                'irc_opt_status': new_status, 'irc_opt_cycle': opt_cycle, 'irc_opt_energy':energy, 'insert_reaction': 'need insert'
+                                'irc_opt_status': new_status, 'irc_opt_energy':energy, 'insert_reaction': 'need insert'
                             }
             qm_collection.update_one(target, {"$set": update_field}, True)
 
@@ -1408,24 +1454,25 @@ def check_barrier():
         qm_collection.update_one(target, {"$set": update_field}, True)
 
 
-def check_jobs(refine = True, cluster_bond_path = None):
+def check_jobs(refine = True, cluster_bond_path = None, level_of_theory = 'ORCA'):
     if cluster_bond_path:
         # use the checker.py path as the reference
         checker_path = os.path.realpath(sys.argv[0])
         ard_path = os.path.dirname(os.path.dirname(checker_path))
         cluster_bond_path = path.join(ard_path, 'script/bonds.txt')
-    check_energy_jobs()
+    check_energy_jobs(level_of_theory = level_of_theory)
     check_ssm_jobs(refine = refine, cluster_bond_path = cluster_bond_path)  # If the ssm perform by orca with xtb GFN2-xtb, then refine the TS is a good choice.  Get a better initial guess
-    #check_low_opt_jobs()
-    #check_bindind_cutoff()
-    #check_opt_jobs()
     check_ts_refine_jobs()
     check_ts_jobs()
     check_irc_jobs()
     check_irc_equal(cluster_bond_path = cluster_bond_path)
-    check_irc_opt_jobs(cluster_bond_path = cluster_bond_path)
+    check_irc_opt_jobs(cluster_bond_path = cluster_bond_path, level_of_theory = level_of_theory)
     check_barrier()
     insert_reaction()
     insert_ard(cluster_bond_path = cluster_bond_path)
 
-check_jobs(refine = True, cluster_bond_path = True)
+    #check_low_opt_jobs()
+    #check_bindind_cutoff()
+    #check_opt_jobs()
+
+check_jobs(refine = True, cluster_bond_path = True, level_of_theory = 'ORCA')

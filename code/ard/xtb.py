@@ -182,7 +182,7 @@ class XTB(object):
         outname = '{}.xyz'.format(target.split('.')[0])
         output_path = os.path.join(tmpdir, 'xtbopt.xyz')
         config_path = os.path.join(os.path.dirname(os.path.dirname(tmpdir)), 'config')
-        constraint_path = os.path.join(config_path, 'constraint.inp')
+        constraint_path = os.path.join(config_path, 'xtb_constraint.inp')
         new_output_path = os.path.join(tmpdir, outname)
         if self.constraint == None:
             p = Popen(['xtb', input_path, '--opt'])

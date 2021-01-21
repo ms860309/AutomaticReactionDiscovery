@@ -79,7 +79,7 @@ class ORCA(object):
             raise ORCAError(f'Frequencies not found in {self.logfile}')
 
 
-
+"""
 #logfile='/mnt/d/CCEPBHYVMLWLGS-UHFFFAOYSA-N_1/TS/ts_refine.out'
 logfile='/mnt/d/GLCWZFHGIWDXCZ-UHFFFAOYSA-N_1/TS/ts_refine.out'
 try:
@@ -90,7 +90,7 @@ except:
 freqs = q.get_frequencies()
 nnegfreq = sum(1 for freq in freqs if freq < 0.0)
 print(nnegfreq)
-"""
+
 zpe = q.get_zpe()
 normal_mode = q.get_normal_modes()
 freq = q.get_frequencies()

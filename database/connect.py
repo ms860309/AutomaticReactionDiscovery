@@ -105,6 +105,7 @@ query = [{'$match':{'reactant_inchi_key':'OWCQMKVAAHGRRF-UHFFFAOYSA-N'}},
 a = list(qm_collection.aggregate(query))[0]['reactant_mopac_hf']
 print(a)
 """
+
 """
 qm_collection = db['qm_calculate_center']
 query = {'ssm_status':'job_success'}
@@ -123,4 +124,20 @@ for target in targets:
     update_field = {'product_inchi_key':prod_inchi_key, 'Product SMILES':prod_smi}
     qm_collection.update_one(target, {"$set": update_field}, True)
 
+"""
+
+"""
+qm_collection = db['qm_calculate_center']
+query = {'ts_status':'job_launched'}
+a = list(qm_collection.find(query))
+for i in a:
+    dir_path = os.path.join(i['path'], 'TS')
+    job_file = os.path.join(dir_path, 'orca_ts.job')
+    inp_file = os.path.join(dir_path, 'ts_geo.in')
+    out_file = os.path.join(dir_path, 'ts_geo.out')
+    os.remove(job_file)
+    os.remove(inp_file)
+    os.remove(out_file)
+    update_field = {'ts_status':"job_unrun"}
+    qm_collection.update_one(i, {"$unset": {'ts_jobid':""}, "$set": update_field}, True)
 """

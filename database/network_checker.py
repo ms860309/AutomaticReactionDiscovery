@@ -120,7 +120,7 @@ def print_information(generations):
                     [
                     { "energy_status":
                         {"$in":
-                        ["job_fail"]}
+                        ["job_fail", 'Have imaginary frequency']}
                         },
                     {'generations':generations}
                     ]

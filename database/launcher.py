@@ -20,7 +20,7 @@ def select_calE_target():
     targets = list(qm_collection.find(query))
     return targets
 
-def launch_energy_jobs(num = 100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
+def launch_energy_jobs(num = 100, level_of_theory='ORCA', ncpus = 4, mpiprocs = 1, ompthreads = 4):
     targets = select_calE_target()
     
     for target in targets[:num]:
@@ -32,8 +32,10 @@ def launch_energy_jobs(num = 100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
         else:
             os.mkdir(Energy_dir_path)
             os.chdir(Energy_dir_path)
-            
-        subfile = create_energy_sub_file(target['path'], Energy_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+        if level_of_theory.upper() == 'QCHEM':
+            subfile = create_qchem_energy_sub_file(target['path'], Energy_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+        elif level_of_theory == 'ORCA':
+            subfile = create_orca_energy_sub_file(target['path'], Energy_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
         
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
@@ -45,13 +47,13 @@ def launch_energy_jobs(num = 100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
         # update status job_launched
         update_energy_status(target, job_id)
 
-def create_energy_sub_file(dir_path, Energy_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
+def create_qchem_energy_sub_file(dir_path, Energy_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
     subfile = path.join(Energy_dir_path, 'cal_E.job')
     energy_input_file = path.join(Energy_dir_path, 'energy.in')
     energy_output_file = path.join(Energy_dir_path, 'energy.out')
     reactant_xyz_path = path.join(dir_path, 'reactant.xyz')
     base_dir_path = path.join(path.dirname(path.dirname(path.dirname(Energy_dir_path))), 'config')
-    energy_lot = path.join(base_dir_path, 'opt_freq.lot')
+    energy_lot = path.join(base_dir_path, 'qchem_opt_freq.lot')
 
     with open(energy_lot) as f:
         config = [line.strip() for line in f]
@@ -79,7 +81,36 @@ def create_energy_sub_file(dir_path, Energy_dir_path, ncpus = 4, mpiprocs = 1, o
     with open(subfile, 'w') as f:
         f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, scratch, command, clean_scratch))
     return subfile
+
+def create_orca_energy_sub_file(dir_path, Energy_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
+    subfile = path.join(Energy_dir_path, 'cal_E.job')
+    energy_input_file = path.join(Energy_dir_path, 'energy.in')
+    reactant_xyz_path = path.join(dir_path, 'reactant.xyz')
+    base_dir_path = path.join(path.dirname(path.dirname(path.dirname(Energy_dir_path))), 'config')
+    energy_lot = path.join(base_dir_path, 'orca_opt_freq.lot')
+
+    with open(energy_lot) as f:
+        config = [line.strip() for line in f]
+
+    shell = '#!/usr/bin/bash'
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe\nsource ~/.bashrc\n'.format(ncpus, mpiprocs, ompthreads)
+    scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\ncp $PBS_O_WORKDIR/energy.in $QCSCRATCH/\ncd $QCSCRATCH\n'
+    command = '$orcadir/orca $QCSCRATCH/energy.in >> $PBS_O_WORKDIR/energy.out'
+    clean_scratch = 'rm -r $QCSCRATCH'
     
+    with open(reactant_xyz_path, 'r') as f1:
+        lines = f1.read().splitlines()
+    with open(energy_input_file, 'w') as f2:
+        for line in config:
+            f2.write(line + '\n')
+        f2.write('*xyz 0 1\n')
+        for line in lines[2:]:
+            f2.write(line + '\n')
+        f2.write('*')
+    with open(subfile, 'w') as f:
+        f.write('{}\n{}\n{}\n{}\n{}\n'.format(shell, pbs_setting, scratch, command, clean_scratch))
+    return subfile
+
 def update_energy_status(target, job_id):
     qm_collection = db['qm_calculate_center']
     update_field = {"energy_status":"job_launched", "energy_jobid":job_id}
@@ -360,7 +391,7 @@ def create_ts_refine_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1
     #ts_output_file = path.join(TS_dir_path, 'ts_refine.out')
     subfile = path.join(TS_dir_path, 'orca_ts_refine.job')
     base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(SSM_dir_path)))), 'config')
-    ts_lot = path.join(base_dir_path, 'refine_ts')
+    ts_lot = path.join(base_dir_path, 'orca_refine_ts')
 
     with open(ts_lot) as f:
         config = [line.strip() for line in f]
@@ -405,19 +436,22 @@ def select_ts_target():
     targets = list(qm_collection.find(query))
     return targets
 
-def launch_ts_jobs(num=100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
+def launch_ts_jobs(num=100, level_of_theory='ORCA', ncpus = 4, mpiprocs = 1, ompthreads = 4):
     targets = select_ts_target()
     
-    for target in targets[:100]:
+    for target in targets[:num]:
+        SSM_dir_path = path.join(target['path'], 'SSM/')
         TS_dir_path = path.join(target['path'], 'TS/')
         if os.path.exists(TS_dir_path):
             os.chdir(TS_dir_path)
         else:
             os.mkdir(TS_dir_path)
             os.chdir(TS_dir_path)
-            
-        SSM_dir_path = path.join(target['path'], 'SSM/')
-        subfile = create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+
+        if level_of_theory.upper() == 'QCHEM':
+            subfile = create_qchem_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+        elif level_of_theory == 'ORCA':
+            subfile = create_orca_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -428,7 +462,7 @@ def launch_ts_jobs(num=100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
         # update status job_launched
         update_ts_status(target, job_id)
         
-def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
+def create_qchem_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
     refine_path = path.join(TS_dir_path, 'ts_refine.xyz')
     if os.path.exists(refine_path):
         tsnode_path = refine_path
@@ -438,7 +472,7 @@ def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompth
     ts_output_file = path.join(TS_dir_path, 'ts.out')
     subfile = path.join(TS_dir_path, 'qchem_ts.job')
     base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(SSM_dir_path)))), 'config')
-    ts_lot = path.join(base_dir_path, 'freq_ts_freq.lot')
+    ts_lot = path.join(base_dir_path, 'qchem_freq_ts_freq.lot')
 
     with open(ts_lot) as f:
         config = [line.strip() for line in f]
@@ -464,9 +498,41 @@ def create_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompth
             f2.write(line + '\n')
     with open(subfile, 'w') as f:
         f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, scratch, command, clean_scratch))
-        
     return subfile
+
+def create_orca_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
+    refine_path = path.join(TS_dir_path, 'ts_refine.xyz')
+    if os.path.exists(refine_path):
+        tsnode_path = refine_path
+    else:
+        tsnode_path = path.join(SSM_dir_path, 'TSnode.xyz')
+    ts_input_file = path.join(TS_dir_path, 'ts_geo.in')
+    subfile = path.join(TS_dir_path, 'orca_ts.job')
+    base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(SSM_dir_path)))), 'config')
+    ts_lot = path.join(base_dir_path, 'orca_freq_ts_freq.lot')
+
+    with open(ts_lot) as f:
+        config = [line.strip() for line in f]
+
+    shell = '#!/usr/bin/bash'
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe\nsource ~/.bashrc\n'.format(ncpus, mpiprocs, ompthreads)
+    scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\ncp $PBS_O_WORKDIR/ts_geo.in $QCSCRATCH/\ncd $QCSCRATCH\n'
+    command = '$orcadir/orca $QCSCRATCH/ts_geo.in >> $PBS_O_WORKDIR/ts_geo.out'
+    copy_the_refine_xyz = 'cp $QCSCRATCH/ts_geo.xyz $PBS_O_WORKDIR'
+    clean_scratch = 'rm -r $QCSCRATCH'
     
+    with open(tsnode_path, 'r') as f1:
+        lines = f1.read().splitlines()
+    with open(ts_input_file, 'w') as f2:
+        for line in config:
+            f2.write(line + '\n')
+        f2.write('*xyz 0 1\n')
+        for line in lines[2:]:
+            f2.write(line + '\n')
+        f2.write('*')
+    with open(subfile, 'w') as f:
+        f.write('{}\n{}\n{}\n{}\n{}\n{}\n'.format(shell, pbs_setting, scratch, command, copy_the_refine_xyz, clean_scratch))
+    return subfile
 
 def update_ts_status(target, job_id):
     qm_collection = db['qm_calculate_center']
@@ -546,7 +612,7 @@ def select_irc_opt_target():
     targets = list(qm_collection.find(query))
     return targets
 
-def launch_irc_opt_jobs(num = 100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
+def launch_irc_opt_jobs(num = 100, level_of_theory='ORCA', ncpus = 4, mpiprocs = 1, ompthreads = 4):
     
     targets = select_irc_opt_target()
     for target in targets[:num]:
@@ -574,8 +640,11 @@ def launch_irc_opt_jobs(num = 100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
                 target_mol = path.join(IRC_dir_path, 'finished_last.xyz')
             elif irc_equal == 'reverse equal to reactant but forward does not equal to product':
                 target_mol = path.join(IRC_dir_path, 'finished_first.xyz')
-            
-        subfile = create_irc_opt_sub_file(IRC_dir_path, target_mol, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+
+        if level_of_theory.upper() == 'QCHEM':
+            subfile = create_qchem_irc_opt_sub_file(IRC_dir_path, target_mol, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+        elif level_of_theory == 'ORCA':
+            subfile = create_orca_irc_opt_sub_file(IRC_dir_path, target_mol, ncpus = 4, mpiprocs = 1, ompthreads = 4)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -586,9 +655,9 @@ def launch_irc_opt_jobs(num = 100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
         # update status job_launched
         update_irc_opt_status(target, job_id)
 
-def create_irc_opt_sub_file(irc_path, target_mol, ncpus = 4, mpiprocs = 1, ompthreads = 4):
+def create_qchem_irc_opt_sub_file(irc_path, target_mol, ncpus = 4, mpiprocs = 1, ompthreads = 4):
     base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(irc_path)))), 'config')
-    irc_opt_lot = path.join(base_dir_path, 'irc_opt_freq.lot')
+    irc_opt_lot = path.join(base_dir_path, 'qchem_opt_freq.lot')
     irc_opt_input = path.join(irc_path, 'irc_opt.in')
     subfile = path.join(irc_path, 'irc_opt.job')
 
@@ -616,7 +685,35 @@ def create_irc_opt_sub_file(irc_path, target_mol, ncpus = 4, mpiprocs = 1, ompth
     nes5 = 'rm -r $QCSCRATCH'
     with open(subfile, 'w') as f:
         f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, nes2, nes3, nes4, nes5))
+    return subfile
 
+def create_orca_irc_opt_sub_file(irc_path, target_mol, ncpus = 4, mpiprocs = 1, ompthreads = 4):
+    base_dir_path = path.join(path.dirname(path.dirname(path.dirname(path.dirname(irc_path)))), 'config')
+    irc_opt_lot = path.join(base_dir_path, 'orca_opt_freq.lot')
+    irc_opt_input = path.join(irc_path, 'irc_reactant.in')
+    subfile = path.join(irc_path, 'irc_opt.job')
+
+    with open(irc_opt_lot) as f:
+        config = [line.strip() for line in f]
+
+    shell = '#!/usr/bin/bash'
+    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe\nsource ~/.bashrc\n'.format(ncpus, mpiprocs, ompthreads)
+    scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\ncp $PBS_O_WORKDIR/irc_reactant.in $QCSCRATCH/\ncd $QCSCRATCH\n'
+    command = '$orcadir/orca $QCSCRATCH/irc_reactant.in >> $PBS_O_WORKDIR/irc_reactant.out'
+    copy_the_refine_xyz = 'cp $QCSCRATCH/irc_reactant.xyz $PBS_O_WORKDIR'
+    clean_scratch = 'rm -r $QCSCRATCH'
+    
+    with open(target_mol, 'r') as f1:
+        lines = f1.read().splitlines()
+    with open(irc_opt_input, 'w') as f2:
+        for line in config:
+            f2.write(line + '\n')
+        f2.write('*xyz 0 1\n')
+        for line in lines[2:]:
+            f2.write(line + '\n')
+        f2.write('*')
+    with open(subfile, 'w') as f:
+        f.write('{}\n{}\n{}\n{}\n{}\n{}\n'.format(shell, pbs_setting, scratch, command, copy_the_refine_xyz, clean_scratch))
     return subfile
 
 def update_irc_opt_status(target, job_id):
@@ -624,92 +721,17 @@ def update_irc_opt_status(target, job_id):
     update_field = {'irc_opt_status':"job_launched", 'irc_opt_jobid':job_id}
     qm_collection.update_one(target, {"$set": update_field}, True)
 
-"""
-Some manually test
-"""
-def select_targets():
-    reaction_collection = db['reactions']
-    query = {"barrier_energy":"do not have reactant_energy"}
-    targets = list(reaction_collection.find(query))
-    return targets
 
-def launch_jobs():
-    targets = select_targets()
+def launch_jobs(num = 30, level_of_theory='ORCA', ncpus = 4, mpiprocs = 1, ompthreads = 4):
+    launch_energy_jobs(num = num, level_of_theory='ORCA', ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
+    launch_ssm_jobs(num = num, level_of_theory='ORCA', ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
+    launch_ts_refine_jobs(num = num, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
+    launch_ts_jobs(num = num, level_of_theory='ORCA', ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
+    launch_irc_jobs(num = num, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
+    launch_irc_opt_jobs(num = num, level_of_theory='ORCA', ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
     
-    for target in targets:
-        SP_dir_path = path.join(target['path'], 'SP/')
-        if path.exists(SP_dir_path):
-            shutil.rmtree(SP_dir_path)
-        os.mkdir(SP_dir_path)
-        os.chdir(SP_dir_path)
-            
-        TS_dir_path = path.join(target['path'], 'TS/')
-        subfile = create_sub_file(SP_dir_path, TS_dir_path)
-        cmd = 'qsub {}'.format(subfile)
-        process = subprocess.Popen([cmd],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, shell = True)
-        stdout, stderr = process.communicate()
-        # get job id from stdout, e.g., "106849.h81"
-        job_id = stdout.decode().replace("\n", "")
-        # update status job_launched
-        update_status(target, job_id)
-        
-def create_sub_file(SP_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4):
-    qchem_ts_path = path.join(TS_dir_path, 'ts_geo.xyz')
-    xtb_ts_path = path.join(TS_dir_path, 'ts_refine.xyz')
-
-    subfile = path.join(SP_dir_path, 'sp.job')
-    qchem_sp = path.join(SP_dir_path, 'qchem_sp.in')
-    xtb_sp = path.join(SP_dir_path, 'xtb_sp.in')
+    #launch_low_opt_jobs(num = num, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
+    #launch_opt_jobs(num = num, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
 
 
-    shell = '#!/usr/bin/bash'
-    pbs_setting = '#PBS -l select=1:ncpus={}:mpiprocs={}:ompthreads={}\n#PBS -q workq\n#PBS -j oe'.format(ncpus, mpiprocs, ompthreads)
-    target_path = 'cd {}'.format(SP_dir_path)
-    nes1 = 'module load qchem'
-    scratch = 'export QCSCRATCH=/tmp/$PBS_JOBID\nmkdir -p $QCSCRATCH\n'
-    command1 = 'qchem -nt {} qchem_sp.in qchem_sp.out'.format(ncpus)
-    command2 = 'qchem -nt {} xtb_sp.in xtb_sp.out'.format(ncpus)
-    clean_scratch = 'rm -r $QCSCRATCH'
-    
-    with open(qchem_ts_path, 'r') as f1:
-        lines = f1.read().splitlines()
-    with open(qchem_sp, 'w') as f2:
-        f2.write('$molecule\n0 1\n')
-        for line in lines[2:]:
-            f2.write(line+ '\n')
-        f2.write('\n$end\n\n')
-        f2.write('\n$rem\n\nJOBTYPE SP\nMETHOD  B3LYP\nDFT_D   D3_BJ\nBASIS   def2-SVP\nSCF_ALGORITHM DIIS\nMAX_SCF_CYCLES 150\nSCF_CONVERGENCE 8\nSYM_IGNORE TRUE\nSYMMETRY FALSE\nWAVEFUNCTION_ANALYSIS FALSE\n$end\n')
-
-    with open(xtb_ts_path, 'r') as f1:
-        lines = f1.read().splitlines()
-    with open(xtb_sp, 'w') as f2:
-        f2.write('$molecule\n0 1\n')
-        for line in lines[2:]:
-            f2.write(line+ '\n')
-        f2.write('\n$end\n\n')
-        f2.write('\n$rem\n\nJOBTYPE SP\nMETHOD  B3LYP\nDFT_D   D3_BJ\nBASIS   def2-SVP\nSCF_ALGORITHM DIIS\nMAX_SCF_CYCLES 150\nSCF_CONVERGENCE 8\nSYM_IGNORE TRUE\nSYMMETRY FALSE\nWAVEFUNCTION_ANALYSIS FALSE\n$end\n')
-
-    with open(subfile, 'w') as f:
-        f.write('{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}'.format(shell, pbs_setting, target_path, nes1, scratch, command1, command2, clean_scratch))
-        
-    return subfile
-    
-
-def update_status(target, job_id):
-    reaction_collection = db['reactions']
-    update_field = {"sp_status":"job_launched", "sp_jobid":job_id}
-    reaction_collection.update_one(target, {"$set": update_field}, True)
-
-
-launch_energy_jobs(num = 30, ncpus = 4, mpiprocs = 1, ompthreads = 4)
-launch_ssm_jobs(num = 50, level_of_theory='ORCA', ncpus = 4, mpiprocs = 1, ompthreads = 4)
-#launch_low_opt_jobs(num = 100, ncpus = 4, mpiprocs = 1, ompthreads = 4)
-#launch_opt_jobs(num = 100, ncpus = 4, mpiprocs = 1, ompthreads = 4)
-launch_ts_refine_jobs(num = 30, ncpus = 4, mpiprocs = 1, ompthreads = 4)
-launch_ts_jobs(num = 30, ncpus = 4, mpiprocs = 1, ompthreads = 4)
-launch_irc_jobs(num = 30, ncpus = 4, mpiprocs = 1, ompthreads = 4)
-launch_irc_opt_jobs(num = 30, ncpus = 4, mpiprocs = 1, ompthreads = 4)
-
-#launch_jobs() # For manual test
+launch_jobs(num = 30, level_of_theory='ORCA', ncpus = 4, mpiprocs = 1, ompthreads = 4)

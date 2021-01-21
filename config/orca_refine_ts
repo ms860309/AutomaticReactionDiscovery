@@ -1,0 +1,28 @@
+! XTB2 OptTS NumFreq TIGHTSCF PAL4
+
+%geom
+Calc_Hess true # Calculate Hessian in the beginning
+NumHess true # Request numerical Hessian (analytical not available)
+Recalc_Hess 5  # Recalculate the Hessian every 5 steps
+Maxiter 60
+Constraints
+	{C 22 C} # Constraining atom no. 22 in space. index start from 0
+	{C 23 C} 
+	{C 24 C} 
+	{C 25 C}
+	{C 26 C}
+	{C 27 C}
+	{C 28 C}
+	{C 29 C}
+	{C 30 C}
+	{C 31 C}
+	{C 32 C}
+	{C 33 C}
+	end
+end
+
+%freq
+PARTIAL_Hess
+	{22 23 24 25 26 27 28 29 30 31 32 33}
+	end
+end
