@@ -1,11 +1,2 @@
 ! XTB2 ENGRAD PAL4 TIGHTSCF
 
-%scf
-maxiter 350
-convergence strong
-sthresh 1e-7
-directresetfreq 1
-SOSCFStart 0.00033
-end
-
-

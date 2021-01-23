@@ -255,18 +255,18 @@ def ard_prod_and_ssm_prod_checker(rxn_dir, refine = False, cluster_bond_path = N
                 #dirname = dir_check(path.dirname(i['path']), pyMol_1.write('inchiKey').strip(), num + 1)
                 #new_path = path.join(path.dirname(i['path']), dirname)
                 #os.rename(rxn_dir, new_path)
-                prod_smi = pyMol_1.write('can').split()[0]
+
                 if refine:
                     update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
                                     'ssm_status': 'job_success',                                # Though the reactant equal to product but TS maybe fine. The SSM somehow do not use constrained optimize in product
                                     'ard_ssm_equal':'ssm reactant equal to product',            # This is a special case but sometimes it will happen.
-                                    'Product SMILES': prod_smi,
+                                    'Product SMILES': prod_smi = pyMol_1.write('can').split()[0],
                                     "ts_refine_status":"job_unrun"}                                    # If check ts and get the success maybe need to check irc but QChem's irc is not robust
                 else:
                     update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
                                     'ssm_status': 'job_success',                               
                                     'ard_ssm_equal':'ssm reactant equal to product',            
-                                    'Product SMILES': prod_smi,
+                                    'Product SMILES': prod_smi = pyMol_1.write('can').split()[0],
                                     "ts_status":"job_unrun"}                                    
                 qm_collection.update_one(i, {"$set": update_field}, True)
             else:
@@ -279,13 +279,13 @@ def ard_prod_and_ssm_prod_checker(rxn_dir, refine = False, cluster_bond_path = N
                                     'ssm_status': 'job_success',
                                     "ts_refine_status":"job_unrun",
                                     'ard_ssm_equal':'not_equal',
-                                    'Product SMILES': prod_smi}
+                                    'Product SMILES': pyMol_1.write('can').split()[0]}
                 else:
                     update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(),
                                     'ssm_status': 'job_success',
                                     "ts_status":"job_unrun",
                                     'ard_ssm_equal':'not_equal',
-                                    'Product SMILES': prod_smi}
+                                    'Product SMILES': pyMol_1.write('can').split()[0]}
                 qm_collection.update_one(i, {"$set": update_field}, True)
         return 'not_equal'
     else:
@@ -748,7 +748,7 @@ def check_irc_equal(cluster_bond_path = None):
                         'reverse does not equal to reactant but forward equal to product']
 
     for target in targets:
-        new_status, forward, backward = check_irc_equal_status(target, cluster_bond_path = None)
+        new_status, forward, backward = check_irc_equal_status(target, cluster_bond_path = cluster_bond_path)
         orig_status = target['irc_equal']
         if orig_status != new_status:
             if new_status in acceptable_condition:

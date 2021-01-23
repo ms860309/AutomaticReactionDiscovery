@@ -168,7 +168,7 @@ def readXYZ(xyz, bonds = None, cluster_bond = None, constraint = None):
                             for bond in pb.ob.OBMolBondIter(mol.OBMol)]
             #bonds = imaginary_bond(bonds, reactant_atom, constraint)
             bonds.extend(cluster_bond)
-    
+
         for bond in bonds:
             obmol.AddBond(bond[0], bond[1], bond[2])
 
