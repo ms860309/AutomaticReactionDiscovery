@@ -4,7 +4,7 @@
 Calc_Hess true # Calculate Hessian in the beginning
 NumHess true # Request numerical Hessian (analytical not available)
 Recalc_Hess 5  # Recalculate the Hessian every 5 steps
-Maxiter 70
+Maxiter 80
 Constraints
 	{C 24 C} 
 	{C 25 C}

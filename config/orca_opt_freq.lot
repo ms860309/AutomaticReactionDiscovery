@@ -1,4 +1,4 @@
-! B3LYP D3BJ def2-SVP rijcosx def2/J def2-svp/C Opt NumFreq TIGHTSCF PAL4
+! B3LYP D3BJ def2-SVP rijcosx def2/J Opt NumFreq TIGHTSCF PAL4
 
 %geom
 Calc_Hess true # Calculate Hessian in the beginning

@@ -260,20 +260,19 @@ def ard_prod_and_ssm_prod_checker(rxn_dir, refine = False, cluster_bond_path = N
                     update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
                                     'ssm_status': 'job_success',                                # Though the reactant equal to product but TS maybe fine. The SSM somehow do not use constrained optimize in product
                                     'ard_ssm_equal':'ssm reactant equal to product',            # This is a special case but sometimes it will happen.
-                                    'Product SMILES': prod_smi = pyMol_1.write('can').split()[0],
+                                    'Product SMILES': pyMol_1.write('can').split()[0],
                                     "ts_refine_status":"job_unrun"}                                    # If check ts and get the success maybe need to check irc but QChem's irc is not robust
                 else:
                     update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(), 
                                     'ssm_status': 'job_success',                               
                                     'ard_ssm_equal':'ssm reactant equal to product',            
-                                    'Product SMILES': prod_smi = pyMol_1.write('can').split()[0],
+                                    'Product SMILES': pyMol_1.write('can').split()[0],
                                     "ts_status":"job_unrun"}                                    
                 qm_collection.update_one(i, {"$set": update_field}, True)
             else:
                 #dirname = dir_check(path.dirname(i['path']), pyMol_1.write('inchiKey').strip(), num + 1)
                 #new_path = path.join(path.dirname(i['path']), dirname)
                 #os.rename(rxn_dir, new_path)
-                prod_smi = pyMol_1.write('can').split()[0]
                 if refine:
                     update_field = {'product_inchi_key':pyMol_1.write('inchiKey').strip(),
                                     'ssm_status': 'job_success',
@@ -368,7 +367,7 @@ def check_ssm_jobs(refine = False, cluster_bond_path = None):
         orig_status = target['ssm_status']
         if orig_status != new_status:
             if new_status == 'job_success':
-                equal = ard_prod_and_ssm_prod_checker(target['path'], refine = refine, cluster_bond_path = None)
+                equal = ard_prod_and_ssm_prod_checker(target['path'], refine = refine, cluster_bond_path = cluster_bond_path)
                 if equal == 'equal':
                     if refine:
                         update_field = {
@@ -468,12 +467,12 @@ def check_ts_refine_jobs():
         # 2. check the job pbs status
         new_status = check_ts_refine_job_status(job_id)
         if new_status == "off_queue":
-            new_status = check_ts_content(target['path'])
+            new_status = check_ts_refine_content(target['path'])
         orig_status = target['ts_refine_status']
         if orig_status != new_status:
             if new_status == 'job_success':
                 update_field = {
-                                'ts_status': 'job_unrun', 'ts_refine_status': 'job_success'
+                                'ts_status': 'job_unrun', 'ts_refine_status': new_status
                                 }
             else:
                 update_field = {
@@ -775,14 +774,14 @@ def check_irc_equal_status(target, cluster_bond_path = None):
     forward_end_output = os.path.join(irc_path, 'forward_end_opt.xyz')
     backward_end_output = os.path.join(irc_path, 'backward_end_opt.xyz')
     
-    pyMol_1 = xyz_to_pyMol(reactant_path, cluster_bond_path = None)
-    pyMol_2 = xyz_to_pyMol(product_path, cluster_bond_path = None)
+    pyMol_1 = xyz_to_pyMol(reactant_path, cluster_bond_path = cluster_bond_path)
+    pyMol_2 = xyz_to_pyMol(product_path, cluster_bond_path = cluster_bond_path)
     if os.path.exists(forward_end_output) and os.path.exists(backward_end_output):
-        pyMol_3 = xyz_to_pyMol(forward_end_output, cluster_bond_path = None)
-        pyMol_4 = xyz_to_pyMol(backward_end_output, cluster_bond_path = None)
+        pyMol_3 = xyz_to_pyMol(forward_end_output, cluster_bond_path = cluster_bond_path)
+        pyMol_4 = xyz_to_pyMol(backward_end_output, cluster_bond_path = cluster_bond_path)
     else:
-        pyMol_3 = xyz_to_pyMol(forward_output, cluster_bond_path = None)
-        pyMol_4 = xyz_to_pyMol(reverse_output, cluster_bond_path = None)
+        pyMol_3 = xyz_to_pyMol(forward_output, cluster_bond_path = cluster_bond_path)
+        pyMol_4 = xyz_to_pyMol(reverse_output, cluster_bond_path = cluster_bond_path)
 
     if pyMol_3.write('inchiKey').strip() == pyMol_4.write('inchiKey').strip():
         return 'forward equal to reverse', pyMol_3, pyMol_4
@@ -853,7 +852,7 @@ def check_irc_opt_job_status(job_id):
     else:
         return "job_launched"
     
-def check_irc_opt_content(dir_path, level_of_theory = level_of_theory):
+def check_irc_opt_content(dir_path, level_of_theory = 'ORCA'):
     reactant_path = path.join(dir_path, 'irc_reactant.xyz')
     irc_path = path.join(dir_path, "IRC")
     irc_reactant_path = path.join(irc_path, 'irc_reactant.xyz')

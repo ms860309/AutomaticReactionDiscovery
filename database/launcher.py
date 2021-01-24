@@ -723,12 +723,12 @@ def update_irc_opt_status(target, job_id):
 
 
 def launch_jobs(num = 30, level_of_theory='ORCA', ncpus = 4, mpiprocs = 1, ompthreads = 4):
-    launch_energy_jobs(num = num, level_of_theory='QCHEM', ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
-    launch_ssm_jobs(num = num, level_of_theory='ORCA', ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
+    launch_energy_jobs(num = num, level_of_theory='ORCA', ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
+    launch_ssm_jobs(num = 50, level_of_theory='ORCA', ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
     launch_ts_refine_jobs(num = num, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
-    launch_ts_jobs(num = num, level_of_theory='QCHEM', ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
-    launch_irc_jobs(num = num, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
-    launch_irc_opt_jobs(num = num, level_of_theory='QCHEM', ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
+    launch_ts_jobs(num = num, level_of_theory='ORCA', ncpus = 8, mpiprocs = mpiprocs, ompthreads = 8)
+    launch_irc_jobs(num = num, ncpus = 8, mpiprocs = mpiprocs, ompthreads = 8)
+    launch_irc_opt_jobs(num = num, level_of_theory='ORCA', ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
     
     #launch_low_opt_jobs(num = num, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
     #launch_opt_jobs(num = num, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
