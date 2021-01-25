@@ -33,9 +33,9 @@ def launch_energy_jobs(num = 100, level_of_theory='ORCA', ncpus = 4, mpiprocs = 
             os.mkdir(Energy_dir_path)
             os.chdir(Energy_dir_path)
         if level_of_theory.upper() == 'QCHEM':
-            subfile = create_qchem_energy_sub_file(target['path'], Energy_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+            subfile = create_qchem_energy_sub_file(target['path'], Energy_dir_path, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
         elif level_of_theory == 'ORCA':
-            subfile = create_orca_energy_sub_file(target['path'], Energy_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+            subfile = create_orca_energy_sub_file(target['path'], Energy_dir_path, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
         
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
@@ -137,7 +137,7 @@ def launch_ssm_jobs(num = 100, level_of_theory='QCHEM', ncpus = 4, mpiprocs = 1,
         os.mkdir(SSM_dir_path)
         os.chdir(SSM_dir_path)
         if level_of_theory.upper() == 'QCHEM':
-            subfile = create_qchem_ssm_sub_file(target['path'], SSM_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+            subfile = create_qchem_ssm_sub_file(target['path'], SSM_dir_path, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
         elif level_of_theory == 'ORCA':
             subfile = create_orca_ssm_sub_file(target['path'], SSM_dir_path)
         cmd = 'qsub {}'.format(subfile)
@@ -230,7 +230,7 @@ def launch_opt_jobs(num=100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
         os.chdir(OPT_dir_path)
         
         create_opt_input(dir_path, OPT_dir_path)
-        subfile = create_opt_sub_file(dir_path, OPT_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+        subfile = create_opt_sub_file(dir_path, OPT_dir_path, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -302,7 +302,7 @@ def launch_low_opt_jobs(num=100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
         os.chdir(OPT_dir_path)
         
         create_low_opt_input(dir_path, OPT_dir_path)
-        subfile = create_low_opt_sub_file(dir_path, OPT_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+        subfile = create_low_opt_sub_file(dir_path, OPT_dir_path, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -374,7 +374,7 @@ def launch_ts_refine_jobs(num=100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
         os.chdir(TS_dir_path)
             
         SSM_dir_path = path.join(target['path'], 'SSM/')
-        subfile = create_ts_refine_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+        subfile = create_ts_refine_sub_file(SSM_dir_path, TS_dir_path, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -449,9 +449,9 @@ def launch_ts_jobs(num=100, level_of_theory='ORCA', ncpus = 4, mpiprocs = 1, omp
             os.chdir(TS_dir_path)
 
         if level_of_theory.upper() == 'QCHEM':
-            subfile = create_qchem_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+            subfile = create_qchem_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
         elif level_of_theory == 'ORCA':
-            subfile = create_orca_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+            subfile = create_orca_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -560,7 +560,7 @@ def launch_irc_jobs(num = 100, ncpus = 4, mpiprocs = 1, ompthreads = 4):
         os.chdir(IRC_dir_path)
 
         TS_dir_path = path.join(target['path'], 'TS/')
-        subfile = create_irc_sub_file(TS_dir_path, IRC_dir_path, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+        subfile = create_irc_sub_file(TS_dir_path, IRC_dir_path, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
@@ -642,9 +642,9 @@ def launch_irc_opt_jobs(num = 100, level_of_theory='ORCA', ncpus = 4, mpiprocs =
                 target_mol = path.join(IRC_dir_path, 'finished_first.xyz')
 
         if level_of_theory.upper() == 'QCHEM':
-            subfile = create_qchem_irc_opt_sub_file(IRC_dir_path, target_mol, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+            subfile = create_qchem_irc_opt_sub_file(IRC_dir_path, target_mol, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
         elif level_of_theory == 'ORCA':
-            subfile = create_orca_irc_opt_sub_file(IRC_dir_path, target_mol, ncpus = 4, mpiprocs = 1, ompthreads = 4)
+            subfile = create_orca_irc_opt_sub_file(IRC_dir_path, target_mol, ncpus = ncpus, mpiprocs = mpiprocs, ompthreads = ompthreads)
         cmd = 'qsub {}'.format(subfile)
         process = subprocess.Popen([cmd],
                             stdout=subprocess.PIPE,
