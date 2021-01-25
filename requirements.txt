@@ -1,6 +1,1 @@
-matplotlib
-numpy
-openbabel >3.1.1
-rmgpy >3.0.0
-scipy
-python 3
+rmg 3.0.0
