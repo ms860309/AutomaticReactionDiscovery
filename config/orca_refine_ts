@@ -1,10 +1,10 @@
-! XTB2 OptTS NumFreq TIGHTSCF PAL4
+! XTB2 OptTS NumFreq TIGHTSCF nomoprint nopop
 
 %geom
 Calc_Hess true # Calculate Hessian in the beginning
 NumHess true # Request numerical Hessian (analytical not available)
 Recalc_Hess 5  # Recalculate the Hessian every 5 steps
-Maxiter 80
+Maxiter 80 # 50 may somehow have bug in orca, interation may exceed 50
 Constraints
 	{C 24 C} 
 	{C 25 C}
@@ -19,6 +19,10 @@ Constraints
 	{C 34 C}
 	{C 35 C}
 	end
+end
+
+%scf
+maxiter 350
 end
 
 %freq

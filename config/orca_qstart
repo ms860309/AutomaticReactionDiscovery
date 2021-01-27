@@ -1,2 +1,11 @@
-! XTB2 ENGRAD PAL4 TIGHTSCF
+! XTB2 ENGRAD TIGHTSCF nomoprint nopop
 
+%maxcore 1000
+
+%pal
+nprocs 4
+end
+
+%scf
+maxiter 350
+end

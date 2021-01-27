@@ -103,6 +103,8 @@ def create_orca_energy_sub_file(dir_path, Energy_dir_path, ncpus = 4, mpiprocs =
     with open(energy_input_file, 'w') as f2:
         for line in config:
             f2.write(line + '\n')
+        f2.write('%pal\nnprocs {}\nend\n'.format(ncpus))
+        f2.write('\n%maxcore 1000\n\n')
         f2.write('*xyz 0 1\n')
         for line in lines[2:]:
             f2.write(line + '\n')
@@ -408,6 +410,8 @@ def create_ts_refine_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1
     with open(ts_input_file, 'w') as f2:
         for line in config:
             f2.write(line + '\n')
+        f2.write('%pal\nnprocs {}\nend\n'.format(ncpus))
+        f2.write('\n%maxcore 1000\n\n')
         f2.write('*xyz 0 1\n')
         for line in lines[2:]:
             f2.write(line + '\n')
@@ -526,6 +530,8 @@ def create_orca_ts_sub_file(SSM_dir_path, TS_dir_path, ncpus = 4, mpiprocs = 1, 
     with open(ts_input_file, 'w') as f2:
         for line in config:
             f2.write(line + '\n')
+        f2.write('%pal\nnprocs {}\nend\n'.format(ncpus))
+        f2.write('\n%maxcore 1000\n\n')
         f2.write('*xyz 0 1\n')
         for line in lines[2:]:
             f2.write(line + '\n')
@@ -708,6 +714,8 @@ def create_orca_irc_opt_sub_file(irc_path, target_mol, ncpus = 4, mpiprocs = 1, 
     with open(irc_opt_input, 'w') as f2:
         for line in config:
             f2.write(line + '\n')
+        f2.write('%pal\nnprocs {}\nend\n'.format(ncpus))
+        f2.write('\n%maxcore 1000\n\n')
         f2.write('*xyz 0 1\n')
         for line in lines[2:]:
             f2.write(line + '\n')
