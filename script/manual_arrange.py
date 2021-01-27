@@ -142,16 +142,22 @@ def runMopac(tmpdir, target = 'reactant.mop'):
     p.wait()
 
 def gen_geometry(reactant_mol, product_mol, constraint, fixed_atom):
-
+    print(constraint)
     reactant_mol.gen3D(constraint, forcefield='uff', method = 'ConjugateGradients', make3D=False)
     product_mol.gen3D(constraint, forcefield='uff', method = 'ConjugateGradients', make3D=False)
+    print(reactant_mol.toNode())
+    print('----')
     print(product_mol.toNode())
+    print('----')
     arrange3D = gen3D.Arrange3D(reactant_mol, product_mol, constraint, fixed_atom)
     msg = arrange3D.arrangeIn3D()
     if msg != '':
         print(msg)
     
+    print(reactant_mol.toNode())
+    print('----')
     print(product_mol.toNode())
+    print('----')
     gen3D.constraint_force_field(reactant_mol, constraint, forcefield='uff', method = 'ConjugateGradients')
     gen3D.constraint_force_field(product_mol, constraint, forcefield='uff', method = 'ConjugateGradients')
 
@@ -194,13 +200,15 @@ constraint = extract_constraint_index(constraint_path)
 fixed_atom = extract_fixed_atom_index(fixed_atom_path)
 reactant = readXYZ(xyz_path)
 atoms = tuple(atom.atomicnum for atom in reactant)
-rb = ((0, 1, 1), (0, 7, 1), (0, 8, 1), (0, 9, 1), (1, 2, 1), (1, 3, 1), (1, 6, 1), (2, 10, 1), (3, 4, 2), (3, 5, 1), (5, 11, 1), 
-    (12, 13, 1), (12, 14, 1), (12, 15, 1), (12, 16, 1), (13, 18, 1), (14, 20, 1), (15, 17, 1), (15, 21, 1), (16, 19, 1), (18, 22, 1), 
-    (18, 23, 1), (18, 24, 1), (19, 25, 1), (19, 26, 1), (19, 27, 1), (20, 28, 1), (20, 29, 1), (20, 30, 1), (21, 31, 1), (21, 32, 1), (21, 33, 1))
+rb = ((0, 1, 1), (0, 5, 1), (0, 6, 1), (0, 7, 1), (1, 2, 1), (1, 4, 1), (1, 8, 1), (2, 3, 1), (2, 9, 1), 
+    (2, 10, 1), (3, 11, 1), (4, 12, 1), (5, 13, 1), (14, 15, 1), (14, 16, 1), (14, 17, 1), (14, 18, 1), (15, 20, 1), 
+    (16, 22, 1), (17, 19, 1), (17, 23, 1), (18, 21, 1), (20, 24, 1), (20, 25, 1), (20, 26, 1), (21, 27, 1), (21, 28, 1), (21, 29, 1), 
+    (22, 30, 1), (22, 31, 1), (22, 32, 1), (23, 33, 1), (23, 34, 1), (23, 35, 1))
 
-product_bonds = ((0, 1, 1), (0, 7, 1), (0, 9, 1), (1, 2, 1), (1, 6, 1), (2, 10, 1), (3, 4, 2), (3, 5, 1), (5, 11, 1), 
-    (12, 13, 1), (12, 14, 1), (12, 15, 1), (12, 16, 1), (13, 18, 1), (14, 20, 1), (15, 21, 1), (16, 19, 1), (18, 22, 1), 
-    (18, 23, 1), (18, 24, 1), (19, 25, 1), (19, 26, 1), (19, 27, 1), (20, 28, 1), (20, 29, 1), (20, 30, 1), (21, 31, 1), (21, 32, 1), (21, 33, 1), (8, 13, 1), (1, 17, 1), (0, 3, 1))
+product_bonds = ((0, 1, 1), (0, 5, 1), (0, 6, 1), (0, 7, 1), (1, 4, 1), (1, 8, 1), (2, 3, 2), (2, 9, 1), (1, 11, 1),
+    (2, 10, 1), (4, 12, 1), (5, 13, 1), (14, 15, 1), (14, 16, 1), (14, 17, 1), (14, 18, 1), (15, 20, 1), (16, 19, 1), 
+    (16, 22, 1), (17, 23, 1), (18, 21, 1), (20, 24, 1), (20, 25, 1), (20, 26, 1), (21, 27, 1), (21, 28, 1), (21, 29, 1), 
+    (22, 30, 1), (22, 31, 1), (22, 32, 1), (23, 33, 1), (23, 34, 1), (23, 35, 1))
 
 product = gen3D.makeMolFromAtomsAndBonds(atoms, product_bonds, spin=reactant.spin)
 product.setCoordsFromMol(reactant)

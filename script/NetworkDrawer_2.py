@@ -43,8 +43,8 @@ def extract_data():
             pass
 
     targets = list(reaction_collection.find(query))
-    reactant_smi = [target['reactant_inchi_key'] for target in targets]
-    product_smi = [target['product_inchi_key'] for target in targets]
+    reactant_smi = [target['reactant_smi'] for target in targets]
+    product_smi = [target['product_smi'] for target in targets]
     barrier_energy = []
     for i in targets:
         #ts = list(qm_collection.find({'path':i['path']}))[0]
@@ -54,7 +54,7 @@ def extract_data():
         barrier_energy.append(round(i['barrier_energy'], 2))
         
     generations = [target['generations'] for target in targets]
-    zipped = zip(reactant_smi, product_smi, generations)
+    zipped = zip(reactant_smi, product_smi, generations, barrier_energy)
 
     return zipped
 
@@ -67,19 +67,19 @@ def draw():
     
     zipped = extract_data()
     _dict = {}
-    for i, j, l in list(zipped):
+    for i, j, l, k in list(zipped):
         if l == 1:
             G.add_edge(i,j,color='r')
-            #_dict[(i,j)] = k
+            _dict[(i,j)] = k
         elif l == 2:
             G.add_edge(i,j,color='g')
-            #_dict[(i,j)] = k
+            _dict[(i,j)] = k
         elif l == 3:
             G.add_edge(i,j,color='b')
-            #_dict[(i,j)] = k
+            _dict[(i,j)] = k
         else:
             G.add_edge(i,j,color='b')
-            #_dict[(i,j)] = k  
+            _dict[(i,j)] = k  
             
     plt.figure()
     
@@ -91,7 +91,7 @@ def draw():
     nx.draw_networkx_edge_labels(G, pos, edge_labels=_dict, font_size=8)
     nx.draw(G, pos, 
             edge_color=colors, 
-            with_labels=False,
+            with_labels=True,
             node_color='lightgreen',
             font_size = 8)
     

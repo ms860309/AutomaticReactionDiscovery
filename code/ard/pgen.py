@@ -120,7 +120,7 @@ class Generate(object):
             if (self.atoms[bonds[0]] == 6 and self.atoms[bonds[1]] == 1) or (self.atoms[bonds[1]] == 6 and self.atoms[bonds[0]] == 1):
                 bond_can_form.remove(bonds)
         # index start from 0
-        for hydrogen in [6,7,8,9,10,11,12,13,19]:
+        for hydrogen in [6,7,8,9,10,11,12,13]:
             for oxygen in [15,16,17]:
                 bond_can_form.append((hydrogen,oxygen,1))
         
@@ -132,7 +132,7 @@ class Generate(object):
                     bond_can_break.append((bond[0], bond[1], b - 1))
                     b -= 1
                 bond_can_break.append(bond)
-                
+
         # Generate products
         #bf_combinations = ((0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2))
         bf_combinations = ((0, 1), (1, 0), (1, 1), (1, 2), (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3))
