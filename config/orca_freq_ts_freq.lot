@@ -4,8 +4,9 @@
 Calc_Hess true # Calculate Hessian in the beginning
 NumHess true # Request numerical Hessian (analytical not available)
 Constraints
-	{C 24 C} 
-	{C 25 C}
+	{C 11 C}
+	{C 12 C}
+	{C 13 C}
 	{C 26 C}
 	{C 27 C}
 	{C 28 C}
@@ -16,6 +17,8 @@ Constraints
 	{C 33 C}
 	{C 34 C}
 	{C 35 C}
+	{C 36 C}
+	{C 37 C}
 	end
 end
 
@@ -27,6 +30,6 @@ end
 
 %freq
 PARTIAL_Hess 
-	{24 25 26 27 28 29 30 31 32 33 34 35}
+	{11 12 13 26 27 28 29 30 31 32 33 34 35 36 37}
 	end
 end

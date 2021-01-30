@@ -208,7 +208,7 @@ class ElementData(object):
                     electronegativity=1.78, max_bonds=3),
             Element(symbol='Sn', name='Tin', atomic_num=50, mass_amu=119.902194,
                     covalent_radius=1.39, vdw_radius=1.93, bond_radius=1.39,
-                    electronegativity=1.96, max_bonds=4),
+                    electronegativity=1.96, max_bonds=5),
             Element(symbol='Sb', name='Antimony', atomic_num=51, mass_amu=120.903815,
                     covalent_radius=1.39, vdw_radius=2.17, bond_radius=1.39,
                     electronegativity=2.05, max_bonds=3),

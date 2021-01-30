@@ -86,6 +86,7 @@ $rem
         SCF_ALGORITHM             DIIS
         MAX_SCF_CYCLES            150
         SCF_CONVERGENCE           8
+		SCF_GUESS                 READ
         SYM_IGNORE                TRUE
         SYMMETRY                  FALSE
         WAVEFUNCTION_ANALYSIS     FALSE

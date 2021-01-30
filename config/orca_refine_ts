@@ -6,8 +6,9 @@ NumHess true # Request numerical Hessian (analytical not available)
 Recalc_Hess 5  # Recalculate the Hessian every 5 steps
 Maxiter 80 # 50 may somehow have bug in orca, interation may exceed 50
 Constraints
-	{C 24 C} 
-	{C 25 C}
+	{C 11 C}
+	{C 12 C}
+	{C 13 C}
 	{C 26 C}
 	{C 27 C}
 	{C 28 C}
@@ -18,6 +19,8 @@ Constraints
 	{C 33 C}
 	{C 34 C}
 	{C 35 C}
+	{C 36 C}
+	{C 37 C}
 	end
 end
 
@@ -27,6 +30,6 @@ end
 
 %freq
 PARTIAL_Hess
-	{24 25 26 27 28 29 30 31 32 33 34 35}
+	{11 12 13 26 27 28 29 30 31 32 33 34 35 36 37}
 	end
 end
